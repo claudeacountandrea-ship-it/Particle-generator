@@ -8,59 +8,51 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0a0a12;color:#c8c8d8;font:12px/1.3 'Segoe UI',system-ui,sans-serif;display:flex;height:100vh;overflow:hidden;user-select:none}
 
-/* ── Sidebar ── */
-.sidebar{width:320px;background:#12121e;border-right:1px solid #2a2a3a;display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+.sidebar{width:340px;background:#12121e;border-right:1px solid #2a2a3a;display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
 .sidebar::-webkit-scrollbar{width:6px}
 .sidebar::-webkit-scrollbar-thumb{background:#333;border-radius:3px}
 .sidebar h1{font-size:13px;padding:12px 16px;background:#1a1a2e;border-bottom:1px solid #2a2a3a;color:#7af;letter-spacing:0.5px}
 
-/* Effect tabs */
 .tabs{display:flex;border-bottom:1px solid #2a2a3a}
 .tab{flex:1;padding:8px 4px;text-align:center;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;font-size:11px;color:#888}
 .tab:hover{color:#aaa;background:#1a1a28}
 .tab.active{color:#7af;border-bottom-color:#7af;background:#16162a}
 
-/* Sections */
 .section{padding:12px 16px;border-bottom:1px solid #1e1e2e}
-.section-title{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#556;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.section-title{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#556;margin-bottom:8px}
 
-/* Controls */
 .ctrl{margin-bottom:8px}
 .ctrl-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
 .ctrl label{font-size:11px;color:#999}
 .ctrl .val{font-size:11px;color:#7af;min-width:36px;text-align:right;font-family:monospace}
 .ctrl input[type=range]{width:100%;height:4px;-webkit-appearance:none;background:#2a2a3a;border-radius:2px;outline:none}
 .ctrl input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#5588cc;cursor:pointer;border:2px solid #1a1a2e}
-.ctrl input[type=range]::-webkit-slider-thumb:hover{background:#77aaee}
 .ctrl input[type=color]{width:28px;height:20px;border:1px solid #333;border-radius:3px;background:#222;cursor:pointer;padding:0}
-.color-row{display:flex;align-items:center;gap:8px}
+.color-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
 .color-row label{flex:1}
 
-/* Buttons */
 .btn{padding:6px 14px;border:1px solid #3a3a5a;background:#1e1e32;color:#aac;border-radius:4px;cursor:pointer;font-size:11px;transition:all .15s}
 .btn:hover{background:#2a2a42;border-color:#5a5a8a}
 .btn.primary{background:#2a4a7a;border-color:#4a6a9a;color:#cdf}
 .btn.primary:hover{background:#3a5a9a}
-.btn-row{display:flex;gap:6px;margin-top:4px}
+.btn-row{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}
 
-/* Toggle */
 .toggle{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .toggle input[type=checkbox]{accent-color:#5588cc}
 
-/* ── Canvas area ── */
+.frame-btns{display:flex;gap:4px;margin-top:4px}
+.frame-btn{flex:1;padding:6px 8px;border:1px solid #3a3a5a;background:#1e1e32;color:#aac;border-radius:4px;cursor:pointer;font-size:12px;text-align:center;font-weight:bold}
+.frame-btn:hover{background:#2a2a42}
+.frame-btn.active{background:#2a4a7a;border-color:#4a6a9a;color:#cdf}
+
+select.ctrl-select{width:100%;padding:4px 8px;background:#1e1e32;border:1px solid #3a3a5a;color:#aac;border-radius:4px;font-size:11px}
+
 .main{flex:1;display:flex;flex-direction:column;position:relative}
 .canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;position:relative}
 canvas{border-radius:4px}
 
-/* Info bar */
 .infobar{height:28px;background:#0e0e18;border-top:1px solid #2a2a3a;display:flex;align-items:center;padding:0 16px;gap:20px;font-size:11px;color:#556}
 .infobar .v{color:#7af}
-
-/* Preset bar */
-.presets{padding:8px 16px;background:#0e0e18;border-bottom:1px solid #2a2a3a;display:flex;gap:6px;flex-wrap:wrap}
-.preset-btn{padding:4px 10px;background:#1a1a2e;border:1px solid #2a2a4a;border-radius:12px;color:#889;font-size:10px;cursor:pointer}
-.preset-btn:hover{background:#2a2a42;color:#aac}
-.preset-btn.active{background:#2a4a6a;border-color:#4a7aaa;color:#bdf}
 </style>
 </head>
 <body>
@@ -79,8 +71,16 @@ canvas{border-radius:4px}
   <div class="section">
     <div class="section-title">Playback</div>
     <div class="ctrl">
-      <div class="ctrl-row"><label>FPS</label><span class="val" id="vFps">24</span></div>
-      <input type="range" id="cFps" min="4" max="60" value="24">
+      <div class="ctrl-row"><label>Total Frames</label></div>
+      <div class="frame-btns">
+        <div class="frame-btn" data-frames="4">4</div>
+        <div class="frame-btn" data-frames="16">16</div>
+        <div class="frame-btn active" data-frames="64">64</div>
+      </div>
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-row"><label>Playback FPS</label><span class="val" id="vFps">24</span></div>
+      <input type="range" id="cFps" min="1" max="60" value="24">
     </div>
     <div class="ctrl">
       <div class="ctrl-row"><label>Brightness</label><span class="val" id="vBright">1.5</span></div>
@@ -93,68 +93,72 @@ canvas{border-radius:4px}
     </div>
   </div>
 
-  <!-- Effect-specific controls container -->
+  <!-- ENERGY controls -->
   <div id="controls-energy">
     <div class="section">
-      <div class="section-title">Particles</div>
+      <div class="section-title">Beams</div>
       <div class="ctrl">
-        <div class="ctrl-row"><label>Path Count</label><span class="val" id="vEPaths">180</span></div>
-        <input type="range" id="cEPaths" min="20" max="400" value="180">
+        <div class="ctrl-row"><label>Beam Count (90=full)</label><span class="val" id="vEBeams">90</span></div>
+        <input type="range" id="cEBeams" min="8" max="90" value="90">
       </div>
       <div class="ctrl">
-        <div class="ctrl-row"><label>Per Path</label><span class="val" id="vEPerPath">3</span></div>
-        <input type="range" id="cEPerPath" min="1" max="6" value="3">
+        <div class="ctrl-row"><label>Pulses Per Beam</label><span class="val" id="vEPulses">3</span></div>
+        <input type="range" id="cEPulses" min="1" max="6" value="3">
       </div>
       <div class="ctrl">
-        <div class="ctrl-row"><label>Max Distance</label><span class="val" id="vEDist">0.62</span></div>
-        <input type="range" id="cEDist" min="0.2" max="0.9" step="0.01" value="0.62">
-      </div>
-    </div>
-    <div class="section">
-      <div class="section-title">Motion</div>
-      <div class="ctrl">
-        <div class="ctrl-row"><label>Spiral Strength</label><span class="val" id="vESpiral">0.4</span></div>
-        <input type="range" id="cESpiral" min="0" max="2" step="0.05" value="0.4">
+        <div class="ctrl-row"><label>Pulse Length</label><span class="val" id="vEPulseLen">0.30</span></div>
+        <input type="range" id="cEPulseLen" min="0.05" max="0.6" step="0.01" value="0.30">
       </div>
       <div class="ctrl">
-        <div class="ctrl-row"><label>Acceleration</label><span class="val" id="vEAccel">2.0</span></div>
-        <input type="range" id="cEAccel" min="0.5" max="5" step="0.1" value="2.0">
-      </div>
-      <div class="ctrl">
-        <div class="ctrl-row"><label>Wobble</label><span class="val" id="vEWobble">0.08</span></div>
-        <input type="range" id="cEWobble" min="0" max="0.3" step="0.01" value="0.08">
+        <div class="ctrl-row"><label>Speed</label><span class="val" id="vESpeed">1.0</span></div>
+        <input type="range" id="cESpeed" min="0.2" max="4" step="0.1" value="1.0">
       </div>
     </div>
     <div class="section">
       <div class="section-title">Shape</div>
       <div class="ctrl">
-        <div class="ctrl-row"><label>Particle Width</label><span class="val" id="vEWidth">14</span></div>
-        <input type="range" id="cEWidth" min="2" max="30" value="14">
+        <div class="ctrl-row"><label>Max Radius</label><span class="val" id="vERadius">0.85</span></div>
+        <input type="range" id="cERadius" min="0.3" max="0.95" step="0.01" value="0.85">
       </div>
       <div class="ctrl">
-        <div class="ctrl-row"><label>Length Multiplier</label><span class="val" id="vELength">3.5</span></div>
-        <input type="range" id="cELength" min="1" max="8" step="0.1" value="3.5">
+        <div class="ctrl-row"><label>Width Factor</label><span class="val" id="vEWidth">1.00</span></div>
+        <input type="range" id="cEWidth" min="0.3" max="2.0" step="0.01" value="1.00">
       </div>
       <div class="ctrl">
-        <div class="ctrl-row"><label>Head Taper</label><span class="val" id="vETaper">0.25</span></div>
-        <input type="range" id="cETaper" min="0.05" max="0.8" step="0.01" value="0.25">
+        <div class="ctrl-row"><label>Head Taper</label><span class="val" id="vETaper">0.30</span></div>
+        <input type="range" id="cETaper" min="0.05" max="1.0" step="0.01" value="0.30">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Wobble</label><span class="val" id="vEWobble">0.02</span></div>
+        <input type="range" id="cEWobble" min="0" max="0.15" step="0.005" value="0.02">
       </div>
     </div>
     <div class="section">
       <div class="section-title">Colors</div>
       <div class="color-row"><label>Core</label><input type="color" id="cEColorCore" value="#ffffff"></div>
-      <div class="color-row"><label>Body</label><input type="color" id="cEColorBody" value="#ccccdd"></div>
-      <div class="color-row"><label>Glow</label><input type="color" id="cEColorGlow" value="#8899cc"></div>
+      <div class="color-row"><label>Body</label><input type="color" id="cEColorBody" value="#aabbee"></div>
+      <div class="color-row"><label>Glow</label><input type="color" id="cEColorGlow" value="#4466aa"></div>
     </div>
   </div>
 
+  <!-- LIGHTNING controls -->
   <div id="controls-lightning" style="display:none">
     <div class="section">
-      <div class="section-title">Bolts</div>
+      <div class="section-title">Mode</div>
       <div class="ctrl">
-        <div class="ctrl-row"><label>Bolt Count</label><span class="val" id="vLBolts">4</span></div>
-        <input type="range" id="cLBolts" min="1" max="8" value="4">
+        <div class="ctrl-row"><label>Mode</label></div>
+        <select class="ctrl-select" id="cLMode">
+          <option value="converge">Converge (to center)</option>
+          <option value="explode">Electric Explosion</option>
+        </select>
       </div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Spawn Rate</label><span class="val" id="vLSpawn">6</span></div>
+        <input type="range" id="cLSpawn" min="1" max="20" value="6">
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Bolts</div>
       <div class="ctrl">
         <div class="ctrl-row"><label>Detail (Subdivisions)</label><span class="val" id="vLSubs">6</span></div>
         <input type="range" id="cLSubs" min="3" max="8" value="6">
@@ -194,6 +198,7 @@ canvas{border-radius:4px}
     </div>
   </div>
 
+  <!-- EXPLOSION controls -->
   <div id="controls-explosion" style="display:none">
     <div class="section">
       <div class="section-title">Debris</div>
@@ -235,43 +240,48 @@ canvas{border-radius:4px}
     </div>
   </div>
 
+  <!-- FIRE controls -->
   <div id="controls-fire" style="display:none">
     <div class="section">
       <div class="section-title">Flame</div>
       <div class="ctrl">
-        <div class="ctrl-row"><label>Particle Count</label><span class="val" id="vFCount">250</span></div>
-        <input type="range" id="cFCount" min="50" max="500" value="250">
+        <div class="ctrl-row"><label>Particle Count</label><span class="val" id="vFCount">400</span></div>
+        <input type="range" id="cFCount" min="50" max="800" value="400">
       </div>
       <div class="ctrl">
         <div class="ctrl-row"><label>Flame Height</label><span class="val" id="vFHeight">0.65</span></div>
         <input type="range" id="cFHeight" min="0.2" max="0.9" step="0.01" value="0.65">
       </div>
       <div class="ctrl">
-        <div class="ctrl-row"><label>Flame Width</label><span class="val" id="vFWidth">0.3</span></div>
-        <input type="range" id="cFWidth" min="0.1" max="0.6" step="0.01" value="0.3">
+        <div class="ctrl-row"><label>Flame Width</label><span class="val" id="vFWidth">0.35</span></div>
+        <input type="range" id="cFWidth" min="0.1" max="0.7" step="0.01" value="0.35">
       </div>
       <div class="ctrl">
-        <div class="ctrl-row"><label>Turbulence</label><span class="val" id="vFTurb">50</span></div>
-        <input type="range" id="cFTurb" min="5" max="120" value="50">
+        <div class="ctrl-row"><label>Turbulence</label><span class="val" id="vFTurb">0.60</span></div>
+        <input type="range" id="cFTurb" min="0" max="1" step="0.01" value="0.60">
       </div>
       <div class="ctrl">
         <div class="ctrl-row"><label>Wind</label><span class="val" id="vFWind">0</span></div>
         <input type="range" id="cFWind" min="-80" max="80" value="0">
       </div>
+      <div class="ctrl">
+        <div class="ctrl-row"><label>Particle Size</label><span class="val" id="vFSize">22</span></div>
+        <input type="range" id="cFSize" min="5" max="50" value="22">
+      </div>
     </div>
     <div class="section">
       <div class="section-title">Embers</div>
       <div class="ctrl">
-        <div class="ctrl-row"><label>Ember Count</label><span class="val" id="vFEmbers">40</span></div>
-        <input type="range" id="cFEmbers" min="0" max="100" value="40">
+        <div class="ctrl-row"><label>Ember Count</label><span class="val" id="vFEmbers">50</span></div>
+        <input type="range" id="cFEmbers" min="0" max="150" value="50">
       </div>
     </div>
     <div class="section">
       <div class="section-title">Colors</div>
-      <div class="color-row"><label>Core</label><input type="color" id="cFColorCore" value="#ffffdd"></div>
-      <div class="color-row"><label>Inner</label><input type="color" id="cFColorInner" value="#ffcc33"></div>
-      <div class="color-row"><label>Outer</label><input type="color" id="cFColorOuter" value="#ff6622"></div>
-      <div class="color-row"><label>Tip</label><input type="color" id="cFColorTip" value="#cc4418"></div>
+      <div class="color-row"><label>Core</label><input type="color" id="cFColorCore" value="#fffff0"></div>
+      <div class="color-row"><label>Inner</label><input type="color" id="cFColorInner" value="#ffdd44"></div>
+      <div class="color-row"><label>Outer</label><input type="color" id="cFColorOuter" value="#ff6611"></div>
+      <div class="color-row"><label>Tip</label><input type="color" id="cFColorTip" value="#cc2200"></div>
     </div>
   </div>
 </div>
@@ -298,9 +308,9 @@ const ctx = C.getContext('2d');
 const W = 700, H = 700;
 C.width = W; C.height = H;
 C.style.width = W + 'px'; C.style.height = H + 'px';
-const CX = W/2, CY = H/2;
+const CX = W / 2, CY = H / 2;
 
-const TOTAL_FRAMES = 64;
+let totalFrames = 64;
 let currentEffect = 'energy';
 let fps = 24;
 let brightness = 1.5;
@@ -312,7 +322,9 @@ let globalSeed = 77;
 
 // ── Seeded PRNG ──
 function makeRand(s) {
-  let seed = s;
+  let seed = Math.abs(s) || 1;
+  seed = seed % 2147483647;
+  if (seed <= 0) seed = 1;
   return () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
 }
 
@@ -322,34 +334,46 @@ const _perm = new Uint8Array(512);
   const r = makeRand(42);
   const p = new Uint8Array(256);
   for (let i = 0; i < 256; i++) p[i] = i;
-  for (let i = 255; i > 0; i--) { const j = Math.floor(r() * (i+1)); [p[i],p[j]] = [p[j],p[i]]; }
+  for (let i = 255; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [p[i], p[j]] = [p[j], p[i]]; }
   for (let i = 0; i < 512; i++) _perm[i] = p[i & 255];
 }
 
 function noise2d(x, y) {
-  // Value noise with smooth interpolation
   const ix = Math.floor(x), iy = Math.floor(y);
   const fx = x - ix, fy = y - iy;
-  const sx = fx*fx*(3-2*fx), sy = fy*fy*(3-2*fy);
+  const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
   const a = _perm[(ix & 255)] + (iy & 255);
-  const b = _perm[((ix+1) & 255)] + (iy & 255);
+  const b = _perm[((ix + 1) & 255)] + (iy & 255);
   const v00 = _perm[a & 511] / 255;
   const v10 = _perm[b & 511] / 255;
-  const v01 = _perm[(a+1) & 511] / 255;
-  const v11 = _perm[(b+1) & 511] / 255;
-  return (v00*(1-sx)+v10*sx)*(1-sy) + (v01*(1-sx)+v11*sx)*sy;
+  const v01 = _perm[(a + 1) & 511] / 255;
+  const v11 = _perm[(b + 1) & 511] / 255;
+  return (v00 * (1 - sx) + v10 * sx) * (1 - sy) + (v01 * (1 - sx) + v11 * sx) * sy;
+}
+
+// Periodic noise: loops seamlessly over t in [0,1]
+function pnoise(x, y, t, radius) {
+  const a = t * Math.PI * 2;
+  return noise2d(x + Math.cos(a) * radius, y + Math.sin(a) * radius);
+}
+
+function pfbm(x, y, t, oct, radius) {
+  let v = 0, amp = 1, freq = 1, tot = 0;
+  for (let i = 0; i < (oct || 3); i++) {
+    v += amp * (pnoise(x * freq, y * freq, t, radius) * 2 - 1);
+    tot += amp; freq *= 2; amp *= 0.5;
+  }
+  return v / tot;
 }
 
 function noise3d(x, y, z) {
-  const a = noise2d(x, y + z * 31.17);
-  const b = noise2d(x + z * 17.31, y);
-  return (a + b) * 0.5;
+  return (noise2d(x, y + z * 31.17) + noise2d(x + z * 17.31, y)) * 0.5;
 }
 
 function fbm(x, y, z, oct) {
   let v = 0, amp = 1, freq = 1, tot = 0;
-  for (let i = 0; i < (oct||4); i++) {
-    v += amp * (noise3d(x*freq, y*freq, z*freq) * 2 - 1);
+  for (let i = 0; i < (oct || 3); i++) {
+    v += amp * (noise3d(x * freq, y * freq, z * freq) * 2 - 1);
     tot += amp; freq *= 2; amp *= 0.5;
   }
   return v / tot;
@@ -358,158 +382,158 @@ function fbm(x, y, z, oct) {
 // ── Color helpers ──
 function hexToRgb(h) {
   const v = parseInt(h.slice(1), 16);
-  return [(v>>16)&255, (v>>8)&255, v&255];
+  return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
 }
 
 function lerpC(c1, c2, t) {
   t = Math.max(0, Math.min(1, t));
-  return [c1[0]+(c2[0]-c1[0])*t, c1[1]+(c2[1]-c1[1])*t, c1[2]+(c2[2]-c1[2])*t];
+  return [c1[0] + (c2[0] - c1[0]) * t, c1[1] + (c2[1] - c1[1]) * t, c1[2] + (c2[2] - c1[2]) * t];
 }
 
-// ── Get control value ──
 function gv(id) { return parseFloat(document.getElementById(id).value); }
 function gc(id) { return hexToRgb(document.getElementById(id).value); }
 
-// ═══════════════════════════════════════════════════════════
-// ENERGY EFFECT (improved with spirals + additive blending)
-// ═══════════════════════════════════════════════════════════
+const DEG = Math.PI / 180;
 
-let energyP = [];
-
-function initEnergy() {
-  energyP = [];
-  const rand = makeRand(globalSeed);
-  const paths = Math.round(gv('cEPaths'));
-  const perPath = Math.round(gv('cEPerPath'));
-  for (let p = 0; p < paths; p++) {
-    const angle = rand() * Math.PI * 2;
-    for (let j = 0; j < perPath; j++) {
-      const phase = (p * perPath + j) / (paths * perPath);
-      energyP.push({
-        angle, phase: (phase + rand()*0.005) % 1,
-        bright: 205 + Math.floor(rand()*50),
-        lenMult: 2.0 + rand() * 3.0,
-        ns: rand() * 1000,
-        speedVar: 0.8 + rand() * 0.4,
-      });
-    }
-  }
-}
+// ═══════════════════════════════════════════════════════════
+// ENERGY EFFECT - 90 beams converging to center
+// ═══════════════════════════════════════════════════════════
 
 function renderEnergy(t) {
-  const maxDist = W * gv('cEDist');
-  const spiral = gv('cESpiral');
-  const accel = gv('cEAccel');
-  const wobble = gv('cEWobble');
-  const baseW = gv('cEWidth');
-  const lenMult = gv('cELength');
-  const taper = gv('cETaper');
+  const beamCount = Math.round(gv('cEBeams'));
+  const pulsesPerBeam = Math.round(gv('cEPulses'));
+  const pulseLen = gv('cEPulseLen');
+  const speed = gv('cESpeed');
+  const maxR = W * 0.5 * gv('cERadius');
+  const widthFact = gv('cEWidth');
+  const headTaper = gv('cETaper');
+  const wobbleAmt = gv('cEWobble');
   const cCore = gc('cEColorCore');
   const cBody = gc('cEColorBody');
   const cGlow = gc('cEColorGlow');
 
-  const sorted = [];
-  for (const p of energyP) {
-    let prog = (t * p.speedVar + p.phase) % 1;
-    let eased = Math.pow(prog, accel);
-    let dist = maxDist * (1 - eased);
-    if (dist < 2) dist = 2;
+  const angleStep = (Math.PI * 2) / beamCount;
+  // Width factor so adjacent beams nearly touch
+  const baseWidthFactor = Math.tan(angleStep / 2) * widthFact;
+  let count = 0;
 
-    // Spiral: angular velocity increases as particle approaches center
-    let spiralAngle = spiral * eased * Math.PI * 2;
-    let wob = fbm(p.ns, t * 4, prog * 2, 2) * wobble * (1 - prog);
-    let angle = p.angle + spiralAngle + wob;
-
-    let x = CX + Math.cos(angle) * dist;
-    let y = CY + Math.sin(angle) * dist;
-    let dr = dist / maxDist;
-
-    let alpha = 1;
-    if (prog < 0.04) alpha = prog / 0.04;
-    else if (prog > 0.85) alpha = (1 - prog) / 0.15;
-    if (alpha < 0.01) continue;
-
-    let bw = (3 + dr * baseW);
-    let len = bw * lenMult * p.lenMult / 3;
-    sorted.push({ x, y, angle, dist, alpha, bw, len, hW: bw*taper, tW: bw, bright: p.bright, dr });
-  }
-  sorted.sort((a, b) => b.dist - a.dist);
-
-  // Pass 1: Normal blend body
-  ctx.globalCompositeOperation = 'source-over';
-  for (const s of sorted) {
-    ctx.save();
-    ctx.translate(s.x, s.y);
-    ctx.rotate(s.angle);
-    ctx.globalAlpha = s.alpha * 0.6;
-    const hH = s.hW/2, tH = s.tW/2;
-    ctx.beginPath();
-    ctx.moveTo(0, -hH); ctx.lineTo(s.len, -tH);
-    ctx.lineTo(s.len, tH); ctx.lineTo(0, hH); ctx.closePath();
-    const bodyC = lerpC(cCore, cBody, s.dr);
-    ctx.fillStyle = `rgba(${bodyC[0]|0},${bodyC[1]|0},${bodyC[2]|0},${s.alpha*0.5})`;
-    ctx.fill();
-    ctx.restore();
+  // Pre-compute beam angles
+  const cosA = new Float64Array(beamCount);
+  const sinA = new Float64Array(beamCount);
+  for (let i = 0; i < beamCount; i++) {
+    const a = i * angleStep;
+    cosA[i] = Math.cos(a);
+    sinA[i] = Math.sin(a);
   }
 
-  // Pass 2: Additive blend heads (bright hotspots)
+  // Background glow layer
   ctx.globalCompositeOperation = 'lighter';
-  for (const s of sorted) {
-    ctx.save();
-    ctx.translate(s.x, s.y);
-    ctx.rotate(s.angle);
-    ctx.globalAlpha = s.alpha * 0.8;
-    const hH = s.hW/2;
-    // Glowing head
-    const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, s.bw * 1.5);
-    grad.addColorStop(0, `rgba(${cCore[0]},${cCore[1]},${cCore[2]},${s.alpha*0.9})`);
-    grad.addColorStop(0.4, `rgba(${cBody[0]},${cBody[1]},${cBody[2]},${s.alpha*0.4})`);
-    grad.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = grad;
-    ctx.beginPath(); ctx.arc(0, 0, s.bw*1.5, 0, Math.PI*2); ctx.fill();
-    // Body streak
-    ctx.globalAlpha = s.alpha * 0.4;
-    const sg = ctx.createLinearGradient(0, 0, s.len, 0);
-    sg.addColorStop(0, `rgba(${cCore[0]},${cCore[1]},${cCore[2]},1)`);
-    sg.addColorStop(0.5, `rgba(${cBody[0]},${cBody[1]},${cBody[2]},0.3)`);
-    sg.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = sg;
-    ctx.beginPath();
-    ctx.moveTo(0, -hH*0.8); ctx.lineTo(s.len, -s.tW/2*0.5);
-    ctx.lineTo(s.len, s.tW/2*0.5); ctx.lineTo(0, hH*0.8); ctx.closePath();
-    ctx.fill();
-    ctx.restore();
+  for (let i = 0; i < beamCount; i++) {
+    const ca = cosA[i], sa = sinA[i];
+    const px = -sa, py = ca; // perpendicular
+
+    for (let p = 0; p < pulsesPerBeam; p++) {
+      // Progress: 0 = outer, 1 = center. Perfect loop via modulo.
+      const phase = p / pulsesPerBeam;
+      const progress = (t * speed + phase) % 1;
+
+      const headDist = maxR * (1 - progress);
+      const tailProgress = Math.max(0, progress - pulseLen);
+      const tailDist = maxR * (1 - tailProgress);
+
+      if (headDist < 3) continue;
+
+      // Wobble using periodic noise
+      const wob = pfbm(i * 7.3 + p * 13.1, progress * 2, t, 2, 1.5) * wobbleAmt * tailDist;
+
+      // Widths at head and tail (natural geometric taper + extra head taper)
+      const headW = headDist * baseWidthFactor * headTaper;
+      const tailW = tailDist * baseWidthFactor;
+
+      // Brightness: fade near center and at spawn
+      let alpha = 1;
+      if (progress < 0.05) alpha = progress / 0.05;
+      if (progress > 0.9) alpha = (1 - progress) / 0.1;
+      if (alpha < 0.01) continue;
+
+      // Head and tail positions
+      const hx = CX + ca * headDist + px * wob;
+      const hy = CY + sa * headDist + py * wob;
+      const tx = CX + ca * tailDist + px * wob * 0.5;
+      const ty = CY + sa * tailDist + py * wob * 0.5;
+
+      // Draw the beam as a gradient-filled trapezoid
+      ctx.save();
+      ctx.globalAlpha = alpha * 0.7;
+
+      // Create gradient from head (bright) to tail (fade)
+      const grad = ctx.createLinearGradient(hx, hy, tx, ty);
+      grad.addColorStop(0, `rgba(${cCore[0]},${cCore[1]},${cCore[2]},1)`);
+      grad.addColorStop(0.15, `rgba(${cBody[0]},${cBody[1]},${cBody[2]},0.9)`);
+      grad.addColorStop(0.6, `rgba(${cGlow[0]},${cGlow[1]},${cGlow[2]},0.3)`);
+      grad.addColorStop(1, `rgba(${cGlow[0]},${cGlow[1]},${cGlow[2]},0)`);
+
+      ctx.beginPath();
+      ctx.moveTo(hx + px * headW, hy + py * headW);
+      ctx.lineTo(tx + px * tailW, ty + py * tailW);
+      ctx.lineTo(tx - px * tailW, ty - py * tailW);
+      ctx.lineTo(hx - px * headW, hy - py * headW);
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Bright head glow
+      ctx.globalAlpha = alpha * 0.9;
+      const headGlowR = headW * 3;
+      if (headGlowR > 1) {
+        const hg = ctx.createRadialGradient(hx, hy, 0, hx, hy, headGlowR);
+        hg.addColorStop(0, `rgba(${cCore[0]},${cCore[1]},${cCore[2]},0.9)`);
+        hg.addColorStop(0.3, `rgba(${cBody[0]},${cBody[1]},${cBody[2]},0.3)`);
+        hg.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = hg;
+        ctx.beginPath();
+        ctx.arc(hx, hy, headGlowR, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+      count++;
+    }
   }
 
-  // Core glow (additive)
-  const pulse = 0.5 + 0.5 * Math.sin(t * Math.PI * 4);
-  const cr = 6 + pulse * 5;
-  ctx.globalAlpha = 0.9;
-  const cg = ctx.createRadialGradient(CX, CY, 0, CX, CY, cr + 50);
+  // Center convergence glow
+  const pulse = 0.5 + 0.5 * Math.sin(t * Math.PI * 2); // perfect loop
+  const coreR = 8 + pulse * 12;
+  ctx.globalAlpha = 0.95;
+  const cg = ctx.createRadialGradient(CX, CY, 0, CX, CY, coreR + 60);
   cg.addColorStop(0, `rgba(${cCore[0]},${cCore[1]},${cCore[2]},1)`);
-  cg.addColorStop(0.1, `rgba(${cGlow[0]},${cGlow[1]},${cGlow[2]},0.6)`);
-  cg.addColorStop(0.4, `rgba(${cGlow[0]},${cGlow[1]},${cGlow[2]},0.1)`);
+  cg.addColorStop(0.08, `rgba(${cBody[0]},${cBody[1]},${cBody[2]},0.8)`);
+  cg.addColorStop(0.25, `rgba(${cGlow[0]},${cGlow[1]},${cGlow[2]},0.3)`);
+  cg.addColorStop(0.6, `rgba(${cGlow[0]},${cGlow[1]},${cGlow[2]},0.05)`);
   cg.addColorStop(1, 'transparent');
-  ctx.fillStyle = cg; ctx.beginPath(); ctx.arc(CX, CY, cr+50, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = cg;
+  ctx.beginPath();
+  ctx.arc(CX, CY, coreR + 60, 0, Math.PI * 2);
+  ctx.fill();
 
   ctx.globalCompositeOperation = 'source-over';
-  return sorted.length;
+  return count;
 }
 
 // ═══════════════════════════════════════════════════════════
-// LIGHTNING (improved with 3-layer glow + taper + stochastic flicker)
+// LIGHTNING - Converge + Explosion modes
 // ═══════════════════════════════════════════════════════════
 
 function midpointDisp(pts, disp, t, soff) {
   const out = [pts[0]];
-  for (let i = 0; i < pts.length-1; i++) {
-    const [x1,y1]=pts[i],[x2,y2]=pts[i+1];
-    const mx=(x1+x2)/2, my=(y1+y2)/2;
-    const dx=x2-x1, dy=y2-y1, sl=Math.sqrt(dx*dx+dy*dy);
-    if (sl<1){out.push([mx,my],[x2,y2]);continue;}
-    const px=-dy/sl, py=dx/sl;
-    const n = fbm(mx*0.008+soff, my*0.008, t, 2);
-    out.push([mx+px*n*disp*sl, my+py*n*disp*sl],[x2,y2]);
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [x1, y1] = pts[i], [x2, y2] = pts[i + 1];
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    const dx = x2 - x1, dy = y2 - y1, sl = Math.sqrt(dx * dx + dy * dy);
+    if (sl < 1) { out.push([mx, my], [x2, y2]); continue; }
+    const px = -dy / sl, py = dx / sl;
+    const n = pfbm(mx * 0.008 + soff, my * 0.008, t, 2, 2);
+    out.push([mx + px * n * disp * sl, my + py * n * disp * sl], [x2, y2]);
   }
   return out;
 }
@@ -517,24 +541,24 @@ function midpointDisp(pts, disp, t, soff) {
 function genBolt(start, end, subs, disp, t, soff, depth, branchChance) {
   let pts = [start, end];
   let d = disp;
-  for (let i = 0; i < subs; i++) { pts = midpointDisp(pts, d, t, soff+i*7.3); d *= 0.55; }
+  for (let i = 0; i < subs; i++) { pts = midpointDisp(pts, d, t, soff + i * 7.3); d *= 0.55; }
   const branches = [];
   if (depth < 2) {
-    const rand = makeRand(Math.floor(soff*100+t*1000) % 2147483647);
-    for (let i = 1; i < pts.length-1; i++) {
+    const rand = makeRand(Math.floor(Math.abs(soff * 100 + t * 1000)) % 2147483646 + 1);
+    for (let i = 1; i < pts.length - 1; i++) {
       if (rand() < branchChance) {
-        const dx = pts[i][0]-pts[Math.max(0,i-1)][0];
-        const dy = pts[i][1]-pts[Math.max(0,i-1)][1];
-        const ba = Math.atan2(dy,dx) + (rand()-0.5)*1.8;
-        const rem = Math.sqrt((end[0]-pts[i][0])**2+(end[1]-pts[i][1])**2);
+        const ddx = pts[i][0] - pts[Math.max(0, i - 1)][0];
+        const ddy = pts[i][1] - pts[Math.max(0, i - 1)][1];
+        const ba = Math.atan2(ddy, ddx) + (rand() - 0.5) * 1.8;
+        const rem = Math.sqrt((end[0] - pts[i][0]) ** 2 + (end[1] - pts[i][1]) ** 2);
         const bl = rem * 0.45;
-        const bEnd = [pts[i][0]+Math.cos(ba)*bl, pts[i][1]+Math.sin(ba)*bl];
-        const {pts:bp} = genBolt(pts[i], bEnd, Math.max(2,subs-2), disp*0.6, t, soff+i*13.7, depth+1, branchChance*0.5);
+        const bEnd = [pts[i][0] + Math.cos(ba) * bl, pts[i][1] + Math.sin(ba) * bl];
+        const { pts: bp } = genBolt(pts[i], bEnd, Math.max(2, subs - 2), disp * 0.6, t, soff + i * 13.7, depth + 1, branchChance * 0.5);
         branches.push(bp);
       }
     }
   }
-  return {pts, branches};
+  return { pts, branches };
 }
 
 function drawBoltLine(pts, width, color, alpha, taper) {
@@ -548,12 +572,13 @@ function drawBoltLine(pts, width, color, alpha, taper) {
     const frac = i / totalLen;
     const w = taper ? width * (1 - frac * 0.6) : width;
     ctx.lineWidth = Math.max(0.5, w);
-    ctx.beginPath(); ctx.moveTo(pts[i][0],pts[i][1]); ctx.lineTo(pts[i+1][0],pts[i+1][1]); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pts[i][0], pts[i][1]); ctx.lineTo(pts[i + 1][0], pts[i + 1][1]); ctx.stroke();
   }
 }
 
 function renderLightning(t) {
-  const boltCount = Math.round(gv('cLBolts'));
+  const mode = document.getElementById('cLMode').value;
+  const spawnRate = Math.round(gv('cLSpawn'));
   const subs = Math.round(gv('cLSubs'));
   const disp = gv('cLDisp');
   const branchChance = gv('cLBranch');
@@ -563,59 +588,65 @@ function renderLightning(t) {
   const glowW = gv('cLGlowW');
   const cCore = gc('cLColorCore');
   const cGlow = gc('cLColorGlow');
-  const nt = t * 2.5;
   let count = 0;
-
-  // Stochastic flicker per bolt
-  const flickerBase = 0.5 + 0.5 * Math.abs(Math.sin(t * Math.PI * flickerSpd));
 
   ctx.globalCompositeOperation = 'lighter';
 
-  for (let bi = 0; bi < boltCount; bi++) {
-    const phase = (t + bi/boltCount) % 1;
+  // Generate bolt slots based on spawn rate
+  for (let bi = 0; bi < spawnRate; bi++) {
+    const phase = (t + bi / spawnRate) % 1;
     if (phase > life) continue;
-    let ba = phase < 0.05 ? phase/0.05 : phase > life*0.7 ? (life-phase)/(life*0.3) : 1;
-    // Per-bolt flicker
-    const boltFlicker = fbm(bi*50, t*flickerSpd, 0, 2);
+    let ba = phase < 0.05 ? phase / 0.05 : phase > life * 0.7 ? (life - phase) / (life * 0.3) : 1;
+
+    // Per-bolt flicker using periodic noise
+    const boltFlicker = pfbm(bi * 50, t * flickerSpd * 0.3, t, 2, 2);
+    const flickerBase = 0.5 + 0.5 * Math.abs(Math.sin(t * Math.PI * 2 * (flickerSpd / 10)));
     ba *= flickerBase * (0.7 + 0.3 * Math.max(0, boltFlicker + 0.5));
     if (ba < 0.01) continue;
 
-    const angle = (bi/boltCount)*Math.PI*2 + fbm(bi*10, t*2, 0, 2)*0.6;
+    const angle = (bi / spawnRate) * Math.PI * 2 + pfbm(bi * 10, t * 2, t, 2, 1.5) * 0.6;
     const ed = W * 0.44;
-    const endOff = fbm(bi*20, t*3, 5, 2) * 18;
-    const start = [CX+Math.cos(angle)*ed, CY+Math.sin(angle)*ed];
-    const end = [CX+endOff, CY+fbm(bi*20+50, t*3, 5, 2)*18];
+    const endOff = pfbm(bi * 20, t * 3, t, 2, 1.5) * 18;
 
-    const {pts, branches} = genBolt(start, end, subs, disp, nt, bi*100, 0, branchChance);
-
-    // Draw branches
-    for (const bp of branches) {
-      drawBoltLine(bp, glowW*0.3, `rgba(${cGlow[0]},${cGlow[1]},${cGlow[2]},0.3)`, ba*0.4, true);
-      drawBoltLine(bp, coreW*0.5, `rgba(${cCore[0]},${cCore[1]},${cCore[2]},0.6)`, ba*0.5, true);
+    let start, end;
+    if (mode === 'converge') {
+      start = [CX + Math.cos(angle) * ed, CY + Math.sin(angle) * ed];
+      end = [CX + endOff, CY + pfbm(bi * 20 + 50, t * 3, t, 2, 1.5) * 18];
+    } else {
+      // Explosion mode: from center outward
+      start = [CX + endOff * 0.5, CY + pfbm(bi * 20 + 50, t * 3, t, 2, 1.5) * 10];
+      end = [CX + Math.cos(angle) * ed * (0.3 + phase * 0.7), CY + Math.sin(angle) * ed * (0.3 + phase * 0.7)];
     }
 
-    // 3-layer main bolt: atmosphere, glow, core
-    drawBoltLine(pts, glowW*1.5, `rgba(${cGlow[0]*.5|0},${cGlow[1]*.5|0},${cGlow[2]*.7|0},0.15)`, ba*0.3, true);
-    drawBoltLine(pts, glowW, `rgba(${cGlow[0]},${cGlow[1]},${cGlow[2]},0.5)`, ba*0.6, true);
+    const { pts, branches } = genBolt(start, end, subs, disp, t * 2.5, bi * 100, 0, branchChance);
+
+    for (const bp of branches) {
+      drawBoltLine(bp, glowW * 0.3, `rgba(${cGlow[0]},${cGlow[1]},${cGlow[2]},0.3)`, ba * 0.4, true);
+      drawBoltLine(bp, coreW * 0.5, `rgba(${cCore[0]},${cCore[1]},${cCore[2]},0.6)`, ba * 0.5, true);
+    }
+
+    drawBoltLine(pts, glowW * 1.5, `rgba(${cGlow[0] * .5 | 0},${cGlow[1] * .5 | 0},${cGlow[2] * .7 | 0},0.15)`, ba * 0.3, true);
+    drawBoltLine(pts, glowW, `rgba(${cGlow[0]},${cGlow[1]},${cGlow[2]},0.5)`, ba * 0.6, true);
     drawBoltLine(pts, coreW, `rgba(${cCore[0]},${cCore[1]},${cCore[2]},0.95)`, ba, true);
     count += pts.length;
   }
 
   // Center flash
-  const flashA = 0.4 + 0.6 * Math.abs(Math.sin(t * Math.PI * flickerSpd * 1.5));
+  const flashA = 0.4 + 0.6 * Math.abs(Math.sin(t * Math.PI * 2 * (flickerSpd / 5)));
+  const flashR = mode === 'explode' ? 50 : 35;
   ctx.globalAlpha = flashA * 0.8;
-  const fg = ctx.createRadialGradient(CX,CY,0,CX,CY,35);
+  const fg = ctx.createRadialGradient(CX, CY, 0, CX, CY, flashR);
   fg.addColorStop(0, `rgba(${cCore[0]},${cCore[1]},${cCore[2]},1)`);
   fg.addColorStop(0.3, `rgba(${cGlow[0]},${cGlow[1]},${cGlow[2]},0.4)`);
   fg.addColorStop(1, 'transparent');
-  ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(CX,CY,35,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(CX, CY, flashR, 0, Math.PI * 2); ctx.fill();
 
   ctx.globalCompositeOperation = 'source-over';
   return count;
 }
 
 // ═══════════════════════════════════════════════════════════
-// EXPLOSION (improved with turbulence + better visuals)
+// EXPLOSION
 // ═══════════════════════════════════════════════════════════
 
 let explDebris = [];
@@ -626,13 +657,13 @@ function initExplosion() {
   const count = Math.round(gv('cXDebris'));
   for (let i = 0; i < count; i++) {
     explDebris.push({
-      angle: rand()*Math.PI*2 + (rand()-0.5)*0.4,
-      speed: 0.2 + rand()*0.8,
+      angle: rand() * Math.PI * 2 + (rand() - 0.5) * 0.4,
+      speed: 0.2 + rand() * 0.8,
       size: 2 + rand() * gv('cXSize'),
-      temp: 0.1 + rand()*0.5,
-      ns: rand()*1000,
-      trail: 1 + rand()*2.5,
-      angVel: (rand()-0.5) * 0.3,
+      temp: 0.1 + rand() * 0.5,
+      ns: rand() * 1000,
+      trail: 1 + rand() * 2.5,
+      angVel: (rand() - 0.5) * 0.3,
     });
   }
 }
@@ -649,126 +680,116 @@ function renderExplosion(t) {
   const cWarm = gc('cXColorWarm');
   const cCool = gc('cXColorCool');
 
-  let bt = buildup > 0 ? (t < buildup ? -1+t/buildup : (t-buildup)/(1-buildup)) : t;
+  let bt = buildup > 0 ? (t < buildup ? -1 + t / buildup : (t - buildup) / (1 - buildup)) : t;
   let count = 0;
 
-  // Buildup
   if (bt < 0) {
     const bu = 1 + bt;
     ctx.globalCompositeOperation = 'lighter';
     for (let i = 0; i < Math.min(50, explDebris.length); i++) {
       const d = explDebris[i];
-      const dist = maxD * (1-bu*0.85);
-      const px = CX+Math.cos(d.angle)*dist, py = CY+Math.sin(d.angle)*dist;
+      const dist = maxD * (1 - bu * 0.85);
+      const px = CX + Math.cos(d.angle) * dist, py = CY + Math.sin(d.angle) * dist;
       ctx.globalAlpha = bu * 0.7;
       const sz = d.size * 0.4;
-      const g = ctx.createRadialGradient(px,py,0,px,py,sz*2);
+      const g = ctx.createRadialGradient(px, py, 0, px, py, sz * 2);
       g.addColorStop(0, `rgba(${cHot[0]},${cHot[1]},${cHot[2]},1)`);
       g.addColorStop(1, 'transparent');
-      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(px,py,sz*2,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(px, py, sz * 2, 0, Math.PI * 2); ctx.fill();
       count++;
     }
     const gr = 20 * bu * bu;
     ctx.globalAlpha = bu;
-    const gg = ctx.createRadialGradient(CX,CY,0,CX,CY,gr+10);
+    const gg = ctx.createRadialGradient(CX, CY, 0, CX, CY, gr + 10);
     gg.addColorStop(0, `rgba(${cHot[0]},${cHot[1]},${cHot[2]},1)`);
     gg.addColorStop(1, 'transparent');
-    ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(CX,CY,gr+10,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(CX, CY, gr + 10, 0, Math.PI * 2); ctx.fill();
     ctx.globalCompositeOperation = 'source-over';
     return count;
   }
 
   ctx.globalCompositeOperation = 'lighter';
 
-  // Flash
   if (bt < flashDur) {
-    const ft = bt/flashDur;
-    const fr = maxD * 0.2 * (1-(1-ft)**2);
-    ctx.globalAlpha = (1-ft*ft) * 0.9;
-    const fg = ctx.createRadialGradient(CX,CY,0,CX,CY,fr);
+    const ft = bt / flashDur;
+    const fr = maxD * 0.2 * (1 - (1 - ft) ** 2);
+    ctx.globalAlpha = (1 - ft * ft) * 0.9;
+    const fg = ctx.createRadialGradient(CX, CY, 0, CX, CY, fr);
     fg.addColorStop(0, `rgba(${cHot[0]},${cHot[1]},${cHot[2]},1)`);
     fg.addColorStop(0.5, `rgba(${cWarm[0]},${cWarm[1]},${cWarm[2]},0.5)`);
     fg.addColorStop(1, 'transparent');
-    ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(CX,CY,fr,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(CX, CY, fr, 0, Math.PI * 2); ctx.fill();
   }
 
-  // Shockwave
   if (showShock && bt < 0.55) {
-    const st = bt/0.55;
-    const sr = maxD * 0.85 * (1-(1-st)**3);
-    const sw = Math.max(2, 10*(1-st*0.7));
-    ctx.globalAlpha = (1-st*st)*0.5;
+    const st = bt / 0.55;
+    const sr = maxD * 0.85 * (1 - (1 - st) ** 3);
+    const sw = Math.max(2, 10 * (1 - st * 0.7));
+    ctx.globalAlpha = (1 - st * st) * 0.5;
     ctx.strokeStyle = `rgba(${cHot[0]},${cHot[1]},${cHot[2]},1)`;
     ctx.lineWidth = sw;
-    ctx.beginPath(); ctx.arc(CX,CY,sr,0,Math.PI*2); ctx.stroke();
-    // Inner glow of shockwave
+    ctx.beginPath(); ctx.arc(CX, CY, sr, 0, Math.PI * 2); ctx.stroke();
     ctx.lineWidth = sw * 0.3;
-    ctx.globalAlpha = (1-st*st)*0.8;
+    ctx.globalAlpha = (1 - st * st) * 0.8;
     ctx.strokeStyle = `rgba(255,255,255,1)`;
-    ctx.beginPath(); ctx.arc(CX,CY,sr,0,Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(CX, CY, sr, 0, Math.PI * 2); ctx.stroke();
   }
 
-  // Debris
   for (const d of explDebris) {
-    const et = 1-(1-Math.min(1,bt*1.3*speedMult))**3;
-    // Turbulent motion
-    const turbX = fbm(d.ns, bt*3, 0, 2) * 30 * bt;
-    const turbY = fbm(d.ns+100, bt*3, 50, 2) * 30 * bt;
+    const et = 1 - (1 - Math.min(1, bt * 1.3 * speedMult)) ** 3;
+    const turbX = pfbm(d.ns, bt * 3, bt, 2, 1.5) * 30 * bt;
+    const turbY = pfbm(d.ns + 100, bt * 3, bt, 2, 1.5) * 30 * bt;
     const dist = maxD * d.speed * et;
     const a = d.angle + d.angVel * bt;
-    let px = CX+Math.cos(a)*dist + turbX;
-    let py = CY+Math.sin(a)*dist + turbY;
-    let alpha = bt > 0.35 ? Math.max(0, 1-((bt-0.35)/0.65)**1.5) : 1;
+    let px = CX + Math.cos(a) * dist + turbX;
+    let py = CY + Math.sin(a) * dist + turbY;
+    let alpha = bt > 0.35 ? Math.max(0, 1 - ((bt - 0.35) / 0.65) ** 1.5) : 1;
     if (alpha < 0.01) continue;
 
-    const tmp = Math.min(1, d.temp + bt*0.5);
+    const tmp = Math.min(1, d.temp + bt * 0.5);
     let color;
-    if (tmp < 0.35) color = lerpC(cHot, cWarm, tmp/0.35);
-    else color = lerpC(cWarm, cCool, (tmp-0.35)/0.65);
+    if (tmp < 0.35) color = lerpC(cHot, cWarm, tmp / 0.35);
+    else color = lerpC(cWarm, cCool, (tmp - 0.35) / 0.65);
 
-    const sz = Math.max(0.5, d.size * (1-bt*0.4));
+    const sz = Math.max(0.5, d.size * (1 - bt * 0.4));
 
-    // Trail
-    const tl = sz * d.trail * trailLen * (1-bt*0.5);
+    const tl = sz * d.trail * trailLen * (1 - bt * 0.5);
     if (tl > 1) {
       ctx.globalAlpha = alpha * 0.5;
-      ctx.strokeStyle = `rgba(${color[0]|0},${color[1]|0},${color[2]|0},1)`;
-      ctx.lineWidth = Math.max(0.5, sz*0.7);
-      ctx.beginPath(); ctx.moveTo(px,py);
-      ctx.lineTo(px+Math.cos(a+Math.PI)*tl, py+Math.sin(a+Math.PI)*tl);
+      ctx.strokeStyle = `rgba(${color[0] | 0},${color[1] | 0},${color[2] | 0},1)`;
+      ctx.lineWidth = Math.max(0.5, sz * 0.7);
+      ctx.beginPath(); ctx.moveTo(px, py);
+      ctx.lineTo(px + Math.cos(a + Math.PI) * tl, py + Math.sin(a + Math.PI) * tl);
       ctx.stroke();
     }
 
-    // Particle glow
     ctx.globalAlpha = alpha * 0.8;
-    const pg = ctx.createRadialGradient(px,py,0,px,py,sz*2);
-    pg.addColorStop(0, `rgba(${color[0]|0},${color[1]|0},${color[2]|0},1)`);
-    pg.addColorStop(0.5, `rgba(${color[0]|0},${color[1]|0},${color[2]|0},0.3)`);
+    const pg = ctx.createRadialGradient(px, py, 0, px, py, sz * 2);
+    pg.addColorStop(0, `rgba(${color[0] | 0},${color[1] | 0},${color[2] | 0},1)`);
+    pg.addColorStop(0.5, `rgba(${color[0] | 0},${color[1] | 0},${color[2] | 0},0.3)`);
     pg.addColorStop(1, 'transparent');
-    ctx.fillStyle = pg; ctx.beginPath(); ctx.arc(px,py,sz*2,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = pg; ctx.beginPath(); ctx.arc(px, py, sz * 2, 0, Math.PI * 2); ctx.fill();
 
-    // Hot core
     ctx.globalAlpha = alpha * 0.9;
-    ctx.fillStyle = `rgba(255,255,${240},1)`;
-    ctx.beginPath(); ctx.arc(px,py,Math.max(0.5,sz*0.4),0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = `rgba(255,255,240,1)`;
+    ctx.beginPath(); ctx.arc(px, py, Math.max(0.5, sz * 0.4), 0, Math.PI * 2); ctx.fill();
     count++;
   }
 
-  // Smoke
   if (showSmoke && bt > 0.3) {
     ctx.globalCompositeOperation = 'source-over';
     const sRand = makeRand(globalSeed + 9999);
-    const smokeT = (bt-0.3)/0.7;
-    const smokeA = Math.min(1, smokeT*2) * (1-Math.max(0, smokeT-0.5)*2);
+    const smokeT = (bt - 0.3) / 0.7;
+    const smokeA = Math.min(1, smokeT * 2) * (1 - Math.max(0, smokeT - 0.5) * 2);
     for (let i = 0; i < 30; i++) {
-      const sa = sRand()*Math.PI*2;
-      const sd = sRand()*0.3 + smokeT*0.12;
-      const ss = (10+sRand()*25) * (0.5+smokeT*1.5);
-      const sx = CX+Math.cos(sa+fbm(i*10,smokeT*2,0,2)*0.3)*sd*maxD;
-      const sy = CY+Math.sin(sa+fbm(i*10+50,smokeT*2,0,2)*0.3)*sd*maxD;
-      ctx.globalAlpha = smokeA * (0.15+sRand()*0.15);
+      const sa = sRand() * Math.PI * 2;
+      const sd = sRand() * 0.3 + smokeT * 0.12;
+      const ss = (10 + sRand() * 25) * (0.5 + smokeT * 1.5);
+      const sx = CX + Math.cos(sa) * sd * maxD;
+      const sy = CY + Math.sin(sa) * sd * maxD;
+      ctx.globalAlpha = smokeA * (0.15 + sRand() * 0.15);
       ctx.fillStyle = `rgba(120,110,100,1)`;
-      ctx.beginPath(); ctx.arc(sx,sy,ss,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(sx, sy, ss, 0, Math.PI * 2); ctx.fill();
     }
   }
 
@@ -777,7 +798,7 @@ function renderExplosion(t) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// FIRE (improved with fBm turbulence + wind + elongated particles)
+// FIRE - Realistic noise-driven flame with proper loop
 // ═══════════════════════════════════════════════════════════
 
 let fireP = [], fireEmb = [];
@@ -788,17 +809,23 @@ function initFire() {
   const count = Math.round(gv('cFCount'));
   for (let i = 0; i < count; i++) {
     fireP.push({
-      phase: rand(), xOff: (rand()-0.5)*2,
-      speed: 0.4+rand()*0.8, size: 3+rand()*12,
-      ns: rand()*1000, aspect: 1.2+rand()*1.5,
+      phase: rand(),
+      xOff: (rand() - 0.5) * 2,
+      speed: 0.3 + rand() * 0.7,
+      size: 0.5 + rand() * 1.0,
+      ns: rand() * 1000,
+      layer: rand(), // depth layer for sorting
     });
   }
   const embers = Math.round(gv('cFEmbers'));
   const rand2 = makeRand(globalSeed + 7777);
   for (let i = 0; i < embers; i++) {
     fireEmb.push({
-      phase: rand2(), xOff: (rand2()-0.5)*1.5,
-      speed: 0.7*(0.5+rand2()*0.5), ns: rand2()*1000,
+      phase: rand2(),
+      xOff: (rand2() - 0.5) * 1.5,
+      speed: 0.5 + rand2() * 0.5,
+      ns: rand2() * 1000,
+      drift: (rand2() - 0.5) * 2,
     });
   }
 }
@@ -806,6 +833,7 @@ function initFire() {
 function renderFire(t) {
   const FH = H * gv('cFHeight');
   const FW = W * gv('cFWidth');
+  const baseSize = gv('cFSize');
   const OY = H * 0.78;
   const turb = gv('cFTurb');
   const wind = gv('cFWind');
@@ -813,81 +841,114 @@ function renderFire(t) {
   const cInner = gc('cFColorInner');
   const cOuter = gc('cFColorOuter');
   const cTip = gc('cFColorTip');
-  const nt = t * 3;
   let count = 0;
 
   function fireCol(h) {
-    if (h < 0.15) return lerpC(cCore, cInner, h/0.15);
-    if (h < 0.45) return lerpC(cInner, cOuter, (h-0.15)/0.3);
-    if (h < 0.75) return lerpC(cOuter, cTip, (h-0.45)/0.3);
-    return lerpC(cTip, [80,70,60], (h-0.75)/0.25);
+    if (h < 0.1) return lerpC(cCore, cInner, h / 0.1);
+    if (h < 0.35) return lerpC(cInner, cOuter, (h - 0.1) / 0.25);
+    if (h < 0.65) return lerpC(cOuter, cTip, (h - 0.35) / 0.3);
+    return lerpC(cTip, [40, 15, 5], (h - 0.65) / 0.35);
   }
 
+  // Ambient base glow (wide, at bottom)
   ctx.globalCompositeOperation = 'lighter';
-
-  // Base glow
-  ctx.globalAlpha = 0.4;
-  const bg = ctx.createRadialGradient(CX+wind*0.3, OY, 0, CX+wind*0.3, OY, FW*0.8);
-  bg.addColorStop(0, `rgba(${cCore[0]},${cCore[1]},${cCore[2]},1)`);
-  bg.addColorStop(0.5, `rgba(${cInner[0]},${cInner[1]},${cInner[2]},0.3)`);
+  ctx.globalAlpha = 0.5;
+  const bgR = FW * 1.2;
+  const bg = ctx.createRadialGradient(CX + wind * 0.2, OY + 10, 0, CX + wind * 0.2, OY + 10, bgR);
+  bg.addColorStop(0, `rgba(${cInner[0]},${cInner[1]},${cInner[2]},0.7)`);
+  bg.addColorStop(0.3, `rgba(${cOuter[0]},${cOuter[1]},${cOuter[2]},0.2)`);
   bg.addColorStop(1, 'transparent');
-  ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(CX+wind*0.3,OY,FW*0.8,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(CX + wind * 0.2, OY + 10, bgR, 0, Math.PI * 2); ctx.fill();
 
-  // Fire particles sorted by size (large behind)
-  const sorted = [...fireP].sort((a,b) => b.size - a.size);
+  // Sort particles: larger behind, smaller in front
+  const sorted = [...fireP].sort((a, b) => a.layer - b.layer);
+
   for (const p of sorted) {
+    // Progress: 0 = just spawned at base, 1 = top of flame
     const prog = (t * p.speed + p.phase) % 1;
+
+    // Y position: rises from base
     const py = OY - prog * FH;
-    const bx = CX + p.xOff * FW * 0.5 * (1-prog*0.5);
-    // Multi-octave noise displacement
-    const ndx = fbm(p.ns, py*0.006, nt, 3) * turb * (0.3+prog*0.7);
-    // Wind pushes more at height
+
+    // Flame shape: wider at base, narrow at top (parabolic envelope)
+    const envelope = Math.max(0, 1 - prog * prog * 0.85);
+    const baseX = CX + p.xOff * FW * 0.5 * envelope;
+
+    // Turbulence displacement (periodic noise for loop)
+    const turbScale = turb * FW * 0.4;
+    const nx = pfbm(p.ns, py * 0.005, t, 3, 2.0) * turbScale * (0.2 + prog * 0.8);
+    // Wind increases with height
     const windOff = wind * prog * prog;
-    const px = bx + ndx + windOff;
-    const wf = (1-prog*0.8) * (1-Math.abs(p.xOff)*0.3);
-    let sz = Math.max(1, p.size * wf);
 
+    const px = baseX + nx + windOff;
+
+    // Size: large at base, shrinks toward top
+    const sizeMult = envelope * (1.2 - prog * 0.5);
+    let sz = Math.max(1.5, baseSize * p.size * sizeMult);
+
+    // Alpha: fade in at base, fade out at top
     let alpha = 1;
-    if (prog < 0.05) alpha = prog/0.05;
-    else if (prog > 0.55) alpha = (1-prog)/0.45;
-    alpha *= wf;
-    if (alpha < 0.01) continue;
+    if (prog < 0.04) alpha = prog / 0.04;
+    else if (prog > 0.5) alpha = Math.max(0, (1 - prog) / 0.5);
+    alpha *= envelope;
+    if (alpha < 0.02) continue;
 
-    const [r,g,b] = fireCol(prog);
-    ctx.globalAlpha = alpha * 0.7;
+    const [r, g, b] = fireCol(prog);
 
-    // Elongated ellipse
-    ctx.save();
-    ctx.translate(px, py);
-    const noiseRot = fbm(p.ns+200, prog*3, nt, 2) * 0.4;
-    ctx.rotate(-Math.PI/2 + noiseRot + (wind*0.005));
-    ctx.scale(1, p.aspect);
-    const fg = ctx.createRadialGradient(0,0,0, 0,0,sz);
-    fg.addColorStop(0, `rgba(${r|0},${g|0},${b|0},1)`);
-    fg.addColorStop(0.6, `rgba(${r|0},${g|0},${b|0},0.3)`);
-    fg.addColorStop(1, 'transparent');
-    ctx.fillStyle = fg;
-    ctx.beginPath(); ctx.arc(0,0,sz,0,Math.PI*2); ctx.fill();
-    ctx.restore();
+    // Draw large soft glowing circle (additive)
+    ctx.globalAlpha = alpha * 0.65;
+    const gr = ctx.createRadialGradient(px, py, 0, px, py, sz);
+    gr.addColorStop(0, `rgba(${r | 0},${g | 0},${b | 0},1)`);
+    gr.addColorStop(0.4, `rgba(${r | 0},${g | 0},${b | 0},0.5)`);
+    gr.addColorStop(0.7, `rgba(${r * 0.7 | 0},${g * 0.5 | 0},${b * 0.3 | 0},0.15)`);
+    gr.addColorStop(1, 'transparent');
+    ctx.fillStyle = gr;
+    ctx.beginPath(); ctx.arc(px, py, sz, 0, Math.PI * 2); ctx.fill();
+
+    // Bright inner core for bottom particles
+    if (prog < 0.3) {
+      ctx.globalAlpha = alpha * 0.8 * (1 - prog / 0.3);
+      const coreR = sz * 0.4;
+      const cg = ctx.createRadialGradient(px, py, 0, px, py, coreR);
+      cg.addColorStop(0, `rgba(${cCore[0]},${cCore[1]},${cCore[2]},1)`);
+      cg.addColorStop(1, 'transparent');
+      ctx.fillStyle = cg;
+      ctx.beginPath(); ctx.arc(px, py, coreR, 0, Math.PI * 2); ctx.fill();
+    }
+
     count++;
   }
 
+  // Bright hotspot at base
+  ctx.globalAlpha = 0.7;
+  const hotR = FW * 0.35;
+  const hg = ctx.createRadialGradient(CX + wind * 0.1, OY, 0, CX + wind * 0.1, OY, hotR);
+  hg.addColorStop(0, `rgba(${cCore[0]},${cCore[1]},${cCore[2]},1)`);
+  hg.addColorStop(0.2, `rgba(${cInner[0]},${cInner[1]},${cInner[2]},0.7)`);
+  hg.addColorStop(0.5, `rgba(${cOuter[0]},${cOuter[1]},${cOuter[2]},0.2)`);
+  hg.addColorStop(1, 'transparent');
+  ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(CX + wind * 0.1, OY, hotR, 0, Math.PI * 2); ctx.fill();
+
   // Embers
   for (const e of fireEmb) {
-    const prog = (t*e.speed+e.phase) % 1;
-    let ey = OY - prog * FH * 1.3;
-    let ex = CX + e.xOff * FW * 0.8 + wind*prog*prog;
-    ex += fbm(e.ns, prog*5, nt, 2) * FW * 0.15;
-    ey += fbm(e.ns+50, prog*5, nt, 2) * FH * 0.05;
-    let alpha = prog < 0.1 ? prog/0.1 : prog > 0.4 ? (1-prog)/0.6 : 1;
-    if (alpha < 0.01) continue;
-    const eSize = Math.max(0.5, 2.5 * (1-prog*0.7));
-    ctx.globalAlpha = alpha * 0.9;
-    const eg = ctx.createRadialGradient(ex,ey,0,ex,ey,eSize*3);
+    const prog = (t * e.speed + e.phase) % 1;
+    let ey = OY - prog * FH * 1.4;
+    let ex = CX + e.xOff * FW * 0.7 + wind * prog * prog;
+    // Drift with periodic noise
+    ex += pfbm(e.ns, prog * 4, t, 2, 1.5) * FW * 0.2;
+    ey += pfbm(e.ns + 50, prog * 4, t, 2, 1.5) * FH * 0.04;
+    ex += e.drift * prog * FW * 0.1;
+
+    let alpha = prog < 0.08 ? prog / 0.08 : prog > 0.35 ? Math.max(0, (1 - prog) / 0.65) : 1;
+    if (alpha < 0.02) continue;
+
+    const eSize = Math.max(0.5, 3 * (1 - prog * 0.6));
+    ctx.globalAlpha = alpha * 0.85;
+    const eg = ctx.createRadialGradient(ex, ey, 0, ex, ey, eSize * 3);
     eg.addColorStop(0, `rgba(255,220,120,1)`);
-    eg.addColorStop(0.4, `rgba(255,160,60,0.4)`);
+    eg.addColorStop(0.3, `rgba(255,160,60,0.5)`);
     eg.addColorStop(1, 'transparent');
-    ctx.fillStyle = eg; ctx.beginPath(); ctx.arc(ex,ey,eSize*3,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = eg; ctx.beginPath(); ctx.arc(ex, ey, eSize * 3, 0, Math.PI * 2); ctx.fill();
     count++;
   }
 
@@ -896,32 +957,31 @@ function renderFire(t) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// RENDER LOOP
+// RENDER LOOP - perfect loop
 // ═══════════════════════════════════════════════════════════
 
 function render(ts) {
   if (!paused) {
     const elapsed = ts - lastTime;
-    if (elapsed >= 1000/fps) {
-      actualFps = Math.round(1000/Math.max(1,elapsed));
+    if (elapsed >= 1000 / fps) {
+      actualFps = Math.round(1000 / Math.max(1, elapsed));
       lastTime = ts;
 
-      const t = (frameIdx % TOTAL_FRAMES) / TOTAL_FRAMES;
+      // t goes from 0 to (totalFrames-1)/totalFrames, perfect loop
+      const t = (frameIdx % totalFrames) / totalFrames;
 
-      // Clear with dark background
       ctx.globalCompositeOperation = 'source-over';
       ctx.globalAlpha = 1;
       ctx.fillStyle = '#0a0a12';
-      ctx.fillRect(0,0,W,H);
+      ctx.fillRect(0, 0, W, H);
 
-      // Apply brightness via multiple passes
       let count = 0;
       const passes = Math.max(1, Math.round(brightness));
       const alphaPerPass = brightness / passes;
 
       for (let pass = 0; pass < passes; pass++) {
         ctx.globalAlpha = pass === 0 ? 1 : alphaPerPass * 0.5;
-        switch(currentEffect) {
+        switch (currentEffect) {
           case 'energy': count = renderEnergy(t); break;
           case 'lightning': count = renderLightning(t); break;
           case 'explosion': count = renderExplosion(t); break;
@@ -932,7 +992,7 @@ function render(ts) {
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
 
-      document.getElementById('iFrame').textContent = `${frameIdx%TOTAL_FRAMES}/${TOTAL_FRAMES}`;
+      document.getElementById('iFrame').textContent = `${frameIdx % totalFrames}/${totalFrames}`;
       document.getElementById('iCount').textContent = count;
       document.getElementById('iFps').textContent = actualFps;
       document.getElementById('iSeed').textContent = globalSeed;
@@ -960,10 +1020,21 @@ document.querySelectorAll('.tab').forEach(tab => {
   });
 });
 
+// Frame count buttons
+document.querySelectorAll('.frame-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.frame-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    totalFrames = parseInt(btn.dataset.frames);
+    frameIdx = 0;
+    reinit();
+  });
+});
+
 // Slider value display
 document.querySelectorAll('.ctrl input[type=range]').forEach(slider => {
   const valSpan = slider.parentElement.querySelector('.val') ||
-                  slider.previousElementSibling?.querySelector('.val');
+    slider.previousElementSibling?.querySelector('.val');
   if (!valSpan) return;
   slider.addEventListener('input', () => {
     valSpan.textContent = parseFloat(slider.value).toFixed(
@@ -989,25 +1060,24 @@ document.getElementById('btnPause').addEventListener('click', e => {
 });
 document.getElementById('btnReset').addEventListener('click', () => { frameIdx = 0; });
 document.getElementById('btnSeed').addEventListener('click', () => {
-  globalSeed = Math.floor(Math.random() * 99999);
+  globalSeed = Math.floor(Math.random() * 99999) + 1;
   reinit();
 });
 
-// Color pickers trigger reinit
+// Color pickers and selects
 document.querySelectorAll('input[type=color]').forEach(c => c.addEventListener('input', () => reinit()));
-// Checkboxes too
 document.querySelectorAll('input[type=checkbox]').forEach(c => c.addEventListener('change', () => reinit()));
+document.querySelectorAll('select').forEach(c => c.addEventListener('change', () => { frameIdx = 0; reinit(); }));
 
 function reinit() {
-  switch(currentEffect) {
-    case 'energy': initEnergy(); break;
+  switch (currentEffect) {
+    case 'energy': break; // energy is procedural, no init needed
     case 'explosion': initExplosion(); break;
     case 'fire': initFire(); break;
   }
 }
 
 // Init
-initEnergy();
 initExplosion();
 initFire();
 requestAnimationFrame(render);
