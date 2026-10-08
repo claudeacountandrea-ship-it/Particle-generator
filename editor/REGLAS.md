@@ -78,6 +78,10 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
   octágono↔rombo por el bisel (diagonal).
 - Caminos por crecimiento en profundidad (largos y enroscados, para perderse) + pocos bucles;
   la meta es el octágono más profundo, con un cuarto dentro.
+- **Pasillos que rodean salas**: muchos octágonos son una sala octogonal más chica con un pasillo
+  anillo alrededor que sigue su forma (2 de ancho en recto, 1 en los diagonales cortos). El anillo
+  está cortado en dos mitades por particiones: una compuerta (forma de C, hay que dar la vuelta)
+  o ninguna (se cruza por la sala). Los rombos son cruces de pasillo.
 - **Cueva pintada**: el jugador pinta con el dedo; se usan solo las piezas que caen sobre la
   pintura, las partes separadas se unen por el camino más corto, la entrada está donde empezó
   a pintar.

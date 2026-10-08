@@ -1339,7 +1339,7 @@ const Mini = (() => {
       B.paint((x, y) => Math.abs(x - x0) <= h && Math.abs(y - y0) <= h && Math.abs(x - x0) + Math.abs(y - y0) <= 2 * h - b, l);
     }
     for (let j = 0; j < m - 1; j++) for (let i = 0; i < n - 1; i++) {
-      const [x0, y0] = cD(i, j), l = B.label('rombo'), R = b + 1;
+      const [x0, y0] = cD(i, j), l = B.label('corr'), R = b + 1; // rombos work as corridor crossings
       D[j * (n - 1) + i] = l;
       B.paint((x, y) => Math.abs(x - x0) <= R && Math.abs(y - y0) <= R && Math.abs(x - x0) + Math.abs(y - y0) <= R + 1, l, [0]);
     }
@@ -1415,19 +1415,49 @@ const Mini = (() => {
     for (const l of [...O, ...D]) if (!seen.has(l)) B.paint(() => true, 0, [l]);
     // the goal: the octagon deepest along the paths
     let goal = start; for (const [l, d] of depth) if (O.includes(l) && d > (depth.get(goal) || 0)) goal = l;
-    // some octagons get a small rombo room inside (a room inside a room)
-    const inner = [];
-    for (let j = 0; j < m; j++) for (let i = 0; i < n; i++) if (seen.has(O[j * n + i]) && (O[j * n + i] === goal || Math.random() < 0.15)) {
-      const [x0, y0] = cO(i, j), l = B.label('room'); inner.push([O[j * n + i], l]);
-      B.paint((x, y) => Math.abs(x - x0) <= 3 && Math.abs(y - y0) <= 3 && Math.abs(x - x0) + Math.abs(y - y0) <= 4, l, [O[j * n + i]]);
+    // rooms wrapped by a corridor: a smaller octagon inside, a ring corridor around it that follows
+    // its shape (2 wide straight, 1 wide on the short diagonals), cut in two halves by partitions
+    const inner = [], gates = [], ringHalves = new Map(); let nRing = 0;
+    for (let j = 0; j < m; j++) for (let i = 0; i < n; i++) {
+      const o = O[j * n + i]; if (!seen.has(o)) continue;
+      const [x0, y0] = cO(i, j);
+      if (o === goal || Math.random() < 0.55) {
+        nRing++;
+        B.kinds[o] = 'corr';
+        const room = B.label('room'), half = B.label('corr');
+        B.paint((x, y) => Math.abs(x - x0) <= 4 && Math.abs(y - y0) <= 4 && Math.abs(x - x0) + Math.abs(y - y0) <= 6, room, [o]);
+        const vert = Math.random() < 0.5; // the partition line crosses the ring at two points
+        B.paint((x, y) => vert ? x > x0 : y > y0, half, [o]);
+        ringHalves.set(o, Math.random() < 0.5 ? [o, half] : [half, o]);
+        if (Math.random() < 0.7) { gates.push([o, half]); inner.push([room, Math.random() < 0.5 ? o : half]); } // one gate: a C-shaped way round
+        else inner.push([room, o], [room, half]); // no gate: the room joins the two halves
+      } else if (Math.random() < 0.2) { // a small rombo room inside
+        const l = B.label('room'); inner.push([o, l]);
+        B.paint((x, y) => Math.abs(x - x0) <= 3 && Math.abs(y - y0) <= 3 && Math.abs(x - x0) + Math.abs(y - y0) <= 4, l, [o]);
+      }
     }
-    B.snap(); B.thin(); B.snap(); B.spikes();
+    B.snap();
     const segs = B.segments(), runs2 = B.runs(segs), deg = new Map();
     for (const s of segs) for (const p of parseW(s.k)) { const v = vk(...p); deg.set(v, (deg.get(v) || 0) + 1); }
     const doors = [];
     const put = (a, c) => { const r = runs2.get(Math.min(a, c) + ',' + Math.max(a, c)); const d = r && B.safeDoor(r, deg); if (d) doors.push(...d); return !!d; };
-    for (const e of chosen) { if (e.via) { put(e.a, e.via); put(e.via, e.c); } else put(e.a, e.c); }
+    const put2 = (a, c) => { // an octagon may now be two ring halves: use whichever touches
+      for (const x of ringHalves.get(a) || [a]) for (const y of ringHalves.get(c) || [c]) if (put(x, y)) return true;
+      return false;
+    };
+    for (const e of chosen) { if (e.via) { put2(e.a, e.via); put2(e.via, e.c); } else put2(e.a, e.c); }
     for (const [o, l] of inner) put(o, l);
+    // gate across the ring: the whole width of the corridor (one of its two crossings)
+    for (const [a, c] of gates) {
+      const segsAC = segs.filter(s => (s.a === a && s.b === c) || (s.a === c && s.b === a));
+      const groups = new Map(); for (const s of segsAC) { const g = s.d + ':' + s.line; if (!groups.has(g)) groups.set(g, []); groups.get(g).push(s); }
+      const opts = [];
+      for (const G of groups.values()) { // split each line into contiguous crossings
+        G.sort((p, q) => p.pos - q.pos); let run = [G[0]];
+        for (let i = 1; i <= G.length; i++) { if (i < G.length && G[i].pos === G[i - 1].pos + 1) { run.push(G[i]); continue; } if (run.length <= 2) opts.push(run.map(s => s.k)); if (i < G.length) run = [G[i]]; }
+      }
+      if (opts.length) doors.push(...opts[rnd(0, opts.length - 1)]);
+    }
     // the way in: an outer wall of the start octagon
     for (const d of ['h', 'v']) {
       const out = segs.filter(s => s.d === d && (s.a === start || s.b === start) && (!s.a || !s.b));
@@ -1440,7 +1470,7 @@ const Mini = (() => {
     return {
       size: W, rows: H, walls: segs.map(s => s.k), doors: [...new Set(doors)], columns: [],
       title: cave ? 'Masmorra construida sobre tu cueva' : `Laberinto de minicuartos ${n}×${m}`,
-      desc: `Mosaico de octágonos (salas 12×12 con bisel 4), rombos con puntas de 2 y pasajes cortos de 2. Todo comparte pared.\n` +
+      desc: `${nRing} salas rodeadas por un pasillo anillo (con particiones). Mosaico de octágonos (salas 12×12 con bisel 4), rombos con puntas de 2 y pasajes cortos de 2. Todo comparte pared.\n` +
         `• ${chosen.length} conexiones: ${nDiag} en diagonal (octágono↔rombo por el bisel) y ${chosen.length - nDiag} rectas por pasaje.\n` +
         `• Caminos largos y enroscados (crecimiento en profundidad): el camino más largo pasa por ${longest} espacios. Pocos bucles.\n` +
         `• ${inner.length} octágonos con un rombo dentro; el del fondo del camino más largo es la meta (tesoro).\n` +
