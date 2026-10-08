@@ -21,6 +21,15 @@ con la ronda 2 de ejemplos (`seed_round2.py`).
 5. **Giro recto → diagonal**: la pared de afuera gira después que la de adentro, de forma que se cumpla la regla 4.
    Con pasillo de 2: la diferencia entre los puntos de giro es 2 → diagonal de 2. *(Pizarra 2)*
 6. **No se cruzan diagonales en X** dentro de una celda. *(pizarra marcada a evitar)*
+7. **Salas en rombo**: cuadrado girado 45°, lados diagonales y puntas rectas de 1
+   (el "bisel" de un rombo es recto). *(pizarra "Cuarto cuadrado en rombo")*
+8. **Cruces diagonales**: un pasillo diagonal puede tener una rama perpendicular,
+   también diagonal. *(pizarra "Dibuja: un cruce de pasillos")*
+
+## Generador
+`editor/index.html` → botón **🎲 Generar ejemplo**: sala cuadrada con bisel o sala en
+rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar 45°
+(regla 5). Valida bordes, cruces en X y que los pasillos no se metan en la sala.
 
 ## Preguntas abiertas (ronda 2)
 - ¿El pasillo que sale de una puerta tiene el ancho de esa puerta?
