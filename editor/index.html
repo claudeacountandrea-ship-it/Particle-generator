@@ -129,13 +129,14 @@ body.full #fbar { display: flex; gap: 6px; position: fixed; left: 0; right: 0; b
     <button id="mDoor" data-mode="door">▯ Puerta</button>
     <button id="undo">↶</button>
     <button id="clear" class="warn">Limpiar</button>
+    <button id="lineBtn" class="on">📏 Línea recta</button>
     <button id="fullBtn">⛶ Pantalla completa</button>
   </div>
   <div class="row">
     <label for="gw">Ancho</label><select id="gw"></select>
     <label for="gh">Alto</label><select id="gh"></select>
   </div>
-  <p class="help"><b>Toca</b> un punto = columna. <b>Arrastra</b> de punto a punto = pared (8 vecinos: rectas y diagonales). En modo <b>Puerta</b>, pinta sobre una pared que ya existe y se convierte en puerta; píntala otra vez y vuelve a ser pared.</p>
+  <p class="help"><b>Toca</b> un punto = columna. <b>Arrastra</b> desde un punto y suelta en otro = pared recta o diagonal (se ve la guía y se dibuja al soltar). Con 📏 apagado dibujas a mano alzada. En modo <b>Puerta</b>, pinta sobre una pared que ya existe y se convierte en puerta; píntala otra vez y vuelve a ser pared.</p>
 
   <div class="field">
     <label for="note" id="noteLabel">Explica qué es y por qué lo dibujaste así</label>
@@ -179,6 +180,7 @@ body.full #fbar { display: flex; gap: 6px; position: fixed; left: 0; right: 0; b
   <button data-mode="draw" class="on">✎</button>
   <button data-mode="erase">⌫</button>
   <button data-mode="door">▯</button>
+  <button id="fLine" class="on">📏</button>
   <button id="fUndo">↶</button>
   <button id="fExit">✕ Salir</button>
 </div>
@@ -249,12 +251,49 @@ function drawInto(g, cw, ch, w, h, cols, ws, ds, G) {
   }
 }
 
-let cursor = null;
+let cursor = null, lineEnd = null, lineMode = true;
+const DIRS = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]];
+// snap the finger to the nearest of the 8 directions from the start point, staying inside the grid
+function snapLine(start, fx, fy) {
+  const dx = fx - start.x, dy = fy - start.y;
+  let best = null;
+  for (const d of DIRS) {
+    const len = Math.hypot(d[0], d[1]), proj = (dx * d[0] + dy * d[1]) / len;
+    if (proj <= 0) continue;
+    const off = Math.abs(dx * d[1] - dy * d[0]) / len;
+    if (!best || off < best.off) best = { d, n: Math.round(proj / len), off };
+  }
+  if (!best) return null;
+  let n = best.n;
+  while (n > 0) {
+    const x = start.x + best.d[0] * n, y = start.y + best.d[1] * n;
+    if (x >= 0 && y >= 0 && x < W && y < H) break;
+    n--;
+  }
+  return n > 0 ? { x: start.x + best.d[0] * n, y: start.y + best.d[1] * n, n, d: best.d } : null;
+}
+function lineKeys(a, L) {
+  const out = []; let c = [a.x, a.y];
+  for (let i = 0; i < L.n; i++) { const n = [c[0] + L.d[0], c[1] + L.d[1]]; out.push(wk(c, n)); c = n; }
+  return out;
+}
 function draw() {
   drawInto(ctx, cw, ch, W, H, columns, walls, doors, geo);
   if (cursor) {
-    ctx.strokeStyle = mode === 'draw' ? css('--accent') : mode === 'door' ? css('--door') : css('--danger'); ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(geo.ox + cursor.x * geo.s, geo.oy + cursor.y * geo.s, geo.s * 0.32, 0, 7); ctx.stroke();
+    const col = mode === 'draw' ? css('--accent') : mode === 'door' ? css('--door') : css('--danger');
+    const P = v => [geo.ox + v.x * geo.s, geo.oy + v.y * geo.s];
+    ctx.strokeStyle = col; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(...P(cursor), geo.s * 0.32, 0, 7); ctx.stroke();
+    if (lineEnd) {
+      // guide: dashed preview of the line that will be made on release
+      ctx.save(); ctx.globalAlpha = 0.75; ctx.lineWidth = Math.max(3, geo.s * 0.16); ctx.lineCap = 'round';
+      ctx.setLineDash([geo.s * 0.25, geo.s * 0.2]);
+      ctx.beginPath(); ctx.moveTo(...P(cursor)); ctx.lineTo(...P(lineEnd)); ctx.stroke(); ctx.restore();
+      ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(...P(lineEnd), geo.s * 0.32, 0, 7); ctx.stroke();
+      const [ex, ey] = P(lineEnd);
+      ctx.fillStyle = col; ctx.font = `600 ${Math.max(12, geo.s * 0.45)}px ${css('--f-ui')}`;
+      ctx.fillText(String(lineEnd.n), ex + geo.s * 0.4, ey - geo.s * 0.4);
+    }
   }
   $('stat').textContent = `${W}×${H} · ${columns.size} col · ${walls.size - doors.size} par · ${doors.size} pta`;
 }
@@ -270,17 +309,12 @@ let dragging = false, moved = false, changed = false, doorPaint = null;
 cv.addEventListener('pointerdown', e => {
   const h = hit(e, 0.5);
   cv.setPointerCapture(e.pointerId);
-  dragging = true; moved = false; changed = false; doorPaint = null; snapshot();
+  dragging = true; moved = false; changed = false; doorPaint = null; lineEnd = null; snapshot();
   if (h && h.x !== null) cursor = { x: h.x, y: h.y };
   else { cursor = null; if (h && (mode === 'erase' || mode === 'door')) tapNearestWall(h.fx, h.fy); }
   draw();
 });
-cv.addEventListener('pointermove', e => {
-  if (!dragging || !cursor) return;
-  const h = hit(e, 0.38);
-  if (!h || h.x === null || (h.x === cursor.x && h.y === cursor.y)) return;
-  if (Math.abs(h.x - cursor.x) > 1 || Math.abs(h.y - cursor.y) > 1) return;
-  const k = wk([cursor.x, cursor.y], [h.x, h.y]);
+function applySeg(k) {
   if (mode === 'draw') walls.add(k);
   else if (mode === 'erase') { walls.delete(k); doors.delete(k); }
   else if (walls.has(k)) {
@@ -288,21 +322,34 @@ cv.addEventListener('pointermove', e => {
     if (doorPaint === null) doorPaint = !doors.has(k);
     doorPaint ? doors.add(k) : doors.delete(k);
   }
+}
+cv.addEventListener('pointermove', e => {
+  if (!dragging || !cursor) return;
+  if (lineMode) {
+    const r = cv.getBoundingClientRect();
+    lineEnd = snapLine(cursor, (e.clientX - r.left - geo.ox) / geo.s, (e.clientY - r.top - geo.oy) / geo.s);
+    moved = !!lineEnd; draw(); return;
+  }
+  const h = hit(e, 0.38);
+  if (!h || h.x === null || (h.x === cursor.x && h.y === cursor.y)) return;
+  if (Math.abs(h.x - cursor.x) > 1 || Math.abs(h.y - cursor.y) > 1) return;
+  applySeg(wk([cursor.x, cursor.y], [h.x, h.y]));
   changed = moved = true; cursor = { x: h.x, y: h.y }; draw();
 });
 function end() {
   if (!dragging) return;
   dragging = false;
+  if (cursor && lineMode && lineEnd) { lineKeys(cursor, lineEnd).forEach(applySeg); changed = true; }
   if (cursor && !moved) {
     const k = vk(cursor.x, cursor.y);
     if (mode === 'draw') { columns.has(k) ? columns.delete(k) : columns.add(k); changed = true; }
     else if (mode === 'erase') { columns.delete(k); changed = true; }
   }
   if (changed) dirty = true; else history.pop();
-  cursor = null; draw();
+  cursor = null; lineEnd = null; draw();
 }
 cv.addEventListener('pointerup', end);
-cv.addEventListener('pointercancel', end);
+cv.addEventListener('pointercancel', () => { lineEnd = null; end(); });
 function tapNearestWall(fx, fy) {
   let best = null, bd = 0.3;
   for (const k of walls) {
@@ -338,6 +385,9 @@ function setSizeSelects() {
     $(id).value = String(v);
   }
 }
+function setLine(on) { lineMode = on; $('lineBtn').classList.toggle('on', on); $('fLine').classList.toggle('on', on); }
+$('lineBtn').onclick = () => setLine(!lineMode);
+$('fLine').onclick = () => setLine(!lineMode);
 function setFull(on) { document.body.classList.toggle('full', on); layout(); }
 $('fullBtn').onclick = () => setFull(true);
 $('fExit').onclick = () => setFull(false);
