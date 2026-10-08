@@ -67,6 +67,17 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
 19. La gran masmorra debe ser **ordenada y usar rectas y diagonales**: esqueleto con avenidas
    diagonales desde el gran salón, después el relleno.
 
-## Idea pendiente
-- **Cueva que se convierte en masmorra**: generar primero una cueva orgánica y después
-  "construir" sobre ella salas, túneles y conexiones con nuestras reglas.
+20. **Objetivo: laberinto de minicuartos** que se recorre adelante/atrás/lados y en diagonal
+   (más adelante también arriba/abajo con pisos).
+21. **Pasillo de 1 de ancho: solo muy corto**, para pasar a otra zona cercana.
+
+## Laberinto de minicuartos (🧩) y cueva pintada (🕳 → 🏗)
+- Mosaico de octágonos (12×12, bisel 4), rombos con puntas de 2 entre cada 4 octágonos y
+  pasajes cortos entre octágonos vecinos. Todo comparte pared; no quedan huecos.
+- Movimientos: octágono↔octágono por pasaje (recto), rombo↔rombo por pasaje (recto),
+  octágono↔rombo por el bisel (diagonal).
+- Caminos por crecimiento en profundidad (largos y enroscados, para perderse) + pocos bucles;
+  la meta es el octágono más profundo, con un cuarto dentro.
+- **Cueva pintada**: el jugador pinta con el dedo; se usan solo las piezas que caen sobre la
+  pintura, las partes separadas se unen por el camino más corto, la entrada está donde empezó
+  a pintar.

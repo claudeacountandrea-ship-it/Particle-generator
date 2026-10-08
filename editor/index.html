@@ -14,6 +14,7 @@
   --m0: #e0473a;
   --m1: #e8a52c;
   --m2: #4aa368;
+  --m3: #b08355;
   --col: #8a5a2b;
   --accent: #4f6b3a;
   --claude: #7a5a9a;
@@ -25,13 +26,13 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #161813; --panel: #1f221b; --ink: #e4e6dd; --muted: #939988; --grid: #4a4f42;
-    --wall: #e8dcc4; --door: #6fb3e6; --m0: #ff6b5c; --m1: #f2bd4b; --m2: #6cc48a; --col: #d39a5c; --accent: #9cbc7e; --claude: #c3a6e0; --danger: #e07a64; --line: #33372d;
+    --wall: #e8dcc4; --door: #6fb3e6; --m0: #ff6b5c; --m1: #f2bd4b; --m2: #6cc48a; --m3: #a07650; --col: #d39a5c; --accent: #9cbc7e; --claude: #c3a6e0; --danger: #e07a64; --line: #33372d;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #161813; --panel: #1f221b; --ink: #e4e6dd; --muted: #939988; --grid: #4a4f42;
-  --wall: #e8dcc4; --door: #6fb3e6; --m0: #ff6b5c; --m1: #f2bd4b; --m2: #6cc48a; --col: #d39a5c; --accent: #9cbc7e; --claude: #c3a6e0; --danger: #e07a64; --line: #33372d;
+  --wall: #e8dcc4; --door: #6fb3e6; --m0: #ff6b5c; --m1: #f2bd4b; --m2: #6cc48a; --m3: #a07650; --col: #d39a5c; --accent: #9cbc7e; --claude: #c3a6e0; --danger: #e07a64; --line: #33372d;
   color-scheme: dark;
 }
 body { background: var(--bg); color: var(--ink); font: 15px/1.45 var(--f-ui); }
@@ -155,6 +156,9 @@ body.full #fbar { display: flex; gap: 6px; position: fixed; left: 0; right: 0; b
     <button id="mErase" data-mode="erase">⌫ Borrar</button>
     <button id="mDoor" data-mode="door">▯ Puerta</button>
     <button id="mMark" data-mode="mark">🖍 Marcar piso</button>
+    <button data-mode="cave">🕳 Pintar cueva</button>
+    <button data-mode="caveErase">🧽 Borrar cueva</button>
+    <button id="buildCave" class="primary">🏗 Construir sobre la cueva</button>
     <button data-mode="pan">✋ Mover</button>
     <button id="zIn" aria-label="Acercar">＋</button>
     <button id="zOut" aria-label="Alejar">－</button>
@@ -173,7 +177,7 @@ body.full #fbar { display: flex; gap: 6px; position: fixed; left: 0; right: 0; b
     <button class="chip" data-mc="1"><i style="background: var(--m1)"></i>Dudoso</button>
     <button class="chip" data-mc="2"><i style="background: var(--m2)"></i>Bien</button>
   </div>
-  <p class="help"><b>Toca</b> un punto = columna. <b>Arrastra</b> desde un punto y suelta en otro = pared recta o diagonal (se ve la guía y se dibuja al soltar). Con 📏 apagado dibujas a mano alzada. En modo <b>Puerta</b>, pinta sobre una pared que ya existe y se convierte en puerta; píntala otra vez y vuelve a ser pared. Con <b>＋ －</b> (o la rueda del ratón) haces zoom y con <b>✋ Mover</b> arrastras el dibujo. En <b>🖍 Marcar piso</b>, toca o arrastra sobre las celdas (el cuadro entre 4 puntos) para señalar errores con colores.</p>
+  <p class="help"><b>Toca</b> un punto = columna. <b>Arrastra</b> desde un punto y suelta en otro = pared recta o diagonal (se ve la guía y se dibuja al soltar). Con 📏 apagado dibujas a mano alzada. En modo <b>Puerta</b>, pinta sobre una pared que ya existe y se convierte en puerta; píntala otra vez y vuelve a ser pared. Con <b>＋ －</b> (o la rueda del ratón) haces zoom y con <b>✋ Mover</b> arrastras el dibujo. Con <b>🕳 Pintar cueva</b> pintas con el dedo los caminos de una cueva y <b>🏗 Construir</b> levanta la masmorra encima. En <b>🖍 Marcar piso</b>, toca o arrastra sobre las celdas (el cuadro entre 4 puntos) para señalar errores con colores.</p>
 
   <div class="field">
     <label for="note" id="noteLabel">Explica qué es y por qué lo dibujaste así</label>
@@ -193,7 +197,11 @@ body.full #fbar { display: flex; gap: 6px; position: fixed; left: 0; right: 0; b
     <button id="mazeXL">🏰 8×8</button>
   </div>
   <div class="bar">
-    <button id="grandSym" class="primary">🏛 Gran masmorra simétrica</button>
+    <button id="newCave" class="primary">🕳 Nueva cueva para pintar</button>
+    <button id="miniBtn">🧩 Laberinto de minicuartos</button>
+  </div>
+  <div class="bar">
+    <button id="grandSym">🏛 Gran masmorra simétrica</button>
     <button id="grandAsym">🏛 Asimétrica</button>
     <select id="grandSize" aria-label="Tamaño de la gran masmorra"><option value="S">Mediana</option><option value="L" selected>Grande</option><option value="XL">Enorme</option></select>
   </div>
@@ -242,6 +250,9 @@ body.full #fbar { display: flex; gap: 6px; position: fixed; left: 0; right: 0; b
   <button data-mode="erase">⌫</button>
   <button data-mode="door">▯</button>
   <button data-mode="mark">🖍</button>
+  <button data-mode="cave">🕳</button>
+  <button data-mode="caveErase">🧽</button>
+  <button id="fBuild">🏗</button>
   <button data-mode="pan">✋</button>
   <button id="fzIn" aria-label="Acercar">＋</button>
   <button id="fzOut" aria-label="Alejar">－</button>
@@ -284,7 +295,7 @@ const LOCAL = 'masmorra-sketch-v2';
 const COL = 'sketches';
 
 // ---------- state ----------
-const SIZES = [5, 7, 9, 11, 13, 15, 17, 21, 25, 31];
+const SIZES = [5, 7, 9, 11, 13, 15, 17, 21, 25, 31, 45, 59, 73, 87];
 let W = 13, H = 21, kind = 'good', columns = new Set(), walls = new Set(), doors = new Set(), marks = new Map(), markColor = 0;
 let mode = 'draw', history = [], dirty = false;
 let pads = [];          // [{id, ...data}]
@@ -339,7 +350,7 @@ function layout() {
 function drawInto(g, cw, ch, w, h, cols, ws, ds, G, mk) {
   const { s, ox, oy } = G || fit(cw, ch, w, h);
   const X = v => ox + v * s, Y = v => oy + v * s;
-  const cGrid = css('--grid'), cCol = css('--col'), mc = [css('--m0'), css('--m1'), css('--m2')];
+  const cGrid = css('--grid'), cCol = css('--col'), mc = [css('--m0'), css('--m1'), css('--m2'), css('--m3')];
   g.clearRect(0, 0, cw, ch);
   if (mk && mk.size) { // floor marks: the cell between 4 points
     g.globalAlpha = 0.45;
@@ -421,9 +432,16 @@ function markAt(e) {
   const r = cv.getBoundingClientRect();
   const x = Math.floor((e.clientX - r.left - geo.ox) / geo.s), y = Math.floor((e.clientY - r.top - geo.oy) / geo.s);
   if (x < 0 || y < 0 || x >= W - 1 || y >= H - 1) return;
-  const k = vk(x, y);
-  if (markPaint === null) markPaint = marks.get(k) !== markColor; // first cell decides: paint or clear
-  if (markPaint) marks.set(k, markColor); else marks.delete(k);
+  const cave = mode === 'cave' || mode === 'caveErase', col = cave ? 3 : markColor, k = vk(x, y);
+  if (cave) markPaint = mode === 'cave'; // the cave brush always paints; its eraser always clears
+  else if (markPaint === null) markPaint = marks.get(k) !== col; // first cell decides: paint or clear
+  // the cave brush is wide (a round blob 5 cells across), the marker is one cell
+  const rad = cave ? 3.5 : 0.5;
+  for (let v = Math.floor(y - rad); v <= y + rad; v++) for (let u = Math.floor(x - rad); u <= x + rad; u++) {
+    if (u < 0 || v < 0 || u >= W - 1 || v >= H - 1 || Math.hypot(u - x, v - y) > rad) continue;
+    const kk = vk(u, v);
+    if (markPaint) marks.set(kk, col); else if (marks.get(kk) === col) marks.delete(kk);
+  }
   changed = true; draw();
 }
 let panStart = null;
@@ -434,7 +452,7 @@ cv.addEventListener('wheel', e => {
 }, { passive: false });
 cv.addEventListener('pointerdown', e => {
   if (mode === 'pan') { cv.setPointerCapture(e.pointerId); panStart = [e.clientX - panX, e.clientY - panY]; return; }
-  if (mode === 'mark') { cv.setPointerCapture(e.pointerId); dragging = true; changed = false; markPaint = null; snapshot(); markAt(e); return; }
+  if (mode === 'mark' || mode === 'cave' || mode === 'caveErase') { cv.setPointerCapture(e.pointerId); dragging = true; changed = false; markPaint = null; snapshot(); markAt(e); return; }
   const h = hit(e, 0.5);
   cv.setPointerCapture(e.pointerId);
   dragging = true; moved = false; changed = false; doorPaint = null; lineEnd = null; snapshot();
@@ -453,7 +471,7 @@ function applySeg(k) {
 }
 cv.addEventListener('pointermove', e => {
   if (panStart) { panX = e.clientX - panStart[0]; panY = e.clientY - panStart[1]; applyView(); return; }
-  if (dragging && mode === 'mark') { markAt(e); return; }
+  if (dragging && (mode === 'mark' || mode === 'cave' || mode === 'caveErase')) { markAt(e); return; }
   if (!dragging || !cursor) return;
   if (lineMode) {
     const r = cv.getBoundingClientRect();
@@ -1295,6 +1313,142 @@ const Grand = (() => {
   };
 })();
 
+// ---------- labyrinth of minirooms: octagons + rombos + short passages ----------
+// A tiling: octagon rooms on a lattice (12×12, bevel 4), rombos with flat tips of 2 where four
+// octagons meet, and short passages 2 wide between neighbouring octagons. Everything shares
+// walls. A random tree decides which walls get doors: octagon↔octagon through a passage
+// (forward/back/left/right), rombo↔rombo through a passage (tip to tip) and octagon↔rombo
+// through a bevel (the diagonal moves). Unused passages join an octagon.
+const Mini = (() => {
+  const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = rnd(0, i); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const h = 6, b = 4, P = 2 * h + 2, M = 2;
+  // cave: optional {W, H, cells: Set("x,y"), start: "x,y"} painted by the player; the dungeon is
+  // built only where the cave is, and the paths start where the painting started
+  return function mini(n = 6, m = n, cave = null) {
+    if (cave) { n = Math.floor((cave.W - 2 * M + 1) / P); m = Math.floor((cave.H - 2 * M + 1) / P); }
+    const W = cave ? cave.W : P * n + 2 * M - 1, H = cave ? cave.H : P * m + 2 * M - 1, B = Build(W, H);
+    const painted = (x, y) => cave.cells.has(vk(Math.floor(x), Math.floor(y)));
+    const share = (x0, y0, r) => { let a = 0, t = 0; for (let y = y0 - r; y < y0 + r; y++) for (let x = x0 - r; x < x0 + r; x++) { t++; if (painted(x + .5, y + .5)) a++; } return a / t; };
+    const cO = (i, j) => [M + h + i * P, M + h + j * P];         // octagon centre
+    const cD = (i, j) => [M + h + i * P + P / 2, M + h + j * P + P / 2]; // rombo centre (between 4 octagons)
+    const O = [], D = [], S = new Map(); // labels
+    for (let j = 0; j < m; j++) for (let i = 0; i < n; i++) {
+      const [x0, y0] = cO(i, j), l = B.label('room');
+      O[j * n + i] = l;
+      B.paint((x, y) => Math.abs(x - x0) <= h && Math.abs(y - y0) <= h && Math.abs(x - x0) + Math.abs(y - y0) <= 2 * h - b, l);
+    }
+    for (let j = 0; j < m - 1; j++) for (let i = 0; i < n - 1; i++) {
+      const [x0, y0] = cD(i, j), l = B.label('rombo'), R = b + 1;
+      D[j * (n - 1) + i] = l;
+      B.paint((x, y) => Math.abs(x - x0) <= R && Math.abs(y - y0) <= R && Math.abs(x - x0) + Math.abs(y - y0) <= R + 1, l, [0]);
+    }
+    // passages: between O(i,j) and O(i+1,j) ('h'), and O(i,j) and O(i,j+1) ('v')
+    for (let j = 0; j < m; j++) for (let i = 0; i < n; i++) for (const [di, dj, t] of [[1, 0, 'h'], [0, 1, 'v']]) {
+      if (i + di >= n || j + dj >= m) continue;
+      const [x0, y0] = cO(i, j), l = B.label('corr');
+      S.set(`${t}${i},${j}`, l);
+      if (t === 'h') B.paint((x, y) => x >= x0 + h && x <= x0 + h + 2 && Math.abs(y - y0) <= h - b, l, [0]);
+      else B.paint((x, y) => y >= y0 + h && y <= y0 + h + 2 && Math.abs(x - x0) <= h - b, l, [0]);
+    }
+    const keep = new Set();
+    for (let j = 0; j < m; j++) for (let i = 0; i < n; i++) if (!cave || share(...cO(i, j), h) >= 0.2) keep.add(O[j * n + i]);
+    for (let j = 0; j < m - 1; j++) for (let i = 0; i < n - 1; i++) if (!cave || share(...cD(i, j), 3) >= 0.25) keep.add(D[j * (n - 1) + i]);
+    B.snap();
+    // graph: nodes are octagons and rombos; edges carry the doors they need
+    const runs = B.runs(B.segments()), door = (a, c) => runs.get(Math.min(a, c) + ',' + Math.max(a, c));
+    const edges = [];
+    for (let j = 0; j < m; j++) for (let i = 0; i < n; i++) {
+      if (i + 1 < n) edges.push({ a: O[j * n + i], c: O[j * n + i + 1], via: S.get(`h${i},${j}`) });
+      if (j + 1 < m) edges.push({ a: O[j * n + i], c: O[(j + 1) * n + i], via: S.get(`v${i},${j}`) });
+    }
+    for (let j = 0; j < m - 1; j++) for (let i = 0; i < n - 1; i++) {
+      const d = D[j * (n - 1) + i];
+      for (const [a, c] of [[i, j], [i + 1, j], [i, j + 1], [i + 1, j + 1]]) edges.push({ a: d, c: O[c * n + a] }); // diagonal moves
+      if (i + 1 < n - 1) edges.push({ a: d, c: D[j * (n - 1) + i + 1], via: S.get(`v${i + 1},${j}`) });
+      if (j + 1 < m - 1) edges.push({ a: d, c: D[(j + 1) * (n - 1) + i], via: S.get(`h${i},${j + 1}`) });
+    }
+    const live = edges.filter(e => keep.has(e.a) && keep.has(e.c));
+    // start: the octagon where the painting began (or the bottom middle one)
+    let start = O[(m - 1) * n + (n >> 1)];
+    if (cave && cave.start) {
+      const [sx, sy] = cave.start.split(',').map(Number); let best = 1e9;
+      for (let j = 0; j < m; j++) for (let i = 0; i < n; i++) { const l = O[j * n + i], [x0, y0] = cO(i, j), d = Math.hypot(x0 - sx, y0 - sy); if (keep.has(l) && d < best) { best = d; start = l; } }
+    }
+    if (!keep.has(start)) start = [...keep].find(l => O.includes(l));
+    if (cave && start !== undefined) {
+      // parts of the cave painted apart are joined by the shortest way through the rock
+      const adjA = new Map(); for (const e of edges) for (const [u, v] of [[e.a, e.c], [e.c, e.a]]) { if (!adjA.has(u)) adjA.set(u, []); adjA.get(u).push(v); }
+      const reach = () => { const r = new Set([start]), q = [start]; while (q.length) { const u = q.pop(); for (const v of adjA.get(u) || []) if (keep.has(v) && !r.has(v)) { r.add(v); q.push(v); } } return r; };
+      for (let guard = 0; guard < 50; guard++) {
+        const r = reach(); if ([...keep].every(l => r.has(l))) break;
+        const prev = new Map(), q = [...r]; r.forEach(l => prev.set(l, null));
+        let hit = null;
+        for (let i = 0; i < q.length && hit === null; i++) for (const v of adjA.get(q[i]) || []) {
+          if (prev.has(v)) continue; prev.set(v, q[i]);
+          if (keep.has(v)) { hit = v; break; } q.push(v);
+        }
+        if (hit === null) break;
+        for (let v = prev.get(hit); v !== null && !r.has(v); v = prev.get(v)) keep.add(v);
+      }
+    }
+    // depth-first growth: long winding ways and branches that end in rooms, so people get lost
+    const adjL = new Map(); for (const e of live) for (const [u, v] of [[e.a, e.c], [e.c, e.a]]) { if (!adjL.has(u)) adjL.set(u, []); adjL.get(u).push([v, e]); }
+    const used = new Set(), chosen = [], seen = new Set([start]), stack = [start], depth = new Map([[start, 0]]);
+    while (stack.length) {
+      const u = stack[stack.length - 1];
+      const opts = shuffle((adjL.get(u) || []).filter(([v, e]) => !seen.has(v) && (!e.via || !used.has(e.via))));
+      if (!opts.length) { stack.pop(); continue; }
+      const [v, e] = opts[0]; seen.add(v); chosen.push(e); if (e.via) used.add(e.via); depth.set(v, depth.get(u) + 1); stack.push(v);
+    }
+    // a few loops so it is a labyrinth with choices, not only a tree
+    for (const e of shuffle(live.filter(e => !chosen.includes(e) && seen.has(e.a) && seen.has(e.c) && (!e.via || !used.has(e.via))))) {
+      if (Math.random() < 0.05) { chosen.push(e); if (e.via) used.add(e.via); }
+    }
+    // unused passages join one of their octagons (no closed spaces, no rock between rooms)
+    for (const [key, l] of S) if (!used.has(l)) {
+      const [i, j] = key.slice(1).split(',').map(Number), t = key[0];
+      const two = [O[j * n + i], t === 'h' ? O[j * n + i + 1] : O[(j + 1) * n + i]].filter(o => seen.has(o));
+      B.paint(() => true, two.length ? two[rnd(0, two.length - 1)] : 0, [l]);
+    }
+    // whatever the paths do not reach is rock
+    for (const l of [...O, ...D]) if (!seen.has(l)) B.paint(() => true, 0, [l]);
+    // the goal: the octagon deepest along the paths
+    let goal = start; for (const [l, d] of depth) if (O.includes(l) && d > (depth.get(goal) || 0)) goal = l;
+    // some octagons get a small rombo room inside (a room inside a room)
+    const inner = [];
+    for (let j = 0; j < m; j++) for (let i = 0; i < n; i++) if (seen.has(O[j * n + i]) && (O[j * n + i] === goal || Math.random() < 0.15)) {
+      const [x0, y0] = cO(i, j), l = B.label('room'); inner.push([O[j * n + i], l]);
+      B.paint((x, y) => Math.abs(x - x0) <= 3 && Math.abs(y - y0) <= 3 && Math.abs(x - x0) + Math.abs(y - y0) <= 4, l, [O[j * n + i]]);
+    }
+    B.snap(); B.thin(); B.snap(); B.spikes();
+    const segs = B.segments(), runs2 = B.runs(segs), deg = new Map();
+    for (const s of segs) for (const p of parseW(s.k)) { const v = vk(...p); deg.set(v, (deg.get(v) || 0) + 1); }
+    const doors = [];
+    const put = (a, c) => { const r = runs2.get(Math.min(a, c) + ',' + Math.max(a, c)); const d = r && B.safeDoor(r, deg); if (d) doors.push(...d); return !!d; };
+    for (const e of chosen) { if (e.via) { put(e.a, e.via); put(e.via, e.c); } else put(e.a, e.c); }
+    for (const [o, l] of inner) put(o, l);
+    // the way in: an outer wall of the start octagon
+    for (const d of ['h', 'v']) {
+      const out = segs.filter(s => s.d === d && (s.a === start || s.b === start) && (!s.a || !s.b));
+      const lines = [...new Set(out.map(s => s.line))];
+      const run = out.filter(s => s.line === lines[0]).sort((p, q) => p.pos - q.pos);
+      const dd = run.length && B.safeDoor(run, deg); if (dd) { doors.push(...dd); break; }
+    }
+    let longest = 0; for (const v of depth.values()) longest = Math.max(longest, v);
+    const nDiag = chosen.filter(e => !e.via).length;
+    return {
+      size: W, rows: H, walls: segs.map(s => s.k), doors: [...new Set(doors)], columns: [],
+      title: cave ? 'Masmorra construida sobre tu cueva' : `Laberinto de minicuartos ${n}×${m}`,
+      desc: `Mosaico de octágonos (salas 12×12 con bisel 4), rombos con puntas de 2 y pasajes cortos de 2. Todo comparte pared.\n` +
+        `• ${chosen.length} conexiones: ${nDiag} en diagonal (octágono↔rombo por el bisel) y ${chosen.length - nDiag} rectas por pasaje.\n` +
+        `• Caminos largos y enroscados (crecimiento en profundidad): el camino más largo pasa por ${longest} espacios. Pocos bucles.\n` +
+        `• ${inner.length} octágonos con un rombo dentro; el del fondo del camino más largo es la meta (tesoro).\n` +
+        `• Entrada: ${cave ? 'donde empezaste a pintar' : 'el primer octágono del recorrido'}.\n\nMarca con 🖍 los errores y explica abajo.`,
+    };
+  };
+})();
+
 async function savePadGen(pad, msg) {
   const id = 'r' + Date.now().toString(36);
   try {
@@ -1311,6 +1465,26 @@ for (const [btn, sym] of [['grandSym', true], ['grandAsym', false]]) $(btn).oncl
   const m = Grand($('grandSize').value, sym);
   savePadGen({ author: 'claude', gen: true, ask: true, reply: '', kind: 'good', order: 3000 + pads.length, createdAt: Date.now(), marks: {}, ...m }, 'Gran masmorra generada');
 };
+$('miniBtn').onclick = () => {
+  const m = Mini(+({ S: 4, L: 6, XL: 8 })[$('grandSize').value]);
+  savePadGen({ author: 'claude', gen: true, ask: true, reply: '', kind: 'good', order: 3000 + pads.length, createdAt: Date.now(), marks: {}, ...m }, 'Laberinto de minicuartos generado');
+};
+$('newCave').onclick = () => {
+  openPad(null); W = 73; H = 73; setSizeSelects(); $('title').value = 'Mi cueva'; layout(); setMode('cave');
+  window.scrollTo({ top: 0, behavior: 'smooth' }); toast('Pinta los caminos de la cueva con el dedo');
+};
+function buildCave() {
+  const cells = new Set([...marks].filter(([, v]) => v === 3).map(([k]) => k));
+  if (!cells.size) { toast('Primero pinta la cueva con 🕳'); return; }
+  if (W < 31 || H < 31) { toast('Agranda el grid (Ancho y Alto 45 o más)'); return; }
+  const m = Mini(0, 0, { W, H, cells, start: [...cells][0] });
+  snapshot();
+  walls = new Set(m.walls); doors = new Set(m.doors); columns = new Set();
+  dirty = true; draw();
+  toast(m.walls.length ? 'Masmorra construida sobre tu cueva' : 'La cueva es muy chica: pinta caminos más anchos o largos');
+}
+$('buildCave').onclick = buildCave;
+$('fBuild').onclick = buildCave;
 $('genBtn').onclick = async () => {
   const g = Gen(13, 21);
   if (!g) { toast('No salió una pieza válida, prueba otra vez'); return; }

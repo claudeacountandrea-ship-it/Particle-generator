@@ -9,7 +9,7 @@ function arch(W, H, shapes, links, out, mirror) {
   const B = Build(W, H), L = {};
   const all = mirror ? shapes.flatMap(([n, f]) => [[n, f], [n + "'", (x, y) => f(W - 1 - x, y)]]) : shapes;
   for (const [n, f] of all) { L[n] = L[n] || B.label('room'); B.paint(f, L[n]); }
-  B.snap();
+  B.snap(); B.thin(); B.snap(); B.spikes(); // no gaps of 1 between walls, no 1×1 boxes
   let segs = B.segments(); const runs = B.runs(segs), doors = [];
   const allLinks = mirror ? links.flatMap(([a, b]) => [[a, b], [a.endsWith('|') ? a.slice(0, -1) : a + "'", b.endsWith('|') ? b.slice(0, -1) : b + "'"]]) : links;
   for (let [a, b] of allLinks) {
@@ -17,7 +17,7 @@ function arch(W, H, shapes, links, out, mirror) {
     if (!L[a] || !L[b]) { console.error('missing', a, b); continue; }
     const key = Math.min(L[a], L[b]) + ',' + Math.max(L[a], L[b]), run = runs.get(key);
     if (!run) { console.error('no wall between', a, b); continue; }
-    doors.push(...B.door(run));
+    { const deg = new Map(); for (const s of segs) for (const p of parseW(s.k)) { const v = vk(...p); deg.set(v, (deg.get(v) || 0) + 1); } const d = B.safeDoor(run, deg); if (d) doors.push(...d); else console.error('no safe door', a, b); }
   }
   for (const [n, side] of out) {
     const o = segs.filter(s => (s.a === L[n] || s.b === L[n]) && (!s.a || !s.b) && s.d === 'h');
@@ -26,7 +26,7 @@ function arch(W, H, shapes, links, out, mirror) {
   }
   const walls = segs.map(s => s.k), ws = new Set(walls), deg = new Map();
   for (const k of walls) for (const p of parseW(k)) { const v = vk(...p); deg.set(v, (deg.get(v) || 0) + 1); }
-  return { size: W, rows: H, walls, doors: [...new Set(doors)].filter(k => ws.has(k)), columns: [...deg].filter(([, d]) => d >= 3).map(([v]) => v) };
+  return { size: W, rows: H, walls, doors: [...new Set(doors)].filter(k => ws.has(k)), columns: [] };
 }
 const pads = [];
 // 1. Egyptian tomb: a long axis going down into the rock, gates, antechamber, side annex, pillared burial hall
@@ -34,16 +34,16 @@ const pads = [];
   const W = 41, H = 61, c = 20;
   const sh = [
     ['entrada', R(c - 3, 52, c + 3, 58, 2)],
-    ['pasillo1', R(c - 1, 40, c + 1, 52)], ['pasillo2', R(c - 1, 30, c + 1, 40)],
+    ['pasillo1', R(c - 2, 40, c + 2, 52)], ['pasillo2', R(c - 2, 30, c + 2, 40)],
     ['antecamara', R(c - 8, 22, c + 8, 30, 2)],
     ['anexo', R(c + 8, 24, c + 16, 30, 2)],
-    ['pasillo3', R(c - 1, 18, c + 1, 22)],
+    ['pasillo3', R(c - 2, 18, c + 2, 22)],
     ['sala_pilares', R(c - 12, 4, c + 12, 18, 3)],
     ['camara', rombo(c, 11, 5)],
     ['almacen_izq', R(c - 18, 6, c - 12, 16, 2)], ['almacen_der', R(c + 12, 6, c + 18, 16, 2)],
   ];
   const m = arch(W, H, sh, [['entrada','pasillo1'],['pasillo1','pasillo2'],['pasillo2','antecamara'],['antecamara','anexo'],['antecamara','pasillo3'],['pasillo3','sala_pilares'],['sala_pilares','camara'],['sala_pilares','almacen_izq'],['sala_pilares','almacen_der']], [['entrada','bottom']]);
-  for (const [x, y] of [[c-9,8],[c+9,8],[c-9,14],[c+9,14]]) m.columns.push(vk(x, y));
+
   pads.push({ id: 'ar1', title: 'Arquitectura: tumba egipcia (eje)', ...m, desc:
     'Tumba de eje: se entra por abajo y se baja por un pasillo largo cortado por puertas (cada puerta es una etapa). ' +
     'Antecámara con un anexo lateral (callejón con propósito: tesoro o trampa). Al fondo, la sala de pilares con dos almacenes simétricos y, en el centro, la cámara funeraria en rombo.\n\n' +
@@ -86,8 +86,8 @@ const pads = [];
 {
   const W = 57, H = 49;
   const sh = [
-    ['ala_o1', R(2, 20, 24, 28)], ['ala_o2', R(2, 2, 10, 20)], ['ala_o3', R(10, 2, 24, 10)], ['fin_o', R(16, 10, 26, 20)],
-    ['ala_e1', R(32, 20, 54, 28)], ['ala_e2', R(46, 28, 54, 46)], ['ala_e3', R(32, 38, 46, 46)], ['fin_e', R(30, 28, 40, 38)],
+    ['ala_o1', R(2, 20, 24, 28)], ['ala_o2', R(2, 2, 10, 20)], ['ala_o3', R(10, 2, 24, 10)], ['fin_o', R(16, 10, 28, 22)],
+    ['ala_e1', R(32, 20, 54, 28)], ['ala_e2', R(46, 28, 54, 46)], ['ala_e3', R(32, 38, 46, 46)], ['fin_e', R(28, 26, 40, 38)],
     ['ala_n1', R(26, 2, 34, 20)], ['ala_n2', R(34, 2, 46, 10)], ['fin_n', R(32, 10, 42, 22, 2)],
     ['entrada', R(18, 38, 30, 46, 2)], ['pasillo_ent', R(26, 28, 30, 38)],
     ['hub', rombo(28, 24, 6)],
