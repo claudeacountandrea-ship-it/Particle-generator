@@ -10,6 +10,7 @@
   --muted: #6b7163;
   --grid: #b9beb1;
   --wall: #3a3226;
+  --door: #2f74a8;
   --col: #8a5a2b;
   --accent: #4f6b3a;
   --claude: #7a5a9a;
@@ -21,13 +22,13 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #161813; --panel: #1f221b; --ink: #e4e6dd; --muted: #939988; --grid: #4a4f42;
-    --wall: #e8dcc4; --col: #d39a5c; --accent: #9cbc7e; --claude: #c3a6e0; --danger: #e07a64; --line: #33372d;
+    --wall: #e8dcc4; --door: #6fb3e6; --col: #d39a5c; --accent: #9cbc7e; --claude: #c3a6e0; --danger: #e07a64; --line: #33372d;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #161813; --panel: #1f221b; --ink: #e4e6dd; --muted: #939988; --grid: #4a4f42;
-  --wall: #e8dcc4; --col: #d39a5c; --accent: #9cbc7e; --claude: #c3a6e0; --danger: #e07a64; --line: #33372d;
+  --wall: #e8dcc4; --door: #6fb3e6; --col: #d39a5c; --accent: #9cbc7e; --claude: #c3a6e0; --danger: #e07a64; --line: #33372d;
   color-scheme: dark;
 }
 body { background: var(--bg); color: var(--ink); font: 15px/1.45 var(--f-ui); }
@@ -61,6 +62,7 @@ textarea { width: 100%; box-sizing: border-box; min-height: 72px; resize: vertic
 .legend i { display: inline-block; vertical-align: middle; margin-right: 5px; }
 .legend .lc { width: 10px; height: 10px; background: var(--col); }
 .legend .lw { width: 18px; height: 3px; background: var(--wall); }
+.legend .ld { width: 18px; height: 3px; background: repeating-linear-gradient(90deg, var(--door) 0 5px, transparent 5px 8px); }
 .legend .lp { width: 4px; height: 4px; border-radius: 50%; background: var(--grid); }
 .filters { display: flex; gap: 6px; flex-wrap: wrap; }
 .filters button { min-height: 34px; padding: 6px 10px; font-size: 12px; }
@@ -117,13 +119,14 @@ body.full #fbar { display: flex; gap: 6px; position: fixed; left: 0; right: 0; b
 
   <canvas id="cv"></canvas>
   <div class="row" style="justify-content: space-between">
-    <div class="legend"><span><i class="lp"></i>punto</span><span><i class="lc"></i>columna</span><span><i class="lw"></i>pared</span></div>
+    <div class="legend"><span><i class="lp"></i>punto</span><span><i class="lc"></i>columna</span><span><i class="lw"></i>pared</span><span><i class="ld"></i>puerta</span></div>
     <span class="stat" id="stat"></span>
   </div>
 
   <div class="bar">
     <button id="mDraw" data-mode="draw" class="on">✎ Dibujar</button>
     <button id="mErase" data-mode="erase">⌫ Borrar</button>
+    <button id="mDoor" data-mode="door">▯ Puerta</button>
     <button id="undo">↶</button>
     <button id="clear" class="warn">Limpiar</button>
     <button id="fullBtn">⛶ Pantalla completa</button>
@@ -132,7 +135,7 @@ body.full #fbar { display: flex; gap: 6px; position: fixed; left: 0; right: 0; b
     <label for="gw">Ancho</label><select id="gw"></select>
     <label for="gh">Alto</label><select id="gh"></select>
   </div>
-  <p class="help"><b>Toca</b> un punto = columna. <b>Arrastra</b> de punto a punto = pared (8 vecinos: rectas y diagonales).</p>
+  <p class="help"><b>Toca</b> un punto = columna. <b>Arrastra</b> de punto a punto = pared (8 vecinos: rectas y diagonales). En modo <b>Puerta</b>, pinta sobre una pared que ya existe y se convierte en puerta; píntala otra vez y vuelve a ser pared.</p>
 
   <div class="field">
     <label for="note" id="noteLabel">Explica qué es y por qué lo dibujaste así</label>
@@ -156,7 +159,7 @@ body.full #fbar { display: flex; gap: 6px; position: fixed; left: 0; right: 0; b
   <details>
     <summary>Exportar / importar JSON (para Kaggle)</summary>
     <div class="field">
-      <p class="help">Cada pizarra trae <b>columns</b>, <b>walls</b>, los textos y <b>grid[y][x] = [columna, E, SE, S, SO]</b>.</p>
+      <p class="help">Cada pizarra trae <b>columns</b>, <b>walls</b>, <b>doors</b>, los textos y <b>grid[y][x] = [columna, E, SE, S, SO]</b> con 0 = nada, 1 = pared, 2 = puerta.</p>
       <div class="bar">
         <button id="copy" class="primary">Copiar JSON</button>
         <button id="import">Importar del cuadro</button>
@@ -173,6 +176,7 @@ body.full #fbar { display: flex; gap: 6px; position: fixed; left: 0; right: 0; b
 <div id="fbar">
   <button data-mode="draw" class="on">✎</button>
   <button data-mode="erase">⌫</button>
+  <button data-mode="door">▯</button>
   <button id="fUndo">↶</button>
   <button id="fExit">✕ Salir</button>
 </div>
@@ -186,7 +190,7 @@ const COL = 'sketches';
 
 // ---------- state ----------
 const SIZES = [5, 7, 9, 11, 13, 15, 17, 21, 25, 31];
-let W = 13, H = 21, kind = 'good', columns = new Set(), walls = new Set();
+let W = 13, H = 21, kind = 'good', columns = new Set(), walls = new Set(), doors = new Set();
 let mode = 'draw', history = [], dirty = false;
 let pads = [];          // [{id, ...data}]
 let openId = null;      // id of the pad in the editor (null = new)
@@ -201,7 +205,7 @@ function wk(a, b) {
 const parseW = k => k.split('|').map(s => s.split(',').map(Number));
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 function toast(m) { const t = $('toast'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 1800); }
-function snapshot() { history.push({ c: [...columns], w: [...walls] }); if (history.length > 200) history.shift(); }
+function snapshot() { history.push({ c: [...columns], w: [...walls], d: [...doors] }); if (history.length > 200) history.shift(); }
 
 // ---------- drawing ----------
 // fit a w×h vertex grid inside cw×ch, centred, leaving half a step of margin
@@ -224,7 +228,7 @@ function layout() {
   draw();
 }
 
-function drawInto(g, cw, ch, w, h, cols, ws, G) {
+function drawInto(g, cw, ch, w, h, cols, ws, ds, G) {
   const { s, ox, oy } = G || fit(cw, ch, w, h);
   const X = v => ox + v * s, Y = v => oy + v * s;
   g.clearRect(0, 0, cw, ch);
@@ -232,7 +236,11 @@ function drawInto(g, cw, ch, w, h, cols, ws, G) {
   for (let i = 0; i < w; i++) { g.beginPath(); g.moveTo(X(i), Y(0)); g.lineTo(X(i), Y(h - 1)); g.stroke(); }
   for (let j = 0; j < h; j++) { g.beginPath(); g.moveTo(X(0), Y(j)); g.lineTo(X(w - 1), Y(j)); g.stroke(); }
   g.strokeStyle = css('--wall'); g.lineCap = 'round'; g.lineWidth = Math.max(2, s * 0.18);
-  for (const k of ws) { const [a, b] = parseW(k); g.beginPath(); g.moveTo(X(a[0]), Y(a[1])); g.lineTo(X(b[0]), Y(b[1])); g.stroke(); }
+  for (const k of ws) { if (ds.has(k)) continue; const [a, b] = parseW(k); g.beginPath(); g.moveTo(X(a[0]), Y(a[1])); g.lineTo(X(b[0]), Y(b[1])); g.stroke(); }
+  // doors: dashed segment in the door colour, so they read as an opening in the wall
+  g.strokeStyle = css('--door'); g.lineCap = 'butt'; g.setLineDash([s * 0.18, s * 0.12]);
+  for (const k of ds) { if (!ws.has(k)) continue; const [a, b] = parseW(k); g.beginPath(); g.moveTo(X(a[0]), Y(a[1])); g.lineTo(X(b[0]), Y(b[1])); g.stroke(); }
+  g.setLineDash([]);
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     if (cols.has(vk(x, y))) { g.fillStyle = css('--col'); const r = Math.max(2.5, s * 0.2); g.fillRect(X(x) - r, Y(y) - r, 2 * r, 2 * r); }
     else { g.fillStyle = css('--grid'); g.beginPath(); g.arc(X(x), Y(y), Math.max(1.2, s * 0.06), 0, 7); g.fill(); }
@@ -241,12 +249,12 @@ function drawInto(g, cw, ch, w, h, cols, ws, G) {
 
 let cursor = null;
 function draw() {
-  drawInto(ctx, cw, ch, W, H, columns, walls, geo);
+  drawInto(ctx, cw, ch, W, H, columns, walls, doors, geo);
   if (cursor) {
-    ctx.strokeStyle = mode === 'draw' ? css('--accent') : css('--danger'); ctx.lineWidth = 2;
+    ctx.strokeStyle = mode === 'draw' ? css('--accent') : mode === 'door' ? css('--door') : css('--danger'); ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(geo.ox + cursor.x * geo.s, geo.oy + cursor.y * geo.s, geo.s * 0.32, 0, 7); ctx.stroke();
   }
-  $('stat').textContent = `${W}×${H} · ${columns.size} col · ${walls.size} par`;
+  $('stat').textContent = `${W}×${H} · ${columns.size} col · ${walls.size - doors.size} par · ${doors.size} pta`;
 }
 function hit(e, radius) {
   const r = cv.getBoundingClientRect();
@@ -256,13 +264,13 @@ function hit(e, radius) {
   return Math.hypot(fx - x, fy - y) <= radius ? { x, y, fx, fy } : { x: null, fx, fy };
 }
 
-let dragging = false, moved = false, changed = false;
+let dragging = false, moved = false, changed = false, doorPaint = null;
 cv.addEventListener('pointerdown', e => {
   const h = hit(e, 0.5);
   cv.setPointerCapture(e.pointerId);
-  dragging = true; moved = false; changed = false; snapshot();
+  dragging = true; moved = false; changed = false; doorPaint = null; snapshot();
   if (h && h.x !== null) cursor = { x: h.x, y: h.y };
-  else { cursor = null; if (mode === 'erase' && h) eraseNearestWall(h.fx, h.fy); }
+  else { cursor = null; if (h && (mode === 'erase' || mode === 'door')) tapNearestWall(h.fx, h.fy); }
   draw();
 });
 cv.addEventListener('pointermove', e => {
@@ -271,7 +279,13 @@ cv.addEventListener('pointermove', e => {
   if (!h || h.x === null || (h.x === cursor.x && h.y === cursor.y)) return;
   if (Math.abs(h.x - cursor.x) > 1 || Math.abs(h.y - cursor.y) > 1) return;
   const k = wk([cursor.x, cursor.y], [h.x, h.y]);
-  if (mode === 'draw') walls.add(k); else walls.delete(k);
+  if (mode === 'draw') walls.add(k);
+  else if (mode === 'erase') { walls.delete(k); doors.delete(k); }
+  else if (walls.has(k)) {
+    // the first wall crossed decides the stroke: wall → door, or door → wall
+    if (doorPaint === null) doorPaint = !doors.has(k);
+    doorPaint ? doors.add(k) : doors.delete(k);
+  }
   changed = moved = true; cursor = { x: h.x, y: h.y }; draw();
 });
 function end() {
@@ -279,36 +293,40 @@ function end() {
   dragging = false;
   if (cursor && !moved) {
     const k = vk(cursor.x, cursor.y);
-    if (mode === 'draw') columns.has(k) ? columns.delete(k) : columns.add(k); else columns.delete(k);
-    changed = true;
+    if (mode === 'draw') { columns.has(k) ? columns.delete(k) : columns.add(k); changed = true; }
+    else if (mode === 'erase') { columns.delete(k); changed = true; }
   }
   if (changed) dirty = true; else history.pop();
   cursor = null; draw();
 }
 cv.addEventListener('pointerup', end);
 cv.addEventListener('pointercancel', end);
-function eraseNearestWall(fx, fy) {
+function tapNearestWall(fx, fy) {
   let best = null, bd = 0.3;
   for (const k of walls) {
     const [a, b] = parseW(k), d = Math.hypot(fx - (a[0] + b[0]) / 2, fy - (a[1] + b[1]) / 2);
     if (d < bd) { bd = d; best = k; }
   }
-  if (best) { walls.delete(best); changed = true; }
+  if (!best) return;
+  if (mode === 'erase') { walls.delete(best); doors.delete(best); }
+  else doors.has(best) ? doors.delete(best) : doors.add(best);
+  changed = true;
 }
 
 function setMode(m) { mode = m; document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === m)); }
-document.querySelectorAll('#fbar [data-mode]').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => setMode(b.dataset.mode));
 $('mDraw').onclick = () => setMode('draw');
 $('mErase').onclick = () => setMode('erase');
 $('fUndo').onclick = () => $('undo').onclick();
-$('undo').onclick = () => { const s = history.pop(); if (!s) return; columns = new Set(s.c); walls = new Set(s.w); dirty = true; draw(); };
-$('clear').onclick = () => { snapshot(); columns.clear(); walls.clear(); dirty = true; draw(); };
+$('undo').onclick = () => { const s = history.pop(); if (!s) return; columns = new Set(s.c); walls = new Set(s.w); doors = new Set(s.d || []); dirty = true; draw(); };
+$('clear').onclick = () => { snapshot(); columns.clear(); walls.clear(); doors.clear(); dirty = true; draw(); };
 for (const id of ['gw', 'gh']) {
   $(id).innerHTML = SIZES.map(n => `<option value="${n}">${n}</option>`).join('');
   $(id).onchange = () => {
     snapshot(); W = +$('gw').value; H = +$('gh').value;
     columns = new Set([...columns].filter(k => { const [x, y] = k.split(',').map(Number); return x < W && y < H; }));
     walls = new Set([...walls].filter(k => parseW(k).every(([x, y]) => x < W && y < H)));
+    doors = new Set([...doors].filter(k => walls.has(k)));
     dirty = true; layout();
   };
 }
@@ -340,7 +358,7 @@ function openPad(id) {
   const p = pads.find(q => q.id === id) || null;
   openId = p ? p.id : null; history = []; dirty = false;
   W = p ? (p.size || 9) : 13; H = p ? (p.rows || p.size || 9) : 21; setSizeSelects();
-  columns = new Set(p?.columns || []); walls = new Set(p?.walls || []);
+  columns = new Set(p?.columns || []); walls = new Set(p?.walls || []); doors = new Set(p?.doors || []);
   $('title').value = p?.title || '';
   const c = isClaude(p);
   $('who').textContent = c ? 'Claude' : 'Tú';
@@ -360,7 +378,7 @@ function updateNoteLabel() {
 }
 function collect() {
   const p = pads.find(q => q.id === openId);
-  const base = { size: W, rows: H, kind, columns: [...columns], walls: [...walls], title: $('title').value.trim(), updatedAt: Date.now() };
+  const base = { size: W, rows: H, kind, columns: [...columns], walls: [...walls], doors: [...doors].filter(k => walls.has(k)), title: $('title').value.trim(), updatedAt: Date.now() };
   if (isClaude(p)) return { ...base, reply: $('note').value.trim() };
   return { ...base, desc: $('note').value.trim(), author: 'user', createdAt: p?.createdAt || Date.now() };
 }
@@ -419,24 +437,24 @@ function renderGallery() {
     const d = document.createElement('p'); d.textContent = (isClaude(p) && p.reply) ? '↳ ' + p.reply : (p.desc || ''); card.append(d);
     card.onclick = () => { openPad(p.id); window.scrollTo({ top: 0, behavior: 'smooth' }); };
     box.append(card);
-    drawInto(c.getContext('2d'), 200, 200, p.size || 9, p.rows || p.size || 9, new Set(p.columns || []), new Set(p.walls || []));
+    drawInto(c.getContext('2d'), 200, 200, p.size || 9, p.rows || p.size || 9, new Set(p.columns || []), new Set(p.walls || []), new Set(p.doors || []));
   }
   $('out').value = exportJSON();
 }
 
 // ---------- export ----------
-function encode(w, h, cols, ws) {
+function encode(w, h, cols, ws, ds) {
   const dirs = [[1, 0], [1, 1], [0, 1], [-1, 1]];
   return Array.from({ length: h }, (_, y) => Array.from({ length: w }, (_, x) => [cols.has(vk(x, y)) ? 1 : 0, ...dirs.map(([dx, dy]) => {
     const nx = x + dx, ny = y + dy;
-    return nx >= 0 && ny >= 0 && nx < w && ny < h && ws.has(wk([x, y], [nx, ny])) ? 1 : 0;
+    return nx >= 0 && ny >= 0 && nx < w && ny < h && ws.has(wk([x, y], [nx, ny])) ? (ds.has(wk([x, y], [nx, ny])) ? 2 : 1) : 0;
   })]));
 }
 function exportJSON() {
   return JSON.stringify({
-    format: 'masmorra-sketch/3',
-    note: 'size = width, rows = height (vertices); kind = good | avoid; grid[y][x] = [column, wall_E, wall_SE, wall_S, wall_SW]; walls = "x1,y1|x2,y2"',
-    examples: pads.map(p => ({ ...p, rows: p.rows || p.size || 9, kind: p.kind || 'good', grid: encode(p.size || 9, p.rows || p.size || 9, new Set(p.columns || []), new Set(p.walls || [])) })),
+    format: 'masmorra-sketch/4',
+    note: 'size = width, rows = height (vertices); kind = good | avoid; grid[y][x] = [column, E, SE, S, SW] with 0 none / 1 wall / 2 door; doors ⊂ walls; walls = "x1,y1|x2,y2"',
+    examples: pads.map(p => ({ ...p, rows: p.rows || p.size || 9, kind: p.kind || 'good', grid: encode(p.size || 9, p.rows || p.size || 9, new Set(p.columns || []), new Set(p.walls || []), new Set(p.doors || [])) })),
   });
 }
 $('copy').onclick = () => {
