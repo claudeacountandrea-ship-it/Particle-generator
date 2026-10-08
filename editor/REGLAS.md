@@ -23,18 +23,21 @@ con la ronda 2 de ejemplos (`seed_round2.py`).
 5. **Giro recto → diagonal**: la pared de afuera gira después que la de adentro, de forma que se cumpla la regla 4.
    Con pasillo de 2: la diferencia entre los puntos de giro es 2 → diagonal de 2. *(Pizarra 2)*
 6. **No se cruzan diagonales en X** dentro de una celda. *(pizarra marcada a evitar)*
-7. **Salas en rombo**: cuadrado girado 45°, lados diagonales. El generador las hace
-   con punta (sin puntas rectas) para no caer en forma octogonal. *(pizarra "Cuarto cuadrado en rombo")*
+7. **Salas en rombo**: cuadrado girado 45°, lados diagonales **pares** (4 o 6) y en cada
+   una de las 4 esquinas una **punta recta de 2**. Los pasillos rectos entran por la punta
+   (puerta de 2 = la punta entera); los diagonales, por el centro de un lado.
+10. **Salas grandes** (10×10, 14×14) y **salas vecinas que comparten pared**, con puerta de 2 al centro.
 9. **Paredes cruzadas delimitan el espacio de una pared** (por confirmar cómo se aplica).
 8. **Cruces diagonales**: un pasillo diagonal puede tener una rama perpendicular,
    también diagonal. *(pizarra "Dibuja: un cruce de pasillos")*
 
 ## Laberinto
-Botones **🧩 4×4 / 7×7 / 10×10** en `editor/index.html`. Nodos cada 8 puntos: cruces,
-salas cuadradas 6×6 (solo pasillos rectos) o rombos de lado 4 (solo pasillos diagonales).
-Árbol aleatorio + algunos bucles, pasillos de 2, diagonales nunca cruzadas. El piso se
-calcula por celda (llena, vacía o media celda cortada por una diagonal), así toda pared
-es un tramo entero. Revisión: modo **🖍 Marcar piso** con colores error / dudoso / bien.
+Botones **🧩 4×4 / 6×6 / 8×8** en `editor/index.html`. Nodos cada 14 puntos: cruces,
+salas cuadradas 10×10 o 14×14 (solo pasillos rectos) o rombos con puntas de 2 (rectos y
+diagonales). Las salas de 14 llenan su celda, así que las vecinas comparten pared.
+Árbol aleatorio + bucles, pasillos de 2, diagonales nunca cruzadas ni apretadas entre dos
+salas. El piso se etiqueta por cuarto de celda (vacío / pasillo / sala n) y cada celda queda
+entera o partida por una diagonal, así toda pared es un tramo entero. Zoom ＋ － y ✋ Mover. Revisión: modo **🖍 Marcar piso** con colores error / dudoso / bien.
 
 ## Generador de piezas
 `editor/index.html` → botón **🎲 Generar ejemplo**: sala cuadrada con bisel o sala en
