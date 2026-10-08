@@ -142,6 +142,7 @@ body.full #fbar { display: flex; gap: 6px; position: fixed; left: 0; right: 0; b
     <textarea id="note" placeholder="Ej: sala de guardia; la esquina diagonal es para que el pasillo entre en ángulo…"></textarea>
   </div>
   <div class="bar">
+    <button id="approve" hidden>✓ Aprobar tal cual</button>
     <button id="save" class="primary">Guardar pizarra</button>
     <button id="del" class="warn" hidden>Eliminar</button>
   </div>
@@ -367,6 +368,7 @@ function openPad(id) {
   setKind(p?.kind || 'good');
   $('note').value = c ? (p.reply || '') : (p?.desc || '');
   $('del').hidden = !p || c;
+  $('approve').hidden = !(c && p.ask);
   layout(); renderGallery();
 }
 
@@ -394,6 +396,10 @@ $('save').onclick = async () => {
     else { upsertLocal(merged); }
     openId = id; dirty = false; toast('Guardado');
   } catch (e) { toast('No se pudo guardar: ' + (e?.code || e?.message || 'error')); }
+};
+$('approve').onclick = () => {
+  if (!$('note').value.trim()) $('note').value = 'Aprobado';
+  $('save').onclick();
 };
 let delArm = false;
 $('del').onclick = async () => {
