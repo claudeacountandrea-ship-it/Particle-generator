@@ -115,10 +115,11 @@ body.full #fbar { display: flex; gap: 6px; position: fixed; left: 0; right: 0; b
 .qtop { display: flex; align-items: center; gap: 10px; }
 .qtop b { flex: 1; font-size: 16px; }
 #qcv { flex: 1; min-height: 0; width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; touch-action: none; }
-.qreasons { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.qreasons { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; align-items: center; padding-bottom: 2px; }
+.qreasons > * { flex: none; }
 .qreasons .chip { min-height: 36px; font-size: 13px; }
 .qbtns { display: grid; grid-template-columns: 2fr 1fr 2fr; gap: 8px; }
-.qbtns button { min-height: 64px; font-size: 18px; font-weight: 600; }
+.qbtns button { min-height: 56px; font-size: 18px; font-weight: 600; }
 .qyes { background: var(--accent); color: var(--panel); border-color: var(--accent); }
 .qno { background: var(--danger); color: var(--panel); border-color: var(--danger); }
 #toast { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 6px; z-index: 9; }
@@ -246,15 +247,15 @@ body.full #fbar { display: flex; gap: 6px; position: fixed; left: 0; right: 0; b
 </div>
 <div id="quiz" hidden>
   <div class="qtop">
-    <b>🎯 ¿Esta zona está bien hecha?</b>
+    <b>🎯 ¿El recuadro está bien?</b>
     <span class="stat" id="qCount"></span>
     <button id="qExit">✕ Salir</button>
   </div>
   <canvas id="qcv"></canvas>
-  <p class="help" style="margin:0">Raya con el dedo en <b style="color: var(--m0)">rojo</b> dónde está el error (toca otra vez para borrar).</p>
+  <p class="help" style="margin:0">Juzga solo el recuadro amarillo. Raya en <b style="color: var(--m0)">rojo</b> el error.</p>
   <input type="text" id="qComment" placeholder="Comentario: qué está mal o cómo lo corregirías (opcional)" style="font-weight:400">
   <div class="qreasons" id="qReasons">
-    <span class="help">Si la rechazas, ¿por qué? (opcional)</span>
+    <span class="help">¿Por qué?</span>
     <button class="chip" data-r="angulo90">Ángulo de 90°</button>
     <button class="chip" data-r="punta">Punta aguda</button>
     <button class="chip" data-r="puerta">Puerta mal puesta</button>
@@ -1062,19 +1063,40 @@ setMarkColor(0);
 // ---------- quick test: approve / reject small areas, saved as training data ----------
 const RATE = 'ratings';
 let qPiece = null, qSource = null, qDone = 0, qReasons = new Set(), qMarks = new Map(), qPaint = null;
-function cropPiece(m, n) {
-  // a random n×n window of a generated dungeon that has something in it
+// pick an interesting spot (a corner, junction, door or bevel) and show it inside a bigger window
+function interestingSpots(m) {
+  const deg = new Map(), dirs = new Map();
+  for (const k of m.walls) for (const [p, q] of [parseW(k), parseW(k).reverse()]) {
+    const v = vk(...p); deg.set(v, (deg.get(v) || 0) + 1);
+    if (!dirs.has(v)) dirs.set(v, new Set()); dirs.get(v).add((q[0] - p[0]) + ',' + (q[1] - p[1]));
+  }
+  const spots = [];
+  for (const [v, d] of dirs) {
+    const ds = [...d];
+    const straight = ds.length === 2 && ds[0].split(',').map(Number).every((x, i) => x === -ds[1].split(',').map(Number)[i]);
+    if (!straight) spots.push(v.split(',').map(Number)); // anything but a plain straight wall
+  }
+  for (const k of m.doors) spots.push(parseW(k)[0]);
+  return spots;
+}
+function cropPiece(m, n, f) {
+  const spots = interestingSpots(m);
   for (let t = 0; t < 40; t++) {
-    const x0 = Math.floor(Math.random() * (m.size - n + 1)), y0 = Math.floor(Math.random() * (m.rows - n + 1));
+    const [sx, sy] = spots[Math.floor(Math.random() * spots.length)];
+    // focus box of f×f cells around the spot, window of n×n points around the focus
+    const fx = Math.max(0, Math.min(m.size - 1 - f, sx - (f >> 1))), fy = Math.max(0, Math.min(m.rows - 1 - f, sy - (f >> 1)));
+    const x0 = Math.max(0, Math.min(m.size - n, fx + (f >> 1) - (n >> 1))), y0 = Math.max(0, Math.min(m.rows - n, fy + (f >> 1) - (n >> 1)));
     const inW = ([x, y]) => x >= x0 && y >= y0 && x < x0 + n && y < y0 + n;
     const mv = ([x, y]) => [x - x0, y - y0];
     const walls = m.walls.filter(k => parseW(k).every(inW));
-    if (walls.length < 18) continue;
+    const inF = ([x, y]) => x >= fx && y >= fy && x <= fx + f && y <= fy + f;
+    if (m.walls.filter(k => parseW(k).every(inF)).length < 4) continue;
     const ws = new Set(walls);
     const tr = k => { const [a, b] = parseW(k).map(mv); return wk(a, b); };
     return {
       size: n, rows: n, walls: walls.map(tr), doors: m.doors.filter(k => ws.has(k)).map(tr),
       columns: m.columns.map(k => k.split(',').map(Number)).filter(inW).map(p => vk(...mv(p))),
+      focus: { x: fx - x0, y: fy - y0, w: f, h: f },
       from: { x0, y0, source: m.title },
     };
   }
@@ -1082,7 +1104,7 @@ function cropPiece(m, n) {
 }
 function nextPiece() {
   if (!qSource || Math.random() < 0.25) qSource = Maze(4, 4);
-  qPiece = cropPiece(qSource, [17, 21, 25][Math.floor(Math.random() * 3)]);
+  qPiece = cropPiece(qSource, 19, [8, 10][Math.floor(Math.random() * 2)]);
   if (!qPiece) { qSource = null; return nextPiece(); }
   qReasons.clear(); document.querySelectorAll('[data-r]').forEach(b => b.classList.remove('on'));
   qMarks = new Map(); $('qComment').value = '';
@@ -1093,11 +1115,17 @@ function drawQuiz() {
   c.width = r.width * dpr; c.height = r.height * dpr;
   const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
   const p = qPiece;
-  drawInto(g, r.width, r.height, p.size, p.rows, new Set(p.columns), new Set(p.walls), new Set(p.doors), null, qMarks);
+  const G = fit(r.width, r.height, p.size, p.rows);
+  drawInto(g, r.width, r.height, p.size, p.rows, new Set(p.columns), new Set(p.walls), new Set(p.doors), G, qMarks);
+  // dim everything outside the focus box and outline the box: the verdict is only about that area
+  const F = p.focus, fx = G.ox + F.x * G.s, fy = G.oy + F.y * G.s, fw = F.w * G.s, fh = F.h * G.s;
+  g.save(); g.fillStyle = css('--bg'); g.globalAlpha = 0.55;
+  g.beginPath(); g.rect(0, 0, r.width, r.height); g.rect(fx, fy, fw, fh); g.fill('evenodd');
+  g.globalAlpha = 1; g.strokeStyle = css('--m1'); g.lineWidth = 3; g.setLineDash([8, 5]); g.strokeRect(fx, fy, fw, fh); g.restore();
   $('qCount').textContent = `${qDone} respondidas`;
 }
 async function rate(verdict) {
-  const rec = { verdict, reasons: [...qReasons], comment: $('qComment').value.trim(), marks: Object.fromEntries(qMarks), piece: qPiece, createdAt: Date.now(), generator: 'masmorra-v4' };
+  const rec = { verdict, reasons: [...qReasons], comment: $('qComment').value.trim(), marks: Object.fromEntries(qMarks), piece: qPiece, createdAt: Date.now(), generator: 'masmorra-v4', scope: 'focus' };
   try {
     if (db) await db.collection(RATE).add(rec);
     else { const L = JSON.parse(localStorage.getItem('masmorra-ratings') || '[]'); L.push(rec); localStorage.setItem('masmorra-ratings', JSON.stringify(L)); }
