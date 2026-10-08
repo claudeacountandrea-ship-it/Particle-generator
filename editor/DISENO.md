@@ -26,6 +26,19 @@
   puertas en extremos alternos. Salas pegadas pueden no conectarse (rodeo, como tu ejemplo).
 - La descripción de cada masmorra trae sus métricas.
 
+## Gran masmorra (🏛, generador por subdivisión)
+- Huella grande con bisel; simétrica (se construye media y se refleja) o asimétrica.
+- Áreas principales: sala de entrada abajo, pasillo del eje y gran salón en rombo.
+- Subdivisión recursiva: un pasillo de 2 cruza la zona y genera salas a cada lado; el pasillo
+  se corta en tramos con puertas (compuertas). Las zonas chicas se vuelven salas; las grandes
+  pueden tener otra sala dentro (anillo).
+- Todas las paredes son compartidas: cada pared separa dos espacios útiles (~80% de piso).
+- Conexión: árbol desde la entrada (prefiere pasillos y el salón) + pocos bucles = laberíntico.
+
+## Arquitecturas de referencia dibujadas (pizarras "Arquitectura: …")
+- Tumba egipcia de eje, cripta en cruz, anillo estilo Zelda, centro con atajos estilo Dark Souls
+  (`arquitecturas.mjs`).
+
 ## Siguientes pasos posibles
 - Ciclos tipados (llave/cerradura, ruta alternativa) y puertas de un solo sentido para los atajos.
 - Pasillos en zigzag (serpiente) para rellenar huecos grandes.

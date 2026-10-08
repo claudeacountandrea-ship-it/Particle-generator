@@ -192,6 +192,11 @@ body.full #fbar { display: flex; gap: 6px; position: fixed; left: 0; right: 0; b
     <button id="mazeL">🏰 6×6</button>
     <button id="mazeXL">🏰 8×8</button>
   </div>
+  <div class="bar">
+    <button id="grandSym" class="primary">🏛 Gran masmorra simétrica</button>
+    <button id="grandAsym">🏛 Asimétrica</button>
+    <select id="grandSize" aria-label="Tamaño de la gran masmorra"><option value="S">Mediana</option><option value="L" selected>Grande</option><option value="XL">Enorme</option></select>
+  </div>
   <div class="filters" id="filters">
     <button data-f="all" class="on">Todas</button>
     <button data-f="claude">De Claude</button>
@@ -984,6 +989,216 @@ const Maze = (() => {
   };
 })();
 
+// ---------- grand dungeon: recursive, packed, shared walls ----------
+// Space is a grid of cells, each split in 4 quarters (N E S W) that carry a region label
+// (0 = rock). Regions are painted with shapes (rectangles with bevels, rombos), walls are
+// every boundary between two labels, so neighbouring spaces always share their wall.
+// Doors are put on chosen pairs of neighbouring regions, centred on their longest straight run.
+const Build = (W, H) => {
+  const C = W - 1, R = H - 1, q = new Int32Array(C * R * 4); // cells × quarters
+  const QC = [[.5, 1 / 6], [5 / 6, .5], [.5, 5 / 6], [1 / 6, .5]]; // quarter centroids N E S W
+  const B = {
+    W, H, q, kinds: { 0: 'rock' }, next: 1,
+    label(kind) { const l = B.next++; B.kinds[l] = kind; return l; },
+    // paint label where f(x, y) holds; only over `over` labels if given
+    paint(f, l, over) {
+      for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) for (let k = 0; k < 4; k++) {
+        const i = (y * C + x) * 4 + k;
+        if (over && !over.includes(q[i])) continue;
+        if (f(x + QC[k][0], y + QC[k][1])) q[i] = l;
+      }
+    },
+    area(l) { let n = 0; for (const v of q) if (v === l) n++; return n / 4; },
+    // snap every cell to whole or half (one diagonal) so all walls are whole segments
+    snap() {
+      for (let c = 0; c < C * R; c++) {
+        const v = [q[c * 4], q[c * 4 + 1], q[c * 4 + 2], q[c * 4 + 3]];
+        const cnt = {}; v.forEach(a => cnt[a] = (cnt[a] || 0) + 1);
+        const m = +Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a])[0];
+        const h = (a, b) => a === b ? a : (cnt[a] >= cnt[b] ? a : b);
+        const cands = [[m, m, m, m], [h(v[0], v[1]), h(v[0], v[1]), h(v[2], v[3]), h(v[2], v[3])], [h(v[0], v[3]), h(v[1], v[2]), h(v[1], v[2]), h(v[0], v[3])]];
+        const cost = cc => cc.reduce((s, a, i) => s + (a !== v[i]), 0);
+        const best = cands.reduce((b, cc) => cost(cc) < cost(b) ? cc : b);
+        for (let k = 0; k < 4; k++) q[c * 4 + k] = best[k];
+      }
+    },
+    Q(x, y, k) { return x < 0 || y < 0 || x >= C || y >= R ? 0 : q[(y * C + x) * 4 + k]; },
+    // every wall segment with the two labels it separates and its direction
+    segments() {
+      const out = [];
+      for (let y = 0; y < H; y++) for (let x = 0; x < C; x++) { const a = B.Q(x, y - 1, 2), b = B.Q(x, y, 0); if (a !== b) out.push({ k: wk([x, y], [x + 1, y]), a, b, d: 'h', line: y, pos: x }); }
+      for (let y = 0; y < R; y++) for (let x = 0; x < W; x++) { const a = B.Q(x - 1, y, 1), b = B.Q(x, y, 3); if (a !== b) out.push({ k: wk([x, y], [x, y + 1]), a, b, d: 'v', line: x, pos: y }); }
+      for (let y = 0; y < R; y++) for (let x = 0; x < C; x++) {
+        const [n, e, s, w] = [0, 1, 2, 3].map(k => B.Q(x, y, k));
+        if (n === e && s === w && n !== s) out.push({ k: wk([x, y], [x + 1, y + 1]), a: n, b: s, d: 'd1', line: x - y, pos: x });
+        else if (n === w && e === s && n !== e) out.push({ k: wk([x + 1, y], [x, y + 1]), a: n, b: e, d: 'd2', line: x + y, pos: x });
+      }
+      return out;
+    },
+    // longest straight run shared by every pair of regions
+    runs(segs) {
+      const by = new Map();
+      for (const s of segs) {
+        if (!s.a || !s.b) continue;
+        const key = Math.min(s.a, s.b) + ',' + Math.max(s.a, s.b);
+        if (!by.has(key)) by.set(key, []);
+        by.get(key).push(s);
+      }
+      const res = new Map();
+      for (const [key, L] of by) {
+        const groups = new Map();
+        for (const s of L) { const g = s.d + ':' + s.line; if (!groups.has(g)) groups.set(g, []); groups.get(g).push(s); }
+        let best = null;
+        for (const G of groups.values()) {
+          G.sort((a, b) => a.pos - b.pos);
+          let run = [G[0]];
+          for (let i = 1; i <= G.length; i++) {
+            if (i < G.length && G[i].pos === G[i - 1].pos + 1) { run.push(G[i]); continue; }
+            if (!best || run.length > best.length) best = run;
+            if (i < G.length) run = [G[i]];
+          }
+        }
+        res.set(key, best);
+      }
+      return res;
+    },
+    door(run) { // centred: even run → 2, odd → 1
+      const w = run.length >= 2 ? (run.length % 2 ? 1 : 2) : 1, i = (run.length - w) >> 1;
+      return run.slice(i, i + w).map(s => s.k);
+    },
+  };
+  return B;
+};
+const bevelRect = (x0, y0, x1, y1, b) => (x, y) => x >= x0 && x <= x1 && y >= y0 && y <= y1 &&
+  x - x0 + y - y0 >= b && x1 - x + y - y0 >= b && x - x0 + y1 - y >= b && x1 - x + y1 - y >= b;
+const rombo = (cx, cy, R) => (x, y) => Math.abs(x - cx) <= R && Math.abs(y - cy) <= R && Math.abs(x - cx) + Math.abs(y - cy) <= R + 1;
+
+const Grand = (() => {
+  const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  return function grand(size = 'L', sym = Math.random() < 0.5) {
+    const S = { S: [49, 61], L: [73, 89], XL: [97, 121] }[size];
+    const W = S[0] + (S[0] % 2 ? 0 : 1), H = S[1];
+    const B = Build(W, H), cx = (W - 1) / 2;
+    const fx0 = 2, fy0 = 2, fx1 = W - 3, fy1 = H - 3;
+    const half = sym ? (x => x <= cx) : () => true; // build the left half, then mirror
+    const foot = B.label('none'); // temporary: inside the dungeon, not yet assigned
+    B.paint(bevelRect(fx0, fy0, fx1, fy1, 6), foot);
+    // main areas: a great hall (rombo with flat tips) and an entrance hall on the axis
+    const hallR = 2 * rnd(3, 5) + 1, hy = Math.round((fy0 + fy1) / 2 + rnd(-4, 4));
+    const hall = B.label('hall');
+    const hx = sym ? cx : rnd(fx0 + hallR + 6, fx1 - hallR - 6);
+    B.paint(rombo(hx, hy, hallR), hall, [foot]);
+    const ent = B.label('room');
+    const ew = 6, ex = sym ? cx : rnd(fx0 + 8, fx1 - 8);
+    B.paint(bevelRect(ex - ew, fy1 - 8, ex + ew, fy1, 2), ent, [foot]);
+    // axis corridor from the entrance hall to the great hall
+    const axis = B.label('corr');
+    B.paint((x, y) => Math.abs(x - ex) <= 1 && y >= hy && y <= fy1 - 8, axis, [foot]);
+    if (!sym) B.paint((x, y) => Math.abs(y - hy) <= 1 && x >= Math.min(ex, hx) - 1 && x <= Math.max(ex, hx) + 1 && y <= fy1 - 8, axis, [foot]);
+    // recursive split of the rest: corridors make rooms on both sides, rooms make rooms inside
+    function split(x0, y0, x1, y1, depth) {
+      const w = x1 - x0, h = y1 - y0;
+      if (w < 4 || h < 4) return;
+      const small = w <= 12 && h <= 12;
+      if (small || depth > 7) {
+        const room = B.label('room');
+        B.paint(bevelRect(x0, y0, x1, y1, 0), room, [foot]);
+        if (w >= 10 && h >= 10 && Math.random() < 0.5) { // a room inside the room
+          const inner = B.label('room'), m = rnd(3, 4);
+          B.paint(bevelRect(x0 + m, y0 + m, x1 - m, y1 - m, 2), inner, [room]);
+        }
+        return;
+      }
+      const vertical = w > h ? true : h > w ? false : Math.random() < 0.5;
+      const len = vertical ? w : h, useCorr = len >= 14 && Math.random() < 0.6;
+      const cut = (vertical ? x0 : y0) + rnd(5, len - 5 - (useCorr ? 2 : 0));
+      if (useCorr) { // corridor 2 wide across, cut into stretches by gates (doors)
+        let a = vertical ? y0 : x0; const end = vertical ? y1 : x1;
+        while (a < end) {
+          const b = Math.min(end, a + rnd(8, 16));
+          const c = B.label('corr');
+          if (vertical) B.paint((x, y) => x >= cut && x <= cut + 2 && y >= a && y <= b, c, [foot]);
+          else B.paint((x, y) => y >= cut && y <= cut + 2 && x >= a && x <= b, c, [foot]);
+          a = b;
+        }
+        if (vertical) { split(x0, y0, cut, y1, depth + 1); split(cut + 2, y0, x1, y1, depth + 1); }
+        else { split(x0, y0, x1, cut, depth + 1); split(x0, cut + 2, x1, y1, depth + 1); }
+      } else if (vertical) { split(x0, y0, cut, y1, depth + 1); split(cut, y0, x1, y1, depth + 1); }
+      else { split(x0, y0, x1, cut, depth + 1); split(x0, cut, x1, y1, depth + 1); }
+    }
+    split(fx0, fy0, sym ? Math.floor(cx) : fx1, fy1, 0);
+    // leftover pieces of the footprint (next to the hall) join a neighbour
+    B.paint(() => true, 0, [foot]);
+    if (sym) { // mirror the left half onto the right
+      const C = W - 1, R = H - 1, q = B.q, map = new Map();
+      for (let y = 0; y < R; y++) for (let x = 0; x < C / 2; x++) {
+        const xm = C - 1 - x;
+        for (const [k, km] of [[0, 0], [2, 2], [1, 3], [3, 1]]) {
+          let v = q[(y * C + x) * 4 + k];
+          if (B.kinds[v] === 'room' || (B.kinds[v] === 'corr' && v !== axis)) {
+            if (!map.has(v)) { const n = B.label(B.kinds[v]); map.set(v, n); }
+            v = map.get(v);
+          }
+          q[(y * C + xm) * 4 + km] = v;
+        }
+      }
+    }
+    B.snap();
+    // merge tiny regions into the neighbour they share most wall with
+    let segs = B.segments();
+    for (let l = 1; l < B.next; l++) {
+      const a = B.area(l); if (!a || a >= 8 || B.kinds[l] === 'hall') continue;
+      const share = new Map();
+      for (const s of segs) { const o = s.a === l ? s.b : s.b === l ? s.a : -1; if (o > 0) share.set(o, (share.get(o) || 0) + 1); }
+      const best = [...share].sort((p, r) => r[1] - p[1])[0];
+      if (best) B.paint(() => true, best[0], [l]);
+    }
+    B.snap(); segs = B.segments();
+    // connect: spanning tree from the entrance, corridors first; a few loops
+    const runs = B.runs(segs), adj = new Map();
+    for (const [key, run] of runs) {
+      if (run.length < 2) continue;
+      const [a, b] = key.split(',').map(Number);
+      for (const [u, v] of [[a, b], [b, a]]) { if (!adj.has(u)) adj.set(u, []); adj.get(u).push([v, key]); }
+    }
+    const doorPairs = new Set(), seen = new Set([ent]), frontier = [...(adj.get(ent) || [])].map(e => [ent, ...e]);
+    const weight = l => B.kinds[l] === 'corr' ? 3 : B.kinds[l] === 'hall' ? 4 : 1;
+    while (frontier.length) {
+      let t = Math.random() * frontier.reduce((s, f) => s + weight(f[1]), 0), i = 0;
+      for (; i < frontier.length - 1; i++) { t -= weight(frontier[i][1]); if (t <= 0) break; }
+      const [, v, key] = frontier.splice(i, 1)[0];
+      if (seen.has(v)) continue;
+      seen.add(v); doorPairs.add(key);
+      for (const e of adj.get(v) || []) if (!seen.has(e[0])) frontier.push([v, ...e]);
+    }
+    const rest = [...runs.keys()].filter(k => !doorPairs.has(k) && runs.get(k).length >= 2);
+    for (let i = 0; i < Math.round(rest.length * 0.06); i++) doorPairs.add(rest[rnd(0, rest.length - 1)]);
+    const doors = [];
+    for (const key of doorPairs) doors.push(...B.door(runs.get(key)));
+    // the way in: a door in the outer wall of the entrance hall
+    const outRun = segs.filter(s => s.d === 'h' && s.line === fy1 && (s.a === ent || s.b === ent) && (!s.a || !s.b)).sort((a, b) => a.pos - b.pos);
+    doors.push(...B.door(outRun));
+    // unreachable regions become rock
+    for (let l = 1; l < B.next; l++) if (B.kinds[l] !== 'rock' && !seen.has(l) && B.area(l)) B.paint(() => true, 0, [l]);
+    B.snap(); segs = B.segments();
+    const walls = segs.map(s => s.k), ws = new Set(walls);
+    // columns where three or more walls meet, and at bevel ends
+    const deg = new Map();
+    for (const k of walls) for (const p of parseW(k)) { const v = vk(...p); deg.set(v, (deg.get(v) || 0) + 1); }
+    const columns = [...deg].filter(([, d]) => d >= 3).map(([v]) => v);
+    let nRoom = 0, nCorr = 0; for (let l = 1; l < B.next; l++) if (seen.has(l) && B.area(l)) B.kinds[l] === 'room' ? nRoom++ : B.kinds[l] === 'corr' ? nCorr++ : 0;
+    let floor = 0; for (const v of B.q) if (v) floor++;
+    return {
+      size: W, rows: H, walls: [...ws], doors: [...new Set(doors)].filter(k => ws.has(k)), columns,
+      title: `Gran masmorra ${sym ? 'simétrica' : 'asimétrica'} ${W}×${H}`,
+      desc: `Gran masmorra ${sym ? 'simétrica (eje central)' : 'asimétrica'}: entrada abajo, pasillo del eje hasta el gran salón en rombo. ` +
+        `El resto se parte en pasillos (cortados en tramos por puertas) que generan salas a cada lado, y salas que generan salas dentro. ` +
+        `Todas las paredes son compartidas.\n• ${nRoom} salas, ${nCorr} tramos de pasillo, ${doorPairs.size} conexiones. Piso usado: ${Math.round(100 * floor / B.q.length)}%.\n\n` +
+        `Marca con 🖍 los errores y explica abajo.`,
+    };
+  };
+})();
+
 async function savePadGen(pad, msg) {
   const id = 'r' + Date.now().toString(36);
   try {
@@ -995,6 +1210,10 @@ async function savePadGen(pad, msg) {
 for (const [btn, n] of [['mazeS', 4], ['mazeL', 6], ['mazeXL', 8]]) $(btn).onclick = () => {
   const m = Maze(n, n);
   savePadGen({ author: 'claude', gen: true, ask: true, reply: '', kind: 'good', order: 2000 + pads.length, createdAt: Date.now(), marks: {}, ...m }, 'Masmorra generada');
+};
+for (const [btn, sym] of [['grandSym', true], ['grandAsym', false]]) $(btn).onclick = () => {
+  const m = Grand($('grandSize').value, sym);
+  savePadGen({ author: 'claude', gen: true, ask: true, reply: '', kind: 'good', order: 3000 + pads.length, createdAt: Date.now(), marks: {}, ...m }, 'Gran masmorra generada');
 };
 $('genBtn').onclick = async () => {
   const g = Gen(13, 21);
