@@ -109,7 +109,7 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
 26. **Vista de piso** (⬛): blanco = piso al que se llega desde la entrada; negro = afuera;
    gris oscuro = encerrado sin acceso (roca maciza o una sala sin puerta).
 
-## 🪨 Cueva por pasos (`cueva_por_pasos.js`) — aprovechar todo el espacio
+## (descartado) 🪨 Cueva por pasos (`cueva_por_pasos.js`) — aprovechar todo el espacio
 27. **Nada de roca desperdiciada adentro**: la cueva (pintada o excavada por "gusanos") se parte
    entera en cámaras; cada pared separa dos cámaras. Paredes solo rectas o a 45° (distancia de
    tablero de ajedrez entre semillas en puntos pares). Borde de la cueva suavizado.
@@ -118,3 +118,14 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
    vuelve 2–3 pasos después). Cámaras sin salida = premios/enemigos. **Atajos** entre cámaras
    vecinas que estaban lejos por el camino (hasta 3, ahorran 10–30 pasos).
 29. Las cámaras largas hacen de tramos de pasillo (sin pasillos que desperdicien espacio).
+
+## Masmorra de salas y pasillos v2 — arquitectura sin espacio perdido
+30. **La idea es arquitectura, no cueva** (la cueva por pasos se descartó).
+31. **Toda casilla es sala** (chica, doble, grande, rombo o galería). Donde no pasa pasillo las
+   salas vecinas llegan a la mitad y **comparten pared**: no queda roca entre salas (~85% de piso).
+32. **Bisel solo donde corresponde**: esquinas de sala que dan a un giro/cruce de pasillo llevan
+   bisel 1 o 2 (y el pasillo no muestra 90°); esquinas contra otra sala quedan rectas.
+33. **Diagonales con propósito**: un pasillo diagonal cruza una casilla reservada y sus dos
+   triángulos se suman a las salas vecinas (salas con una pared diagonal), sin triángulos sueltos.
+34. **Particiones**: puertas entre salas vecinas (salas en fila), galerías con cuartitos y
+   compuertas en pasillos. Toda zona encerrada recibe una puerta: nada queda sin acceso.
