@@ -11,6 +11,9 @@
   --grid: #b9beb1;
   --wall: #3a3226;
   --door: #2f74a8;
+  --m0: #e0473a;
+  --m1: #e8a52c;
+  --m2: #4aa368;
   --col: #8a5a2b;
   --accent: #4f6b3a;
   --claude: #7a5a9a;
@@ -22,13 +25,13 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #161813; --panel: #1f221b; --ink: #e4e6dd; --muted: #939988; --grid: #4a4f42;
-    --wall: #e8dcc4; --door: #6fb3e6; --col: #d39a5c; --accent: #9cbc7e; --claude: #c3a6e0; --danger: #e07a64; --line: #33372d;
+    --wall: #e8dcc4; --door: #6fb3e6; --m0: #ff6b5c; --m1: #f2bd4b; --m2: #6cc48a; --col: #d39a5c; --accent: #9cbc7e; --claude: #c3a6e0; --danger: #e07a64; --line: #33372d;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #161813; --panel: #1f221b; --ink: #e4e6dd; --muted: #939988; --grid: #4a4f42;
-  --wall: #e8dcc4; --door: #6fb3e6; --col: #d39a5c; --accent: #9cbc7e; --claude: #c3a6e0; --danger: #e07a64; --line: #33372d;
+  --wall: #e8dcc4; --door: #6fb3e6; --m0: #ff6b5c; --m1: #f2bd4b; --m2: #6cc48a; --col: #d39a5c; --accent: #9cbc7e; --claude: #c3a6e0; --danger: #e07a64; --line: #33372d;
   color-scheme: dark;
 }
 body { background: var(--bg); color: var(--ink); font: 15px/1.45 var(--f-ui); }
@@ -98,6 +101,11 @@ body.full #rail, body.full .wrap > :not(#cv) { display: none !important; }
 body.full #cv { position: fixed; left: 0; right: 0; top: env(safe-area-inset-top, 0px); width: 100%; height: calc(100dvh - 64px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); border: 0; border-radius: 0; z-index: 10; }
 body.full #fbar { display: flex; gap: 6px; position: fixed; left: 0; right: 0; bottom: 0; padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px)); background: var(--panel); border-top: 1px solid var(--line); z-index: 11; }
 #fbar button { flex: 1; padding: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 6px 10px; }
+.chip i { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+.chip.on { outline: 2px solid var(--ink); outline-offset: 1px; }
+#fColor { font-size: 22px; }
+@media (min-width: 1000px) { .wrap { max-width: 1200px; } }
 #toast { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 6px; z-index: 9; }
 </style>
 
@@ -127,6 +135,7 @@ body.full #fbar { display: flex; gap: 6px; position: fixed; left: 0; right: 0; b
     <button id="mDraw" data-mode="draw" class="on">✎ Dibujar</button>
     <button id="mErase" data-mode="erase">⌫ Borrar</button>
     <button id="mDoor" data-mode="door">▯ Puerta</button>
+    <button id="mMark" data-mode="mark">🖍 Marcar piso</button>
     <button id="undo">↶</button>
     <button id="clear" class="warn">Limpiar</button>
     <button id="lineBtn" class="on">📏 Línea recta</button>
@@ -136,7 +145,13 @@ body.full #fbar { display: flex; gap: 6px; position: fixed; left: 0; right: 0; b
     <label for="gw">Ancho</label><select id="gw"></select>
     <label for="gh">Alto</label><select id="gh"></select>
   </div>
-  <p class="help"><b>Toca</b> un punto = columna. <b>Arrastra</b> desde un punto y suelta en otro = pared recta o diagonal (se ve la guía y se dibuja al soltar). Con 📏 apagado dibujas a mano alzada. En modo <b>Puerta</b>, pinta sobre una pared que ya existe y se convierte en puerta; píntala otra vez y vuelve a ser pared.</p>
+  <div class="row" id="markRow" hidden>
+    <span class="help">Color:</span>
+    <button class="chip" data-mc="0"><i style="background: var(--m0)"></i>Error</button>
+    <button class="chip" data-mc="1"><i style="background: var(--m1)"></i>Dudoso</button>
+    <button class="chip" data-mc="2"><i style="background: var(--m2)"></i>Bien</button>
+  </div>
+  <p class="help"><b>Toca</b> un punto = columna. <b>Arrastra</b> desde un punto y suelta en otro = pared recta o diagonal (se ve la guía y se dibuja al soltar). Con 📏 apagado dibujas a mano alzada. En modo <b>Puerta</b>, pinta sobre una pared que ya existe y se convierte en puerta; píntala otra vez y vuelve a ser pared. En <b>🖍 Marcar piso</b>, toca o arrastra sobre las celdas (el cuadro entre 4 puntos) para señalar errores con colores.</p>
 
   <div class="field">
     <label for="note" id="noteLabel">Explica qué es y por qué lo dibujaste así</label>
@@ -149,7 +164,12 @@ body.full #fbar { display: flex; gap: 6px; position: fixed; left: 0; right: 0; b
   </div>
 
   <h2>Pizarras</h2>
-  <button id="genBtn" class="primary">🎲 Generar ejemplo con las reglas</button>
+  <div class="bar">
+    <button id="genBtn" class="primary">🎲 Generar pieza</button>
+    <button id="mazeS">🧩 Laberinto 4×4</button>
+    <button id="mazeL">🧩 7×7</button>
+    <button id="mazeXL">🧩 10×10</button>
+  </div>
   <div class="filters" id="filters">
     <button data-f="all" class="on">Todas</button>
     <button data-f="claude">De Claude</button>
@@ -180,6 +200,8 @@ body.full #fbar { display: flex; gap: 6px; position: fixed; left: 0; right: 0; b
   <button data-mode="draw" class="on">✎</button>
   <button data-mode="erase">⌫</button>
   <button data-mode="door">▯</button>
+  <button data-mode="mark">🖍</button>
+  <button id="fColor" aria-label="Color de marca">●</button>
   <button id="fLine" class="on">📏</button>
   <button id="fUndo">↶</button>
   <button id="fExit">✕ Salir</button>
@@ -194,7 +216,7 @@ const COL = 'sketches';
 
 // ---------- state ----------
 const SIZES = [5, 7, 9, 11, 13, 15, 17, 21, 25, 31];
-let W = 13, H = 21, kind = 'good', columns = new Set(), walls = new Set(), doors = new Set();
+let W = 13, H = 21, kind = 'good', columns = new Set(), walls = new Set(), doors = new Set(), marks = new Map(), markColor = 0;
 let mode = 'draw', history = [], dirty = false;
 let pads = [];          // [{id, ...data}]
 let openId = null;      // id of the pad in the editor (null = new)
@@ -209,7 +231,7 @@ function wk(a, b) {
 const parseW = k => k.split('|').map(s => s.split(',').map(Number));
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 function toast(m) { const t = $('toast'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 1800); }
-function snapshot() { history.push({ c: [...columns], w: [...walls], d: [...doors] }); if (history.length > 200) history.shift(); }
+function snapshot() { history.push({ c: [...columns], w: [...walls], d: [...doors], m: [...marks] }); if (history.length > 200) history.shift(); }
 
 // ---------- drawing ----------
 // fit a w×h vertex grid inside cw×ch, centred, leaving half a step of margin
@@ -232,10 +254,16 @@ function layout() {
   draw();
 }
 
-function drawInto(g, cw, ch, w, h, cols, ws, ds, G) {
+function drawInto(g, cw, ch, w, h, cols, ws, ds, G, mk) {
   const { s, ox, oy } = G || fit(cw, ch, w, h);
   const X = v => ox + v * s, Y = v => oy + v * s;
+  const cGrid = css('--grid'), cCol = css('--col'), mc = [css('--m0'), css('--m1'), css('--m2')];
   g.clearRect(0, 0, cw, ch);
+  if (mk && mk.size) { // floor marks: the cell between 4 points
+    g.globalAlpha = 0.45;
+    for (const [k, v] of mk) { const [x, y] = k.split(',').map(Number); g.fillStyle = mc[v] || mc[0]; g.fillRect(X(x), Y(y), s, s); }
+    g.globalAlpha = 1;
+  }
   g.strokeStyle = css('--line'); g.lineWidth = 1;
   for (let i = 0; i < w; i++) { g.beginPath(); g.moveTo(X(i), Y(0)); g.lineTo(X(i), Y(h - 1)); g.stroke(); }
   for (let j = 0; j < h; j++) { g.beginPath(); g.moveTo(X(0), Y(j)); g.lineTo(X(w - 1), Y(j)); g.stroke(); }
@@ -246,8 +274,8 @@ function drawInto(g, cw, ch, w, h, cols, ws, ds, G) {
   for (const k of ds) { if (!ws.has(k)) continue; const [a, b] = parseW(k); g.beginPath(); g.moveTo(X(a[0]), Y(a[1])); g.lineTo(X(b[0]), Y(b[1])); g.stroke(); }
   g.setLineDash([]);
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    if (cols.has(vk(x, y))) { g.fillStyle = css('--col'); const r = Math.max(2.5, s * 0.2); g.fillRect(X(x) - r, Y(y) - r, 2 * r, 2 * r); }
-    else { g.fillStyle = css('--grid'); g.beginPath(); g.arc(X(x), Y(y), Math.max(1.2, s * 0.06), 0, 7); g.fill(); }
+    if (cols.has(vk(x, y))) { g.fillStyle = cCol; const r = Math.max(2.5, s * 0.2); g.fillRect(X(x) - r, Y(y) - r, 2 * r, 2 * r); }
+    else if (s > 5) { g.fillStyle = cGrid; g.beginPath(); g.arc(X(x), Y(y), Math.max(1.2, s * 0.06), 0, 7); g.fill(); }
   }
 }
 
@@ -278,7 +306,7 @@ function lineKeys(a, L) {
   return out;
 }
 function draw() {
-  drawInto(ctx, cw, ch, W, H, columns, walls, doors, geo);
+  drawInto(ctx, cw, ch, W, H, columns, walls, doors, geo, marks);
   if (cursor) {
     const col = mode === 'draw' ? css('--accent') : mode === 'door' ? css('--door') : css('--danger');
     const P = v => [geo.ox + v.x * geo.s, geo.oy + v.y * geo.s];
@@ -295,7 +323,7 @@ function draw() {
       ctx.fillText(String(lineEnd.n), ex + geo.s * 0.4, ey - geo.s * 0.4);
     }
   }
-  $('stat').textContent = `${W}×${H} · ${columns.size} col · ${walls.size - doors.size} par · ${doors.size} pta`;
+  $('stat').textContent = `${W}×${H} · ${columns.size} col · ${walls.size - doors.size} par · ${doors.size} pta${marks.size ? ' · ' + marks.size + ' marcas' : ''}`;
 }
 function hit(e, radius) {
   const r = cv.getBoundingClientRect();
@@ -306,7 +334,18 @@ function hit(e, radius) {
 }
 
 let dragging = false, moved = false, changed = false, doorPaint = null;
+let markPaint = null;
+function markAt(e) {
+  const r = cv.getBoundingClientRect();
+  const x = Math.floor((e.clientX - r.left - geo.ox) / geo.s), y = Math.floor((e.clientY - r.top - geo.oy) / geo.s);
+  if (x < 0 || y < 0 || x >= W - 1 || y >= H - 1) return;
+  const k = vk(x, y);
+  if (markPaint === null) markPaint = marks.get(k) !== markColor; // first cell decides: paint or clear
+  if (markPaint) marks.set(k, markColor); else marks.delete(k);
+  changed = true; draw();
+}
 cv.addEventListener('pointerdown', e => {
+  if (mode === 'mark') { cv.setPointerCapture(e.pointerId); dragging = true; changed = false; markPaint = null; snapshot(); markAt(e); return; }
   const h = hit(e, 0.5);
   cv.setPointerCapture(e.pointerId);
   dragging = true; moved = false; changed = false; doorPaint = null; lineEnd = null; snapshot();
@@ -324,6 +363,7 @@ function applySeg(k) {
   }
 }
 cv.addEventListener('pointermove', e => {
+  if (dragging && mode === 'mark') { markAt(e); return; }
   if (!dragging || !cursor) return;
   if (lineMode) {
     const r = cv.getBoundingClientRect();
@@ -362,13 +402,20 @@ function tapNearestWall(fx, fy) {
   changed = true;
 }
 
-function setMode(m) { mode = m; document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === m)); }
+function setMode(m) { mode = m; document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === m)); $('markRow').hidden = m !== 'mark'; }
+function setMarkColor(i) {
+  markColor = i;
+  document.querySelectorAll('[data-mc]').forEach(b => b.classList.toggle('on', +b.dataset.mc === i));
+  $('fColor').style.color = css('--m' + i);
+}
+document.querySelectorAll('[data-mc]').forEach(b => b.onclick = () => { setMarkColor(+b.dataset.mc); setMode('mark'); });
+$('fColor').onclick = () => { setMarkColor((markColor + 1) % 3); setMode('mark'); };
 document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => setMode(b.dataset.mode));
 $('mDraw').onclick = () => setMode('draw');
 $('mErase').onclick = () => setMode('erase');
 $('fUndo').onclick = () => $('undo').onclick();
-$('undo').onclick = () => { const s = history.pop(); if (!s) return; columns = new Set(s.c); walls = new Set(s.w); doors = new Set(s.d || []); dirty = true; draw(); };
-$('clear').onclick = () => { snapshot(); columns.clear(); walls.clear(); doors.clear(); dirty = true; draw(); };
+$('undo').onclick = () => { const s = history.pop(); if (!s) return; columns = new Set(s.c); walls = new Set(s.w); doors = new Set(s.d || []); marks = new Map(s.m || []); dirty = true; draw(); };
+$('clear').onclick = () => { snapshot(); columns.clear(); walls.clear(); doors.clear(); marks.clear(); dirty = true; draw(); };
 for (const id of ['gw', 'gh']) {
   $(id).innerHTML = SIZES.map(n => `<option value="${n}">${n}</option>`).join('');
   $(id).onchange = () => {
@@ -376,6 +423,7 @@ for (const id of ['gw', 'gh']) {
     columns = new Set([...columns].filter(k => { const [x, y] = k.split(',').map(Number); return x < W && y < H; }));
     walls = new Set([...walls].filter(k => parseW(k).every(([x, y]) => x < W && y < H)));
     doors = new Set([...doors].filter(k => walls.has(k)));
+    marks = new Map([...marks].filter(([k]) => { const [x, y] = k.split(',').map(Number); return x < W - 1 && y < H - 1; }));
     dirty = true; layout();
   };
 }
@@ -410,7 +458,7 @@ function openPad(id) {
   const p = pads.find(q => q.id === id) || null;
   openId = p ? p.id : null; history = []; dirty = false;
   W = p ? (p.size || 9) : 13; H = p ? (p.rows || p.size || 9) : 21; setSizeSelects();
-  columns = new Set(p?.columns || []); walls = new Set(p?.walls || []); doors = new Set(p?.doors || []);
+  columns = new Set(p?.columns || []); walls = new Set(p?.walls || []); doors = new Set(p?.doors || []); marks = new Map(Object.entries(p?.marks || {}));
   $('title').value = p?.title || '';
   const c = isClaude(p);
   $('who').textContent = c ? 'Claude' : 'Tú';
@@ -431,7 +479,7 @@ function updateNoteLabel() {
 }
 function collect() {
   const p = pads.find(q => q.id === openId);
-  const base = { size: W, rows: H, kind, columns: [...columns], walls: [...walls], doors: [...doors].filter(k => walls.has(k)), title: $('title').value.trim(), updatedAt: Date.now() };
+  const base = { size: W, rows: H, kind, columns: [...columns], walls: [...walls], doors: [...doors].filter(k => walls.has(k)), marks: Object.fromEntries(marks), title: $('title').value.trim(), updatedAt: Date.now() };
   if (isClaude(p)) return { ...base, reply: $('note').value.trim() };
   return { ...base, desc: $('note').value.trim(), author: 'user', createdAt: p?.createdAt || Date.now() };
 }
@@ -494,7 +542,7 @@ function renderGallery() {
     const d = document.createElement('p'); d.textContent = (isClaude(p) && p.reply) ? '↳ ' + p.reply : (p.desc || ''); card.append(d);
     card.onclick = () => { openPad(p.id); window.scrollTo({ top: 0, behavior: 'smooth' }); };
     box.append(card);
-    drawInto(c.getContext('2d'), 200, 200, p.size || 9, p.rows || p.size || 9, new Set(p.columns || []), new Set(p.walls || []), new Set(p.doors || []));
+    drawInto(c.getContext('2d'), 200, 200, p.size || 9, p.rows || p.size || 9, new Set(p.columns || []), new Set(p.walls || []), new Set(p.doors || []), null, new Map(Object.entries(p.marks || {})));
   }
   $('out').value = exportJSON();
 }
@@ -553,13 +601,14 @@ const Gen = (() => {
   }
 
   function squareRoom(W, H) {
-    const w = rnd(5, Math.min(10, W - 3)), h = rnd(5, Math.min(10, H - 3));
+    // sides measured in whole doors: even lengths, so a centred door of 2 always fits (no half walls)
+    const w = 2 * rnd(2, Math.min(5, (W - 3) >> 1)), h = 2 * rnd(2, Math.min(5, (H - 3) >> 1));
     const x0 = rnd(1, W - 2 - w), y0 = rnd(1, H - 2 - h), x1 = x0 + w, y1 = y0 + h;
     const sides = {
-      arriba: [[x0 + 1, y0], [x1 - 1, y0], [0, -1]], derecha: [[x1, y0 + 1], [x1, y1 - 1], [1, 0]],
-      abajo: [[x1 - 1, y1], [x0 + 1, y1], [0, 1]], izquierda: [[x0, y1 - 1], [x0, y0 + 1], [-1, 0]],
+      arriba: [[x0, y0], [x1, y0], [0, -1]], derecha: [[x1, y0], [x1, y1], [1, 0]],
+      abajo: [[x1, y1], [x0, y1], [0, 1]], izquierda: [[x0, y1], [x0, y0], [-1, 0]],
     };
-    const outline = [sides.arriba[0], sides.arriba[1], sides.derecha[0], sides.derecha[1], sides.abajo[0], sides.abajo[1], sides.izquierda[0], sides.izquierda[1]];
+    const outline = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
     const walls = poly(outline, true), doors = [], extra = [], notes = [];
     for (const name of Object.keys(sides).filter(() => Math.random() < 0.5).slice(0, 2)) {
       const [a, b, n] = sides[name], dr = door(a, b);
@@ -567,17 +616,17 @@ const Gen = (() => {
       notes.push(`pared de ${name} mide ${dr.L} (${dr.L % 2 ? 'impar' : 'par'}) → puerta de ${dr.w} al centro`);
       if (Math.random() < 0.8) { const c = corridor(dr.p, dr.q, n, dr.w, W, H); extra.push(c); notes.push(c.text); }
     }
-    return { kind: `sala cuadrada ${w}×${h} con bisel`, outline, walls, doors, extra, notes,
+    return { kind: `sala cuadrada ${w}×${h}`, outline, walls, doors, extra, notes,
       columns: outline.map(p => vk(...p)) };
   }
 
   function diamondRoom(W, H) {
-    const r = rnd(3, Math.min(7, Math.floor((W - 3) / 2), Math.floor((H - 3) / 2)));
-    const cx = rnd(r + 1, W - r - 3), cy = rnd(r + 1, H - r - 3);
-    const T = [cx, cy - r], T2 = [cx + 1, cy - r], R = [cx + 1 + r, cy], R2 = [cx + 1 + r, cy + 1];
-    const B = [cx + 1, cy + 1 + r], B2 = [cx, cy + 1 + r], Lp = [cx - r, cy + 1], L2 = [cx - r, cy];
-    const outline = [T, T2, R, R2, B, B2, Lp, L2];
-    const sides = { 'arriba-derecha': [T2, R, [1, -1]], 'abajo-derecha': [R2, B, [1, 1]], 'abajo-izquierda': [B2, Lp, [-1, 1]], 'arriba-izquierda': [L2, T, [-1, -1]] };
+    // pointed rombo (a square turned 45°), sides even so the diagonal door of 2 is centred
+    const r = 2 * rnd(2, Math.min(3, Math.floor((W - 3) / 4), Math.floor((H - 3) / 4)));
+    const cx = rnd(r + 1, W - r - 2), cy = rnd(r + 1, H - r - 2);
+    const T = [cx, cy - r], R = [cx + r, cy], B = [cx, cy + r], Lp = [cx - r, cy];
+    const outline = [T, R, B, Lp];
+    const sides = { 'arriba-derecha': [T, R, [1, -1]], 'abajo-derecha': [R, B, [1, 1]], 'abajo-izquierda': [B, Lp, [-1, 1]], 'arriba-izquierda': [Lp, T, [-1, -1]] };
     const walls = poly(outline, true), doors = [], extra = [], notes = [`los lados diagonales miden ${r}`];
     for (const name of Object.keys(sides).filter(() => Math.random() < 0.5).slice(0, 2)) {
       const [a, b, n] = sides[name], dr = door(a, b);
@@ -585,7 +634,7 @@ const Gen = (() => {
       notes.push(`puerta diagonal de ${dr.w} al centro del lado ${name}`);
       if (Math.random() < 0.8) { const c = diagCorridor(dr.p, dr.q, n, dr.w); extra.push(c); notes.push(c.text); }
     }
-    return { kind: `sala en rombo (lado ${r}) con puntas rectas de 1`, outline, walls, doors, extra, notes,
+    return { kind: `sala en rombo (lado ${r})`, outline, walls, doors, extra, notes,
       columns: outline.map(p => vk(...p)) };
   }
 
@@ -626,16 +675,136 @@ const Gen = (() => {
   };
 })();
 
+// ---------- maze generator ----------
+// Nodes on a coarse lattice (every D points) are junctions, square rooms or rombo rooms.
+// A random spanning tree joins them with corridors 2 wide (straight or diagonal, never crossing).
+// The floor is rasterised per cell as full / empty / half (split by one diagonal), so every wall
+// is a whole grid segment and diagonals can never cross in X.
+const Maze = (() => {
+  const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = rnd(0, i); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const D = 8, M = 4, HSQ = 3, RRB = 4;
+  const DIR8 = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]];
+
+  return function maze(nx, ny) {
+    const W = D * (nx - 1) + 2 * M + 1, H = D * (ny - 1) + 2 * M + 1;
+    const id = (i, j) => j * nx + i;
+    const type = Array.from({ length: nx * ny }, () => { const r = Math.random(); return r < 0.2 ? 'sq' : r < 0.32 ? 'rb' : 'j'; });
+    const ok = (t, diag) => t === 'j' || (t === 'sq' && !diag) || (t === 'rb' && diag);
+    let edges, used;
+    const diagCell = (i, j, di, dj) => Math.min(i, i + di) + ',' + Math.min(j, j + dj);
+    const canLink = (i, j, di, dj) => {
+      const a = id(i, j), b = id(i + di, j + dj), diag = di && dj;
+      return ok(type[a], diag) && ok(type[b], diag) && (!diag || !used.has(diagCell(i, j, di, dj)));
+    };
+    const link = (i, j, di, dj) => { edges.push([i, j, i + di, j + dj]); if (di && dj) used.add(diagCell(i, j, di, dj)); };
+    for (let tries = 0; ; tries++) {
+      edges = []; used = new Set();
+      const seen = new Set([0]), stack = [[0, 0]];
+      if (type[0] === 'rb') type[0] = 'j';
+      while (stack.length) {
+        const [i, j] = stack[stack.length - 1];
+        const opts = shuffle(DIR8.filter(([di, dj]) => {
+          const a = i + di, b = j + dj;
+          return a >= 0 && b >= 0 && a < nx && b < ny && !seen.has(id(a, b)) && canLink(i, j, di, dj);
+        }));
+        if (!opts.length) { stack.pop(); continue; }
+        const [di, dj] = opts[0]; link(i, j, di, dj); seen.add(id(i + di, j + dj)); stack.push([i + di, j + dj]);
+      }
+      if (seen.size === nx * ny) break;
+      for (let k = 0; k < nx * ny; k++) if (!seen.has(k)) type[k] = 'j'; // isolated rooms become junctions
+    }
+    // a few extra links make loops, so it is a labyrinth and not just a tree
+    const have = new Set(edges.map(e => e.join(',')));
+    for (let k = 0; k < nx * ny * 0.15; k++) {
+      const i = rnd(0, nx - 1), j = rnd(0, ny - 1), [di, dj] = DIR8[rnd(0, 7)], a = i + di, b = j + dj;
+      if (a < 0 || b < 0 || a >= nx || b >= ny || have.has([i, j, a, b].join(',')) || have.has([a, b, i, j].join(','))) continue;
+      if (canLink(i, j, di, dj)) { link(i, j, di, dj); have.add([i, j, a, b].join(',')); }
+    }
+
+    const P = (i, j) => [M + i * D, M + j * D];
+    const shapes = [];
+    for (const [i, j, a, b] of edges) {
+      const [x1, y1] = P(i, j), [x2, y2] = P(a, b), dx = Math.sign(x2 - x1), dy = Math.sign(y2 - y1);
+      if (dx && dy) { // diagonal band: |perp| ≤ 2 in x±y units, cut square at each centre
+        const along = (x, y) => (x - x1) * dx + (y - y1) * dy, perp = (x, y) => (x - x1) * dy - (y - y1) * dx;
+        const L = along(x2, y2);
+        shapes.push((x, y) => Math.abs(perp(x, y)) <= 2 && along(x, y) >= 0 && along(x, y) <= L);
+      } else {
+        const lo = [Math.min(x1, x2) - 1, Math.min(y1, y2) - 1], hi = [Math.max(x1, x2) + 1, Math.max(y1, y2) + 1];
+        shapes.push((x, y) => x >= lo[0] && x <= hi[0] && y >= lo[1] && y <= hi[1]);
+      }
+    }
+    const columns = [], doorSegs = [], notes = { sq: 0, rb: 0 };
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+      const t = type[id(i, j)], [cx, cy] = P(i, j);
+      if (t === 'j') shapes.push((x, y) => Math.abs(x - cx) <= 1 && Math.abs(y - cy) <= 1); // junction hub
+      else if (t === 'sq') {
+        notes.sq++;
+        shapes.push((x, y) => Math.abs(x - cx) <= HSQ && Math.abs(y - cy) <= HSQ);
+        for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) columns.push(vk(cx + a * HSQ, cy + b * HSQ));
+      } else if (t === 'rb') {
+        notes.rb++;
+        shapes.push((x, y) => Math.abs(x - cx) + Math.abs(y - cy) <= RRB);
+        for (const [a, b] of [[0, -1], [1, 0], [0, 1], [-1, 0]]) columns.push(vk(cx + a * RRB, cy + b * RRB));
+      }
+    }
+    // doors where a corridor enters a room: 2 wide, centred on that wall
+    for (const [i, j, a, b] of edges) for (const [p, q] of [[[i, j], [a, b]], [[a, b], [i, j]]]) {
+      const t = type[id(...p)]; if (t === 'j') continue;
+      const [cx, cy] = P(...p), [qx, qy] = P(...q), d = [Math.sign(qx - cx), Math.sign(qy - cy)];
+      const k = t === 'sq' ? HSQ : RRB / 2, m = [cx + d[0] * k, cy + d[1] * k];
+      // perpendicular to the corridor: the other axis, or the other diagonal
+      const pr = d[0] && d[1] ? [d[1], -d[0]] : [Math.abs(d[1]), Math.abs(d[0])];
+      const s0 = [m[0] - pr[0], m[1] - pr[1]], s1 = [m[0] + pr[0], m[1] + pr[1]];
+      doorSegs.push(wk(s0, m), wk(m, s1));
+    }
+
+    // rasterise quarters → cell states
+    const inF = (x, y) => shapes.some(f => f(x, y));
+    const cell = new Uint8Array((W - 1) * (H - 1)); // bits N=1 E=2 S=4 W=8
+    for (let y = 0; y < H - 1; y++) for (let x = 0; x < W - 1; x++) {
+      let q = (inF(x + .5, y + 1 / 6) ? 1 : 0) | (inF(x + 5 / 6, y + .5) ? 2 : 0) | (inF(x + .5, y + 5 / 6) ? 4 : 0) | (inF(x + 1 / 6, y + .5) ? 8 : 0);
+      const n = (q & 1) + (q >> 1 & 1) + (q >> 2 & 1) + (q >> 3 & 1);
+      if (n >= 3 || q === 5 || q === 10) q = 15; else if (n < 2) q = 0;
+      cell[y * (W - 1) + x] = q;
+    }
+    const C = (x, y) => (x < 0 || y < 0 || x >= W - 1 || y >= H - 1) ? 0 : cell[y * (W - 1) + x];
+    const walls = [];
+    for (let y = 0; y < H; y++) for (let x = 0; x < W - 1; x++)
+      if (!!(C(x, y - 1) & 4) !== !!(C(x, y) & 1)) walls.push(wk([x, y], [x + 1, y]));
+    for (let y = 0; y < H - 1; y++) for (let x = 0; x < W; x++)
+      if (!!(C(x - 1, y) & 2) !== !!(C(x, y) & 8)) walls.push(wk([x, y], [x, y + 1]));
+    for (let y = 0; y < H - 1; y++) for (let x = 0; x < W - 1; x++) {
+      const q = C(x, y);
+      if (q === 3 || q === 12) walls.push(wk([x, y], [x + 1, y + 1]));
+      if (q === 9 || q === 6) walls.push(wk([x + 1, y], [x, y + 1]));
+    }
+    const ws = new Set([...walls, ...doorSegs]);
+    return {
+      size: W, rows: H, walls: [...ws], doors: [...new Set(doorSegs)], columns: [...new Set(columns)],
+      title: `Laberinto ${nx}×${ny}`,
+      desc: `Laberinto generado: ${nx * ny} nodos, ${notes.sq} salas cuadradas (6×6), ${notes.rb} salas en rombo (lado 4), pasillos de 2 rectos y diagonales sin cruces.\n\nMarca con 🖍 las celdas de piso donde veas errores y explica abajo.`,
+    };
+  };
+})();
+
+async function savePadGen(pad, msg) {
+  const id = 'r' + Date.now().toString(36);
+  try {
+    if (db) await db.collection(COL).doc(id).set(pad); else upsertLocal({ ...pad, id });
+    if (!pads.some(p => p.id === id)) pads = [...pads, { ...pad, id }];
+    openPad(id); window.scrollTo({ top: 0, behavior: 'smooth' }); toast(msg);
+  } catch (e) { toast('No se pudo guardar: ' + (e?.code || e?.message || 'error')); }
+}
+for (const [btn, n] of [['mazeS', 4], ['mazeL', 7], ['mazeXL', 10]]) $(btn).onclick = () => {
+  const m = Maze(n, n);
+  savePadGen({ author: 'claude', gen: true, ask: true, reply: '', kind: 'good', order: 2000 + pads.length, createdAt: Date.now(), marks: {}, ...m }, 'Laberinto generado');
+};
 $('genBtn').onclick = async () => {
   const g = Gen(13, 21);
   if (!g) { toast('No salió una pieza válida, prueba otra vez'); return; }
-  const id = 'r' + Date.now().toString(36);
-  const pad = { author: 'claude', gen: true, ask: true, reply: '', kind: 'good', size: 13, rows: 21, order: 1000 + pads.length, createdAt: Date.now(), ...g };
-  try {
-    if (db) await db.collection(COL).doc(id).set(pad); else upsertLocal({ ...pad, id });
-    pads = pads.some(p => p.id === id) ? pads : [...pads, { ...pad, id }];
-    openPad(id); window.scrollTo({ top: 0, behavior: 'smooth' }); toast('Ejemplo generado');
-  } catch (e) { toast('No se pudo guardar el ejemplo'); }
+  savePadGen({ author: 'claude', gen: true, ask: true, reply: '', kind: 'good', size: 13, rows: 21, order: 1000 + pads.length, createdAt: Date.now(), ...g }, 'Ejemplo generado');
 };
 
 // ---------- export ----------
@@ -694,6 +863,7 @@ addEventListener('scroll', placeThumb, { passive: true });
 addEventListener('resize', placeThumb);
 new ResizeObserver(placeThumb).observe(document.body);
 
+setMarkColor(0);
 // ---------- boot ----------
 new ResizeObserver(layout).observe(cv);
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { draw(); renderGallery(); });
