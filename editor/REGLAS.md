@@ -99,3 +99,12 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
   laberinto que prefiere girar (serpiente/espiral) y se ramifica; giros con bisel.
 - Cada sala abre a un pasillo vecino; los pasillos que no llevan a ninguna sala se cortan; pocos atajos.
 - Lo usa también 🏗 Construir sobre la cueva.
+
+## Particiones en pasadizos
+24. **Galerías**: un pasadizo (de 2, o grande de 8) con cuartitos a ambos lados separados por
+   paredes nuevas. Cada cuartito abre al pasadizo; algunos tienen otra puerta que sigue en otra
+   dirección (hasta 5 salidas); los demás son cámaras para enemigos o premios.
+25. **Compuertas**: algunos tramos de pasillo se cierran con una pared con puerta de lado a lado,
+   así cada tramo es un minicuarto que se abre para avanzar. Nunca delante de la puerta de una sala.
+26. **Vista de piso** (⬛): blanco = piso al que se llega desde la entrada; negro = afuera;
+   gris oscuro = encerrado sin acceso (roca maciza o una sala sin puerta).
