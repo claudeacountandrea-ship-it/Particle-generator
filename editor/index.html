@@ -106,6 +106,21 @@ body.full #fbar { display: flex; gap: 6px; position: fixed; left: 0; right: 0; b
 .chip.on { outline: 2px solid var(--ink); outline-offset: 1px; }
 #fColor { font-size: 22px; }
 @media (min-width: 1000px) { .wrap { max-width: 1200px; } }
+.refs { margin: 6px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
+.refs a { color: var(--accent); font-weight: 600; }
+#quiz { position: fixed; inset: 0; z-index: 20; background: var(--bg); display: flex; flex-direction: column; gap: 8px;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 12px calc(12px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; }
+#quiz[hidden] { display: none; }
+#qComment { flex: none; }
+.qtop { display: flex; align-items: center; gap: 10px; }
+.qtop b { flex: 1; font-size: 16px; }
+#qcv { flex: 1; min-height: 0; width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; touch-action: none; }
+.qreasons { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.qreasons .chip { min-height: 36px; font-size: 13px; }
+.qbtns { display: grid; grid-template-columns: 2fr 1fr 2fr; gap: 8px; }
+.qbtns button { min-height: 64px; font-size: 18px; font-weight: 600; }
+.qyes { background: var(--accent); color: var(--panel); border-color: var(--accent); }
+.qno { background: var(--danger); color: var(--panel); border-color: var(--danger); }
 #toast { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 6px; z-index: 9; }
 </style>
 
@@ -114,6 +129,9 @@ body.full #fbar { display: flex; gap: 6px; position: fixed; left: 0; right: 0; b
     <h1>Masmorra Sketch</h1>
     <span class="sync" id="sync">cargando…</span>
   </header>
+  <div class="bar">
+    <button id="quizBtn" class="primary">🎯 Test rápido: aprobar o rechazar áreas</button>
+  </div>
 
   <div class="row">
     <span class="who user" id="who">Tú</span>
@@ -182,6 +200,20 @@ body.full #fbar { display: flex; gap: 6px; position: fixed; left: 0; right: 0; b
   </div>
   <div id="gallery"></div>
 
+  <details id="refs">
+    <summary>📚 Masmorras de referencia (se abren en otra pestaña)</summary>
+    <ul class="refs">
+      <li><a href="https://dysonlogos.blog/2019/08/22/delve-top-bottom/" target="_blank" rel="noopener">Dyson Logos — Megadelve</a>: decenas de mapas dibujados a mano que se unen en una sola megamasmorra. Mira cómo usa paredes diagonales y salas en ángulo.</li>
+      <li><a href="https://dysonlogos.blog/" target="_blank" rel="noopener">Blog de Dyson Logos</a>: cientos de mapas gratis. Busca “dungeon” o “delve”.</li>
+      <li><a href="https://80.lv/articles/unexplored-a-game-with-cyclic-dungeon-generation/" target="_blank" rel="noopener">Unexplored — generación cíclica</a>: masmorras armadas con bucles con propósito (atajo, llave y puerta, ruta alternativa).</li>
+      <li><a href="https://thealexandrian.net/wordpress/13085/roleplaying-games/jaquaying-the-dungeon" target="_blank" rel="noopener">Jaquaying the dungeon</a>: análisis de mapas clásicos con varios caminos, atajos y pasajes secretos.</li>
+      <li><a href="https://tinysubversions.com/spelunkyGen/" target="_blank" rel="noopener">Generador de Spelunky (interactivo)</a>: cómo traza el camino principal sobre una cuadrícula de salas.</li>
+      <li><a href="https://journal.stuffwithstuff.com/2014/12/21/rooms-and-mazes/" target="_blank" rel="noopener">Rooms and Mazes</a>: salas + laberinto que llena todo el espacio, con animaciones paso a paso.</li>
+      <li><a href="https://zeldauniverse.net/2017/01/26/explore-zelda-dungeon-design-in-mark-browns-youtube-series-boss-keys/" target="_blank" rel="noopener">Boss Keys (Zelda)</a>: mapas de mazmorras de Zelda y sus diagramas de llaves y atajos.</li>
+      <li>Megamasmorras clásicas para buscar por nombre: Undermountain, Barrowmaze, Stonehell, Castle Greyhawk, Rappan Athuk, Caverns of Thracia.</li>
+    </ul>
+  </details>
+
   <details>
     <summary>Exportar / importar JSON (para Kaggle)</summary>
     <div class="field">
@@ -211,6 +243,31 @@ body.full #fbar { display: flex; gap: 6px; position: fixed; left: 0; right: 0; b
   <button id="fLine" class="on">📏</button>
   <button id="fUndo">↶</button>
   <button id="fExit">✕ Salir</button>
+</div>
+<div id="quiz" hidden>
+  <div class="qtop">
+    <b>🎯 ¿Esta zona está bien hecha?</b>
+    <span class="stat" id="qCount"></span>
+    <button id="qExit">✕ Salir</button>
+  </div>
+  <canvas id="qcv"></canvas>
+  <p class="help" style="margin:0">Raya con el dedo en <b style="color: var(--m0)">rojo</b> dónde está el error (toca otra vez para borrar).</p>
+  <input type="text" id="qComment" placeholder="Comentario: qué está mal o cómo lo corregirías (opcional)" style="font-weight:400">
+  <div class="qreasons" id="qReasons">
+    <span class="help">Si la rechazas, ¿por qué? (opcional)</span>
+    <button class="chip" data-r="angulo90">Ángulo de 90°</button>
+    <button class="chip" data-r="punta">Punta aguda</button>
+    <button class="chip" data-r="puerta">Puerta mal puesta</button>
+    <button class="chip" data-r="bisel">Falta o sobra bisel</button>
+    <button class="chip" data-r="pasillo">Pasillo raro</button>
+    <button class="chip" data-r="espacio">Espacio perdido</button>
+    <button class="chip" data-r="otro">Otro</button>
+  </div>
+  <div class="qbtns">
+    <button id="qNo" class="qno">✗ Rechazar</button>
+    <button id="qSkip">Saltar</button>
+    <button id="qYes" class="qyes">✓ Aprobar</button>
+  </div>
 </div>
 <div id="toast" hidden></div>
 
@@ -1001,6 +1058,85 @@ addEventListener('resize', placeThumb);
 new ResizeObserver(placeThumb).observe(document.body);
 
 setMarkColor(0);
+
+// ---------- quick test: approve / reject small areas, saved as training data ----------
+const RATE = 'ratings';
+let qPiece = null, qSource = null, qDone = 0, qReasons = new Set(), qMarks = new Map(), qPaint = null;
+function cropPiece(m, n) {
+  // a random n×n window of a generated dungeon that has something in it
+  for (let t = 0; t < 40; t++) {
+    const x0 = Math.floor(Math.random() * (m.size - n + 1)), y0 = Math.floor(Math.random() * (m.rows - n + 1));
+    const inW = ([x, y]) => x >= x0 && y >= y0 && x < x0 + n && y < y0 + n;
+    const mv = ([x, y]) => [x - x0, y - y0];
+    const walls = m.walls.filter(k => parseW(k).every(inW));
+    if (walls.length < 18) continue;
+    const ws = new Set(walls);
+    const tr = k => { const [a, b] = parseW(k).map(mv); return wk(a, b); };
+    return {
+      size: n, rows: n, walls: walls.map(tr), doors: m.doors.filter(k => ws.has(k)).map(tr),
+      columns: m.columns.map(k => k.split(',').map(Number)).filter(inW).map(p => vk(...mv(p))),
+      from: { x0, y0, source: m.title },
+    };
+  }
+  return null;
+}
+function nextPiece() {
+  if (!qSource || Math.random() < 0.25) qSource = Maze(4, 4);
+  qPiece = cropPiece(qSource, [17, 21, 25][Math.floor(Math.random() * 3)]);
+  if (!qPiece) { qSource = null; return nextPiece(); }
+  qReasons.clear(); document.querySelectorAll('[data-r]').forEach(b => b.classList.remove('on'));
+  qMarks = new Map(); $('qComment').value = '';
+  drawQuiz();
+}
+function drawQuiz() {
+  const c = $('qcv'), r = c.getBoundingClientRect(), dpr = devicePixelRatio || 1;
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const p = qPiece;
+  drawInto(g, r.width, r.height, p.size, p.rows, new Set(p.columns), new Set(p.walls), new Set(p.doors), null, qMarks);
+  $('qCount').textContent = `${qDone} respondidas`;
+}
+async function rate(verdict) {
+  const rec = { verdict, reasons: [...qReasons], comment: $('qComment').value.trim(), marks: Object.fromEntries(qMarks), piece: qPiece, createdAt: Date.now(), generator: 'masmorra-v4' };
+  try {
+    if (db) await db.collection(RATE).add(rec);
+    else { const L = JSON.parse(localStorage.getItem('masmorra-ratings') || '[]'); L.push(rec); localStorage.setItem('masmorra-ratings', JSON.stringify(L)); }
+    qDone++;
+  } catch (e) { toast('No se pudo guardar la respuesta'); }
+  nextPiece();
+}
+document.querySelectorAll('[data-r]').forEach(b => b.onclick = () => {
+  const r = b.dataset.r; qReasons.has(r) ? qReasons.delete(r) : qReasons.add(r); b.classList.toggle('on', qReasons.has(r));
+});
+// red marker: paint the floor cells where the mistake is
+function qMarkAt(e) {
+  const c = $('qcv'), r = c.getBoundingClientRect(), G = fit(r.width, r.height, qPiece.size, qPiece.rows);
+  const x = Math.floor((e.clientX - r.left - G.ox) / G.s), y = Math.floor((e.clientY - r.top - G.oy) / G.s);
+  if (x < 0 || y < 0 || x >= qPiece.size - 1 || y >= qPiece.rows - 1) return;
+  const k = vk(x, y);
+  if (qPaint === null) qPaint = !qMarks.has(k);
+  qPaint ? qMarks.set(k, 0) : qMarks.delete(k);
+  drawQuiz();
+}
+$('qcv').addEventListener('pointerdown', e => { if (!qPiece) return; $('qcv').setPointerCapture(e.pointerId); qPaint = null; qMarkAt(e); });
+$('qcv').addEventListener('pointermove', e => { if (qPaint !== null) qMarkAt(e); });
+$('qcv').addEventListener('pointerup', () => qPaint = null);
+$('qcv').addEventListener('pointercancel', () => qPaint = null);
+$('qYes').onclick = () => rate('ok');
+$('qNo').onclick = () => rate('bad');
+$('qSkip').onclick = () => nextPiece();
+$('qExit').onclick = () => { $('quiz').hidden = true; document.body.style.overflow = ''; };
+$('quizBtn').onclick = async () => {
+  $('quiz').hidden = false; document.body.style.overflow = 'hidden';
+  if (db) { try { qDone = (await db.collection(RATE).get()).size; } catch {} }
+  nextPiece();
+};
+addEventListener('keydown', e => {
+  if ($('quiz').hidden || e.target === $('qComment')) return;
+  if (e.key === 'ArrowRight') rate('ok'); else if (e.key === 'ArrowLeft') rate('bad'); else if (e.key === 'ArrowDown') nextPiece();
+});
+addEventListener('resize', () => { if (!$('quiz').hidden && qPiece) drawQuiz(); });
+
 // ---------- boot ----------
 new ResizeObserver(layout).observe(cv);
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { draw(); renderGallery(); });
