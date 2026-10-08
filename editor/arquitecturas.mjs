@@ -2,7 +2,7 @@ import fs from 'fs';
 const vk=(x,y)=>x+','+y;
 function wk(a,b){const [p,q]=(a[1]<b[1]||(a[1]===b[1]&&a[0]<=b[0]))?[a,b]:[b,a];return vk(p[0],p[1])+'|'+vk(q[0],q[1]);}
 const parseW = k => k.split('|').map(s => s.split(',').map(Number));
-eval(fs.readFileSync('/tmp/claude-0/grand.js','utf8').replace('const Grand','globalThis.Grand').replace('const Build','globalThis.Build').replace('const bevelRect','globalThis.bevelRect').replace('const rombo','globalThis.rombo'));
+eval(fs.readFileSync('/tmp/claude-0/grand2.js','utf8').replace('const Grand','globalThis.Grand').replace('const Build','globalThis.Build').replace('const bevelRect','globalThis.bevelRect').replace('const rombo','globalThis.rombo'));
 const R = (x0,y0,x1,y1,b=0) => bevelRect(x0,y0,x1,y1,b);
 // shapes: [name, f]; later shapes paint over earlier ones. links: [nameA, nameB]. out: [name, 'bottom'|'top'] door to outside
 function arch(W, H, shapes, links, out, mirror) {

@@ -58,3 +58,15 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
 - ¿Se puede poner puerta en un bisel?
 - ¿Las uniones en T necesitan bisel?
 - ¿El bisel puede medir 2 o más?
+
+## Correcciones de la gran masmorra
+16. **Nada de espacios de 1 entre paredes**: o comparten pared o dejan sitio para pasar (≥ 2).
+17. **Una puerta no puede chocar con otra pared**: ni en sus extremos ni en medio.
+18. **Columnas apagadas por ahora** (tapaban uniones malas). Más adelante: columnas hechas solo de
+   pared (cuadrado, rombo u octógono). Los puntos son minicolumnas en las uniones.
+19. La gran masmorra debe ser **ordenada y usar rectas y diagonales**: esqueleto con avenidas
+   diagonales desde el gran salón, después el relleno.
+
+## Idea pendiente
+- **Cueva que se convierte en masmorra**: generar primero una cueva orgánica y después
+  "construir" sobre ella salas, túneles y conexiones con nuestras reglas.
