@@ -1,0 +1,344 @@
+<title>Masmorra Sketch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Grenze+Gotisch:wght@600&display=swap">
+<style>
+/* Layout: one-screen tool — header, square canvas, thumb-reach toolbar, saved-examples strip below */
+:root {
+  --bg: #eef0ec;
+  --panel: #f8f9f6;
+  --ink: #23271f;
+  --muted: #6b7163;
+  --grid: #b9beb1;
+  --wall: #3a3226;
+  --col: #8a5a2b;
+  --accent: #4f6b3a;
+  --danger: #a3402f;
+  --line: #d5d9cf;
+  --f-display: "Grenze Gotisch", Georgia, serif;
+  --f-ui: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161813; --panel: #1f221b; --ink: #e4e6dd; --muted: #939988; --grid: #4a4f42;
+    --wall: #e8dcc4; --col: #d39a5c; --accent: #9cbc7e; --danger: #e07a64; --line: #33372d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161813; --panel: #1f221b; --ink: #e4e6dd; --muted: #939988; --grid: #4a4f42;
+  --wall: #e8dcc4; --col: #d39a5c; --accent: #9cbc7e; --danger: #e07a64; --line: #33372d;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font: 13px/1.4 var(--f-ui); }
+.wrap { max-width: 560px; margin: 0 auto; padding-inline: 16px; padding-block: 10px 24px; display: flex; flex-direction: column; gap: 10px; }
+header { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+h1 { font: 600 28px/1 var(--f-display); margin: 0; letter-spacing: .5px; }
+.stat { color: var(--muted); font-variant-numeric: tabular-nums; }
+#cv { width: 100%; aspect-ratio: 1; max-width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; touch-action: none; display: block; }
+.bar { display: flex; flex-wrap: wrap; gap: 6px; }
+button, select, input { font: inherit; color: var(--ink); }
+button { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; min-height: 42px; cursor: pointer; }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button.on { background: var(--accent); color: var(--panel); border-color: var(--accent); }
+button.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); flex: 1; }
+button.warn { color: var(--danger); }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+label { color: var(--muted); }
+select, input[type=text] { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 8px; min-height: 40px; }
+input[type=text] { flex: 1; min-width: 0; }
+.help { color: var(--muted); margin: 0; }
+.help b { color: var(--ink); font-weight: 600; }
+h2 { font: 600 20px/1 var(--f-display); margin: 8px 0 0; }
+#saved { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px; display: flex; flex-direction: column; gap: 2px; cursor: pointer; }
+.card canvas { width: 100%; aspect-ratio: 1; display: block; }
+.card span { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.empty { color: var(--muted); grid-column: 1 / -1; }
+textarea { width: 100%; box-sizing: border-box; min-height: 120px; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 8px; font: 11px/1.35 var(--f-ui); }
+#toast { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 6px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Masmorra Sketch</h1>
+    <span class="stat" id="stat"></span>
+  </header>
+
+  <canvas id="cv"></canvas>
+
+  <div class="bar">
+    <button id="mDraw" class="on">✎ Dibujar</button>
+    <button id="mErase">⌫ Borrar</button>
+    <button id="undo">↶ Deshacer</button>
+    <button id="clear" class="warn">Limpiar</button>
+  </div>
+
+  <p class="help"><b>Toca</b> un punto = columna. <b>Arrastra</b> de punto a punto = pared (8 vecinos: rectas y diagonales). En modo Borrar, toca o arrastra para quitar.</p>
+
+  <div class="row">
+    <label for="size">Grid</label>
+    <select id="size">
+      <option value="5">5×5</option><option value="7">7×7</option><option value="9" selected>9×9</option>
+      <option value="11">11×11</option><option value="13">13×13</option><option value="17">17×17</option>
+    </select>
+    <input type="text" id="tag" placeholder="etiqueta (sala, pasillo…)">
+  </div>
+  <div class="bar">
+    <button id="save" class="primary">Guardar ejemplo</button>
+    <button id="newEx">Nuevo</button>
+  </div>
+
+  <h2>Ejemplos guardados</h2>
+  <div id="saved"></div>
+
+  <h2>Exportar para entrenar</h2>
+  <p class="help">JSON con todos los ejemplos. Cada uno trae <b>columns</b>, <b>walls</b> y <b>grid</b>: por vértice [columna, E, SE, S, SO] (0/1). Cópialo y pégalo en un archivo .json para Kaggle.</p>
+  <div class="bar">
+    <button id="copy" class="primary">Copiar JSON</button>
+    <button id="import">Importar del cuadro</button>
+    <button id="wipe" class="warn">Borrar todos</button>
+  </div>
+  <textarea id="out" spellcheck="false"></textarea>
+</div>
+<div id="toast" hidden></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const cv = $('cv'), ctx = cv.getContext('2d');
+const KEY = 'masmorra-sketch-v1';
+
+let N = 9;                 // vertices per side
+let columns = new Set();   // "x,y"
+let walls = new Set();     // "x1,y1|x2,y2" normalized
+let mode = 'draw';
+let history = [];
+let editingIndex = -1;
+let examples = load();
+
+function load() { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return []; } }
+function persist() { try { localStorage.setItem(KEY, JSON.stringify(examples)); } catch {} }
+
+const vk = (x, y) => x + ',' + y;
+function wk(a, b) {
+  const [p, q] = (a[1] < b[1] || (a[1] === b[1] && a[0] <= b[0])) ? [a, b] : [b, a];
+  return vk(p[0], p[1]) + '|' + vk(q[0], q[1]);
+}
+const parseW = k => k.split('|').map(s => s.split(',').map(Number));
+
+function snapshot() { history.push({ c: [...columns], w: [...walls] }); if (history.length > 200) history.shift(); }
+function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+// ---------- geometry ----------
+let pad, step;
+function layout() {
+  const r = cv.getBoundingClientRect(), dpr = devicePixelRatio || 1;
+  cv.width = r.width * dpr; cv.height = r.width * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  pad = r.width * 0.06;
+  step = (r.width - 2 * pad) / (N - 1);
+  draw();
+}
+const px = x => pad + x * step;
+
+function drawInto(c, size, n, cols, ws, live) {
+  const g = c.getContext('2d');
+  const p = live ? pad : size * 0.08, s = live ? step : (size - 2 * p) / (n - 1);
+  const X = v => p + v * s;
+  g.clearRect(0, 0, size, size);
+  // faint cells
+  g.strokeStyle = css('--line'); g.lineWidth = 1;
+  for (let i = 0; i < n; i++) {
+    g.beginPath(); g.moveTo(X(i), X(0)); g.lineTo(X(i), X(n - 1)); g.stroke();
+    g.beginPath(); g.moveTo(X(0), X(i)); g.lineTo(X(n - 1), X(i)); g.stroke();
+  }
+  // walls
+  g.strokeStyle = css('--wall'); g.lineCap = 'round';
+  g.lineWidth = Math.max(2, s * 0.18);
+  for (const k of ws) { const [a, b] = parseW(k); g.beginPath(); g.moveTo(X(a[0]), X(a[1])); g.lineTo(X(b[0]), X(b[1])); g.stroke(); }
+  // vertices
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    if (cols.has(vk(x, y))) {
+      g.fillStyle = css('--col'); const r = Math.max(3, s * 0.2);
+      g.fillRect(X(x) - r, X(y) - r, 2 * r, 2 * r);
+    } else {
+      g.fillStyle = css('--grid'); g.beginPath(); g.arc(X(x), X(y), Math.max(1.2, s * 0.06), 0, 7); g.fill();
+    }
+  }
+}
+
+let cursor = null; // {x,y} active vertex while dragging
+function draw() {
+  const size = cv.getBoundingClientRect().width;
+  drawInto(cv, size, N, columns, walls, true);
+  if (cursor) {
+    ctx.strokeStyle = mode === 'draw' ? css('--accent') : css('--danger'); ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(px(cursor.x), px(cursor.y), step * 0.32, 0, 7); ctx.stroke();
+  }
+  $('stat').textContent = `${N}×${N} · ${columns.size} col · ${walls.size} paredes`;
+}
+
+function hit(e, radius = 0.45) {
+  const r = cv.getBoundingClientRect();
+  const fx = (e.clientX - r.left - pad) / step, fy = (e.clientY - r.top - pad) / step;
+  const x = Math.round(fx), y = Math.round(fy);
+  if (x < 0 || y < 0 || x >= N || y >= N) return null;
+  return Math.hypot(fx - x, fy - y) <= radius ? { x, y, fx, fy } : { x: null, fx, fy };
+}
+
+// ---------- pointer ----------
+let dragging = false, moved = false, changed = false;
+cv.addEventListener('pointerdown', e => {
+  const h = hit(e, 0.5);
+  cv.setPointerCapture(e.pointerId);
+  dragging = true; moved = false; changed = false;
+  snapshot();
+  if (h && h.x !== null) cursor = { x: h.x, y: h.y };
+  else { cursor = null; if (mode === 'erase' && h) eraseNearestWall(h.fx, h.fy); }
+  draw();
+});
+cv.addEventListener('pointermove', e => {
+  if (!dragging || !cursor) return;
+  const h = hit(e, 0.38);
+  if (!h || h.x === null || (h.x === cursor.x && h.y === cursor.y)) return;
+  const dx = h.x - cursor.x, dy = h.y - cursor.y;
+  if (Math.abs(dx) > 1 || Math.abs(dy) > 1) return; // only 8 neighbours
+  const k = wk([cursor.x, cursor.y], [h.x, h.y]);
+  if (mode === 'draw') walls.add(k); else walls.delete(k);
+  changed = true; moved = true; cursor = { x: h.x, y: h.y }; draw();
+});
+function end() {
+  if (!dragging) return;
+  dragging = false;
+  if (cursor && !moved) {
+    const k = vk(cursor.x, cursor.y);
+    if (mode === 'draw') { columns.has(k) ? columns.delete(k) : columns.add(k); }
+    else columns.delete(k);
+    changed = true;
+  }
+  if (!changed) history.pop();
+  cursor = null; draw();
+}
+cv.addEventListener('pointerup', end);
+cv.addEventListener('pointercancel', end);
+
+function eraseNearestWall(fx, fy) {
+  let best = null, bd = 0.3;
+  for (const k of walls) {
+    const [a, b] = parseW(k), mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+    const d = Math.hypot(fx - mx, fy - my);
+    if (d < bd) { bd = d; best = k; }
+  }
+  if (best) { walls.delete(best); changed = true; }
+}
+
+// ---------- controls ----------
+function setMode(m) { mode = m; $('mDraw').classList.toggle('on', m === 'draw'); $('mErase').classList.toggle('on', m === 'erase'); }
+$('mDraw').onclick = () => setMode('draw');
+$('mErase').onclick = () => setMode('erase');
+$('undo').onclick = () => { const s = history.pop(); if (!s) return; columns = new Set(s.c); walls = new Set(s.w); draw(); };
+$('clear').onclick = () => { snapshot(); columns.clear(); walls.clear(); draw(); };
+$('size').onchange = e => {
+  const n = +e.target.value;
+  snapshot();
+  columns = new Set([...columns].filter(k => k.split(',').every(v => +v < n)));
+  walls = new Set([...walls].filter(k => parseW(k).flat().every(v => v < n)));
+  N = n; layout();
+};
+
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 1600); }
+
+// ML-friendly per-vertex encoding: [column, E, SE, S, SW]
+function encode(n, cols, ws) {
+  const dirs = [[1, 0], [1, 1], [0, 1], [-1, 1]];
+  const grid = [];
+  for (let y = 0; y < n; y++) {
+    const row = [];
+    for (let x = 0; x < n; x++) {
+      row.push([cols.has(vk(x, y)) ? 1 : 0, ...dirs.map(([dx, dy]) => {
+        const nx = x + dx, ny = y + dy;
+        return nx >= 0 && ny >= 0 && nx < n && ny < n && ws.has(wk([x, y], [nx, ny])) ? 1 : 0;
+      })]);
+    }
+    grid.push(row);
+  }
+  return grid;
+}
+function current() {
+  return {
+    size: N, tag: $('tag').value.trim(),
+    columns: [...columns].map(k => k.split(',').map(Number)),
+    walls: [...walls].map(k => parseW(k).flat()),
+  };
+}
+$('save').onclick = () => {
+  if (!columns.size && !walls.size) { toast('Dibuja algo primero'); return; }
+  const ex = current();
+  if (editingIndex >= 0) { examples[editingIndex] = ex; toast(`Ejemplo ${editingIndex + 1} actualizado`); }
+  else { examples.push(ex); editingIndex = examples.length - 1; toast(`Guardado #${examples.length}`); }
+  persist(); renderSaved();
+};
+$('newEx').onclick = () => { snapshot(); columns.clear(); walls.clear(); editingIndex = -1; $('tag').value = ''; draw(); renderSaved(); };
+
+function openEx(i) {
+  const ex = examples[i]; snapshot();
+  N = ex.size; $('size').value = String(N);
+  columns = new Set(ex.columns.map(([x, y]) => vk(x, y)));
+  walls = new Set(ex.walls.map(w => wk([w[0], w[1]], [w[2], w[3]])));
+  $('tag').value = ex.tag || ''; editingIndex = i; layout(); renderSaved();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderSaved() {
+  const box = $('saved'); box.innerHTML = '';
+  if (!examples.length) { box.innerHTML = '<p class="empty">Aún no hay ejemplos. Dibuja una sala o un pasillo y pulsa Guardar.</p>'; }
+  examples.forEach((ex, i) => {
+    const card = document.createElement('div'); card.className = 'card';
+    if (i === editingIndex) card.style.borderColor = css('--accent');
+    const c = document.createElement('canvas'); const S = 160; c.width = S; c.height = S;
+    card.append(c);
+    const sp = document.createElement('span'); sp.textContent = `#${i + 1} ${ex.tag || ''}`; card.append(sp);
+    card.onclick = () => openEx(i);
+    box.append(card);
+    drawInto(c, S, ex.size, new Set(ex.columns.map(([x, y]) => vk(x, y))), new Set(ex.walls.map(w => wk([w[0], w[1]], [w[2], w[3]]))), false);
+  });
+  $('out').value = exportJSON();
+}
+function exportJSON() {
+  return JSON.stringify({
+    format: 'masmorra-sketch/1',
+    note: 'grid[y][x] = [column, wall_E, wall_SE, wall_S, wall_SW]',
+    examples: examples.map(ex => ({ ...ex, grid: encode(ex.size, new Set(ex.columns.map(([x, y]) => vk(x, y))), new Set(ex.walls.map(w => wk([w[0], w[1]], [w[2], w[3]])))) })),
+  });
+}
+$('copy').onclick = () => {
+  const t = $('out'); t.value = exportJSON();
+  const fallback = () => { t.focus(); t.select(); toast('Seleccionado: copia manualmente'); };
+  if (navigator.clipboard) navigator.clipboard.writeText(t.value).then(() => toast(`Copiados ${examples.length} ejemplos`), fallback);
+  else fallback();
+};
+$('import').onclick = () => {
+  try {
+    const d = JSON.parse($('out').value);
+    const list = (d.examples || d).map(({ size, tag, columns, walls }) => ({ size, tag, columns, walls }));
+    examples = list; persist(); editingIndex = -1; renderSaved(); toast(`Importados ${list.length}`);
+  } catch { toast('JSON no válido'); }
+};
+let wipeArm = false;
+$('wipe').onclick = () => {
+  if (!wipeArm) { wipeArm = true; $('wipe').textContent = '¿Seguro? toca otra vez'; setTimeout(() => { wipeArm = false; $('wipe').textContent = 'Borrar todos'; }, 3000); return; }
+  examples = []; persist(); editingIndex = -1; wipeArm = false; $('wipe').textContent = 'Borrar todos'; renderSaved();
+};
+
+// Starter sample so the canvas shows what it does: a small room with a diagonal corner and two pillars
+if (!examples.length) {
+  [[1,1],[7,1],[1,7],[4,4]].forEach(([x,y]) => columns.add(vk(x,y)));
+  const path = [[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],[7,2],[7,3],[7,4],[7,5],[6,6],[5,7],[4,7],[3,7],[2,7],[1,7],[1,6],[1,5]];
+  for (let i = 1; i < path.length; i++) walls.add(wk(path[i-1], path[i]));
+  [[1,3],[1,2],[1,1]].reduce((a,b) => (walls.add(wk(a,b)), b));
+  $('tag').value = 'ejemplo: sala con esquina diagonal';
+}
+new ResizeObserver(layout).observe(cv);
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { draw(); renderSaved(); });
+renderSaved(); layout();
+</script>
