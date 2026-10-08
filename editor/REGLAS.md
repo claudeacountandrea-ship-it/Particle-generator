@@ -29,6 +29,11 @@ con la ronda 2 de ejemplos (`seed_round2.py`).
    (pasillos diagonales). Cuadrado: puertas en sus lados rectos. El bisel o la punta solo se
    usaría como puerta si no hay otra opción.
 12. **Sin pasillos ciegos**: todo pasillo termina en una sala.
+13. **Salas en serpiente**: una sala grande dividida por muros internos con puertas en extremos
+   alternos, para que haya que zigzaguear. *(pizarra "cuarto laberinto semi-zigzag")*
+14. **Salas pegadas sin conexión directa**: comparten pared pero se llega dando la vuelta por un
+   pasillo que las rodea. *(pizarra "cuartos separados pero con misma pared")*
+15. Pasillos de ancho 1 también valen.
 10. **Salas grandes** (10×10, 14×14) y **salas vecinas que comparten pared**, con puerta de 2 al centro.
 9. **Paredes cruzadas delimitan el espacio de una pared** (por confirmar cómo se aplica).
 8. **Cruces diagonales**: un pasillo diagonal puede tener una rama perpendicular,
