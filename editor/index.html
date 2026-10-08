@@ -36,7 +36,7 @@ header { display: flex; align-items: baseline; justify-content: space-between; g
 h1 { font: 600 34px/1 var(--f-display); margin: 0; letter-spacing: .5px; }
 h2 { font: 600 26px/1 var(--f-display); margin: 14px 0 0; }
 .stat, .sync { color: var(--muted); font-variant-numeric: tabular-nums; }
-#cv { width: 100%; aspect-ratio: 1; max-width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; touch-action: none; display: block; }
+#cv { width: 100%; height: 70vh; max-width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; touch-action: none; display: block; }
 .bar { display: flex; flex-wrap: wrap; gap: 6px; }
 button, select, input, textarea { font: inherit; color: var(--ink); }
 button { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; min-height: 48px; cursor: pointer; }
@@ -83,6 +83,19 @@ details summary { cursor: pointer; color: var(--muted); padding-block: 6px; }
 #track { position: relative; flex: 1; width: 100%; cursor: grab; }
 #track::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; transform: translateX(-50%); background: var(--line); }
 #thumb { position: absolute; left: 6px; right: 6px; height: 64px; border-radius: 8px; background: var(--accent); opacity: .85; }
+.kind { display: flex; gap: 6px; }
+.kind button { flex: 1; min-height: 40px; padding: 6px 10px; }
+.kind button.on-good { background: var(--accent); color: var(--panel); border-color: var(--accent); }
+.kind button.on-avoid { background: var(--danger); color: var(--panel); border-color: var(--danger); }
+.card.avoid { border-style: dashed; border-color: var(--danger); }
+.card .bad { font-size: 12px; color: var(--danger); font-weight: 600; }
+/* full-screen drawing: canvas fills the screen, a compact toolbar sits at the bottom */
+#fbar { display: none; }
+body.full { overflow: hidden; }
+body.full #rail, body.full .wrap > :not(#cv) { display: none !important; }
+body.full #cv { position: fixed; left: 0; right: 0; top: env(safe-area-inset-top, 0px); width: 100%; height: calc(100dvh - 64px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); border: 0; border-radius: 0; z-index: 10; }
+body.full #fbar { display: flex; gap: 6px; position: fixed; left: 0; right: 0; bottom: 0; padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px)); background: var(--panel); border-top: 1px solid var(--line); z-index: 11; }
+#fbar button { flex: 1; padding: 6px; }
 #toast { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 6px; z-index: 9; }
 </style>
 
@@ -97,6 +110,10 @@ details summary { cursor: pointer; color: var(--muted); padding-block: 6px; }
     <input type="text" id="title" placeholder="Nombre de la pizarra">
   </div>
   <p class="claude-note" id="claudeNote" hidden></p>
+  <div class="kind" role="group" aria-label="Tipo de ejemplo">
+    <button id="kGood">✓ Ejemplo bueno</button>
+    <button id="kAvoid">✗ Borrador a evitar</button>
+  </div>
 
   <canvas id="cv"></canvas>
   <div class="row" style="justify-content: space-between">
@@ -105,14 +122,15 @@ details summary { cursor: pointer; color: var(--muted); padding-block: 6px; }
   </div>
 
   <div class="bar">
-    <button id="mDraw" class="on">✎ Dibujar</button>
-    <button id="mErase">⌫ Borrar</button>
+    <button id="mDraw" data-mode="draw" class="on">✎ Dibujar</button>
+    <button id="mErase" data-mode="erase">⌫ Borrar</button>
     <button id="undo">↶</button>
     <button id="clear" class="warn">Limpiar</button>
-    <select id="size" aria-label="Tamaño del grid">
-      <option value="5">5×5</option><option value="7">7×7</option><option value="9" selected>9×9</option>
-      <option value="11">11×11</option><option value="13">13×13</option><option value="17">17×17</option>
-    </select>
+    <button id="fullBtn">⛶ Pantalla completa</button>
+  </div>
+  <div class="row">
+    <label for="gw">Ancho</label><select id="gw"></select>
+    <label for="gh">Alto</label><select id="gh"></select>
   </div>
   <p class="help"><b>Toca</b> un punto = columna. <b>Arrastra</b> de punto a punto = pared (8 vecinos: rectas y diagonales).</p>
 
@@ -131,6 +149,7 @@ details summary { cursor: pointer; color: var(--muted); padding-block: 6px; }
     <button data-f="claude">De Claude</button>
     <button data-f="todo">Para responder</button>
     <button data-f="user">Tuyas</button>
+    <button data-f="avoid">A evitar</button>
   </div>
   <div id="gallery"></div>
 
@@ -151,6 +170,12 @@ details summary { cursor: pointer; color: var(--muted); padding-block: 6px; }
   <div id="track"><div id="thumb"></div></div>
   <button id="down" aria-label="Bajar">▼</button>
 </div>
+<div id="fbar">
+  <button data-mode="draw" class="on">✎</button>
+  <button data-mode="erase">⌫</button>
+  <button id="fUndo">↶</button>
+  <button id="fExit">✕ Salir</button>
+</div>
 <div id="toast" hidden></div>
 
 <script>
@@ -160,7 +185,8 @@ const LOCAL = 'masmorra-sketch-v2';
 const COL = 'sketches';
 
 // ---------- state ----------
-let N = 9, columns = new Set(), walls = new Set();
+const SIZES = [5, 7, 9, 11, 13, 15, 17, 21, 25, 31];
+let W = 13, H = 21, kind = 'good', columns = new Set(), walls = new Set();
 let mode = 'draw', history = [], dirty = false;
 let pads = [];          // [{id, ...data}]
 let openId = null;      // id of the pad in the editor (null = new)
@@ -178,48 +204,55 @@ function toast(m) { const t = $('toast'); t.textContent = m; t.hidden = false; c
 function snapshot() { history.push({ c: [...columns], w: [...walls] }); if (history.length > 200) history.shift(); }
 
 // ---------- drawing ----------
-let pad, step;
+// fit a w×h vertex grid inside cw×ch, centred, leaving half a step of margin
+function fit(cw, ch, w, h) {
+  const s = Math.min(cw / w, ch / h);
+  return { s, ox: (cw - s * (w - 1)) / 2, oy: (ch - s * (h - 1)) / 2 };
+}
+let geo = { s: 1, ox: 0, oy: 0 }, cw = 0, ch = 0;
 function layout() {
+  if (!document.body.classList.contains('full')) {
+    // tall enough for the grid's shape, but never taller than most of the screen
+    const w = cv.clientWidth;
+    cv.style.height = Math.min(w * H / W, innerHeight * 0.8) + 'px';
+  } else cv.style.height = '';
   const r = cv.getBoundingClientRect(), dpr = devicePixelRatio || 1;
-  cv.width = r.width * dpr; cv.height = r.width * dpr;
+  cw = r.width; ch = r.height;
+  cv.width = cw * dpr; cv.height = ch * dpr;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  pad = r.width * 0.06; step = (r.width - 2 * pad) / (N - 1);
+  geo = fit(cw, ch, W, H);
   draw();
 }
-const px = x => pad + x * step;
 
-function drawInto(c, size, n, cols, ws, live) {
-  const g = c.getContext('2d');
-  const p = live ? pad : size * 0.08, s = live ? step : (size - 2 * p) / (n - 1);
-  const X = v => p + v * s;
-  g.clearRect(0, 0, size, size);
+function drawInto(g, cw, ch, w, h, cols, ws, G) {
+  const { s, ox, oy } = G || fit(cw, ch, w, h);
+  const X = v => ox + v * s, Y = v => oy + v * s;
+  g.clearRect(0, 0, cw, ch);
   g.strokeStyle = css('--line'); g.lineWidth = 1;
-  for (let i = 0; i < n; i++) {
-    g.beginPath(); g.moveTo(X(i), X(0)); g.lineTo(X(i), X(n - 1)); g.stroke();
-    g.beginPath(); g.moveTo(X(0), X(i)); g.lineTo(X(n - 1), X(i)); g.stroke();
-  }
+  for (let i = 0; i < w; i++) { g.beginPath(); g.moveTo(X(i), Y(0)); g.lineTo(X(i), Y(h - 1)); g.stroke(); }
+  for (let j = 0; j < h; j++) { g.beginPath(); g.moveTo(X(0), Y(j)); g.lineTo(X(w - 1), Y(j)); g.stroke(); }
   g.strokeStyle = css('--wall'); g.lineCap = 'round'; g.lineWidth = Math.max(2, s * 0.18);
-  for (const k of ws) { const [a, b] = parseW(k); g.beginPath(); g.moveTo(X(a[0]), X(a[1])); g.lineTo(X(b[0]), X(b[1])); g.stroke(); }
-  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
-    if (cols.has(vk(x, y))) { g.fillStyle = css('--col'); const r = Math.max(3, s * 0.2); g.fillRect(X(x) - r, X(y) - r, 2 * r, 2 * r); }
-    else { g.fillStyle = css('--grid'); g.beginPath(); g.arc(X(x), X(y), Math.max(1.2, s * 0.06), 0, 7); g.fill(); }
+  for (const k of ws) { const [a, b] = parseW(k); g.beginPath(); g.moveTo(X(a[0]), Y(a[1])); g.lineTo(X(b[0]), Y(b[1])); g.stroke(); }
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (cols.has(vk(x, y))) { g.fillStyle = css('--col'); const r = Math.max(2.5, s * 0.2); g.fillRect(X(x) - r, Y(y) - r, 2 * r, 2 * r); }
+    else { g.fillStyle = css('--grid'); g.beginPath(); g.arc(X(x), Y(y), Math.max(1.2, s * 0.06), 0, 7); g.fill(); }
   }
 }
 
 let cursor = null;
 function draw() {
-  drawInto(cv, cv.getBoundingClientRect().width, N, columns, walls, true);
+  drawInto(ctx, cw, ch, W, H, columns, walls, geo);
   if (cursor) {
     ctx.strokeStyle = mode === 'draw' ? css('--accent') : css('--danger'); ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(px(cursor.x), px(cursor.y), step * 0.32, 0, 7); ctx.stroke();
+    ctx.beginPath(); ctx.arc(geo.ox + cursor.x * geo.s, geo.oy + cursor.y * geo.s, geo.s * 0.32, 0, 7); ctx.stroke();
   }
-  $('stat').textContent = `${N}×${N} · ${columns.size} col · ${walls.size} par`;
+  $('stat').textContent = `${W}×${H} · ${columns.size} col · ${walls.size} par`;
 }
 function hit(e, radius) {
   const r = cv.getBoundingClientRect();
-  const fx = (e.clientX - r.left - pad) / step, fy = (e.clientY - r.top - pad) / step;
+  const fx = (e.clientX - r.left - geo.ox) / geo.s, fy = (e.clientY - r.top - geo.oy) / geo.s;
   const x = Math.round(fx), y = Math.round(fy);
-  if (x < 0 || y < 0 || x >= N || y >= N) return null;
+  if (x < 0 || y < 0 || x >= W || y >= H) return null;
   return Math.hypot(fx - x, fy - y) <= radius ? { x, y, fx, fy } : { x: null, fx, fy };
 }
 
@@ -263,17 +296,39 @@ function eraseNearestWall(fx, fy) {
   if (best) { walls.delete(best); changed = true; }
 }
 
-function setMode(m) { mode = m; $('mDraw').classList.toggle('on', m === 'draw'); $('mErase').classList.toggle('on', m === 'erase'); }
+function setMode(m) { mode = m; document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === m)); }
+document.querySelectorAll('#fbar [data-mode]').forEach(b => b.onclick = () => setMode(b.dataset.mode));
 $('mDraw').onclick = () => setMode('draw');
 $('mErase').onclick = () => setMode('erase');
+$('fUndo').onclick = () => $('undo').onclick();
 $('undo').onclick = () => { const s = history.pop(); if (!s) return; columns = new Set(s.c); walls = new Set(s.w); dirty = true; draw(); };
 $('clear').onclick = () => { snapshot(); columns.clear(); walls.clear(); dirty = true; draw(); };
-$('size').onchange = e => {
-  const n = +e.target.value; snapshot();
-  columns = new Set([...columns].filter(k => k.split(',').every(v => +v < n)));
-  walls = new Set([...walls].filter(k => parseW(k).flat().every(v => v < n)));
-  N = n; dirty = true; layout();
-};
+for (const id of ['gw', 'gh']) {
+  $(id).innerHTML = SIZES.map(n => `<option value="${n}">${n}</option>`).join('');
+  $(id).onchange = () => {
+    snapshot(); W = +$('gw').value; H = +$('gh').value;
+    columns = new Set([...columns].filter(k => { const [x, y] = k.split(',').map(Number); return x < W && y < H; }));
+    walls = new Set([...walls].filter(k => parseW(k).every(([x, y]) => x < W && y < H)));
+    dirty = true; layout();
+  };
+}
+function setSizeSelects() {
+  for (const [id, v] of [['gw', W], ['gh', H]]) {
+    if (!SIZES.includes(v)) $(id).insertAdjacentHTML('beforeend', `<option value="${v}">${v}</option>`);
+    $(id).value = String(v);
+  }
+}
+function setFull(on) { document.body.classList.toggle('full', on); layout(); }
+$('fullBtn').onclick = () => setFull(true);
+$('fExit').onclick = () => setFull(false);
+function setKind(k) {
+  kind = k;
+  $('kGood').className = k === 'good' ? 'on-good' : '';
+  $('kAvoid').className = k === 'avoid' ? 'on-avoid' : '';
+  updateNoteLabel();
+}
+$('kGood').onclick = () => { setKind('good'); dirty = true; };
+$('kAvoid').onclick = () => { setKind('avoid'); dirty = true; };
 $('title').oninput = $('note').oninput = () => dirty = true;
 
 // ---------- pads (store) ----------
@@ -284,22 +339,28 @@ function sortPads() { pads.sort((a, b) => (a.order ?? 1e9) - (b.order ?? 1e9) ||
 function openPad(id) {
   const p = pads.find(q => q.id === id) || null;
   openId = p ? p.id : null; history = []; dirty = false;
-  N = p?.size || 9; $('size').value = String(N);
+  W = p ? (p.size || 9) : 13; H = p ? (p.rows || p.size || 9) : 21; setSizeSelects();
   columns = new Set(p?.columns || []); walls = new Set(p?.walls || []);
   $('title').value = p?.title || '';
   const c = isClaude(p);
   $('who').textContent = c ? 'Claude' : 'Tú';
   $('who').className = 'who ' + (c ? 'claude' : 'user');
   $('claudeNote').hidden = !c; $('claudeNote').textContent = p?.desc || '';
-  $('noteLabel').textContent = c ? (p.ask ? 'Tu respuesta (dibuja arriba y explica aquí)' : 'Tu comentario: ¿está bien así? ¿qué cambiarías?') : 'Explica qué es y por qué lo dibujaste así';
+  setKind(p?.kind || 'good');
   $('note').value = c ? (p.reply || '') : (p?.desc || '');
   $('del').hidden = !p || c;
   layout(); renderGallery();
 }
 
+function updateNoteLabel() {
+  const p = pads.find(q => q.id === openId);
+  $('noteLabel').textContent = kind === 'avoid' ? '¿Por qué está mal? ¿Qué debe evitar el generador?'
+    : isClaude(p) ? (p.ask ? 'Tu respuesta (dibuja arriba y explica aquí)' : 'Tu comentario: ¿está bien así? ¿qué cambiarías?')
+    : 'Explica qué es y por qué lo dibujaste así';
+}
 function collect() {
   const p = pads.find(q => q.id === openId);
-  const base = { size: N, columns: [...columns], walls: [...walls], title: $('title').value.trim(), updatedAt: Date.now() };
+  const base = { size: W, rows: H, kind, columns: [...columns], walls: [...walls], title: $('title').value.trim(), updatedAt: Date.now() };
   if (isClaude(p)) return { ...base, reply: $('note').value.trim() };
   return { ...base, desc: $('note').value.trim(), author: 'user', createdAt: p?.createdAt || Date.now() };
 }
@@ -343,38 +404,39 @@ function renderGallery() {
   const nw = document.createElement('button'); nw.className = 'card new'; nw.textContent = '+ Pizarra en blanco';
   nw.onclick = () => { openPad(null); window.scrollTo({ top: 0, behavior: 'smooth' }); };
   box.append(nw);
-  const list = pads.filter(p => filter === 'all' || (filter === 'claude' && isClaude(p)) || (filter === 'user' && !isClaude(p)) || (filter === 'todo' && needsAnswer(p)));
+  const list = pads.filter(p => filter === 'all' || (filter === 'claude' && isClaude(p)) || (filter === 'user' && !isClaude(p)) || (filter === 'todo' && needsAnswer(p)) || (filter === 'avoid' && p.kind === 'avoid'));
   if (!pads.length) { const e = document.createElement('p'); e.className = 'empty'; e.textContent = db ? 'Aún no hay pizarras. Las de Claude aparecerán aquí; la primera tuya la creas con el botón de arriba.' : 'Sin conexión al almacén: tus pizarras se guardan solo en este navegador.'; box.append(e); }
   for (const p of list) {
-    const card = document.createElement('button'); card.className = 'card' + (p.id === openId ? ' active' : '');
+    const card = document.createElement('button'); card.className = 'card' + (p.id === openId ? ' active' : '') + (p.kind === 'avoid' ? ' avoid' : '');
     const c = document.createElement('canvas'); c.width = c.height = 200; card.append(c);
     const meta = document.createElement('div'); meta.className = 'meta';
     const w = document.createElement('span'); w.className = 'who ' + (isClaude(p) ? 'claude' : 'user'); w.textContent = isClaude(p) ? 'Claude' : 'Tú';
     meta.append(w);
-    if (needsAnswer(p)) { const t = document.createElement('span'); t.className = 'todo'; t.textContent = '● responder'; meta.append(t); }
+    if (p.kind === 'avoid') { const t = document.createElement('span'); t.className = 'bad'; t.textContent = '✗ evitar'; meta.append(t); }
+    else if (needsAnswer(p)) { const t = document.createElement('span'); t.className = 'todo'; t.textContent = '● responder'; meta.append(t); }
     card.append(meta);
     const b = document.createElement('b'); b.textContent = p.title || 'Sin nombre'; card.append(b);
     const d = document.createElement('p'); d.textContent = (isClaude(p) && p.reply) ? '↳ ' + p.reply : (p.desc || ''); card.append(d);
     card.onclick = () => { openPad(p.id); window.scrollTo({ top: 0, behavior: 'smooth' }); };
     box.append(card);
-    drawInto(c, 200, p.size || 9, new Set(p.columns || []), new Set(p.walls || []), false);
+    drawInto(c.getContext('2d'), 200, 200, p.size || 9, p.rows || p.size || 9, new Set(p.columns || []), new Set(p.walls || []));
   }
   $('out').value = exportJSON();
 }
 
 // ---------- export ----------
-function encode(n, cols, ws) {
+function encode(w, h, cols, ws) {
   const dirs = [[1, 0], [1, 1], [0, 1], [-1, 1]];
-  return Array.from({ length: n }, (_, y) => Array.from({ length: n }, (_, x) => [cols.has(vk(x, y)) ? 1 : 0, ...dirs.map(([dx, dy]) => {
+  return Array.from({ length: h }, (_, y) => Array.from({ length: w }, (_, x) => [cols.has(vk(x, y)) ? 1 : 0, ...dirs.map(([dx, dy]) => {
     const nx = x + dx, ny = y + dy;
-    return nx >= 0 && ny >= 0 && nx < n && ny < n && ws.has(wk([x, y], [nx, ny])) ? 1 : 0;
+    return nx >= 0 && ny >= 0 && nx < w && ny < h && ws.has(wk([x, y], [nx, ny])) ? 1 : 0;
   })]));
 }
 function exportJSON() {
   return JSON.stringify({
-    format: 'masmorra-sketch/2',
-    note: 'grid[y][x] = [column, wall_E, wall_SE, wall_S, wall_SW]; walls = "x1,y1|x2,y2"',
-    examples: pads.map(p => ({ ...p, grid: encode(p.size || 9, new Set(p.columns || []), new Set(p.walls || [])) })),
+    format: 'masmorra-sketch/3',
+    note: 'size = width, rows = height (vertices); kind = good | avoid; grid[y][x] = [column, wall_E, wall_SE, wall_S, wall_SW]; walls = "x1,y1|x2,y2"',
+    examples: pads.map(p => ({ ...p, rows: p.rows || p.size || 9, kind: p.kind || 'good', grid: encode(p.size || 9, p.rows || p.size || 9, new Set(p.columns || []), new Set(p.walls || [])) })),
   });
 }
 $('copy').onclick = () => {
