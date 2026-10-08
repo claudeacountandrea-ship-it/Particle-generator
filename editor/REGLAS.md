@@ -85,3 +85,17 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
 - **Cueva pintada**: el jugador pinta con el dedo; se usan solo las piezas que caen sobre la
   pintura, las partes separadas se unen por el camino más corto, la entrada está donde empezó
   a pintar.
+
+## Corrección (salas y pasillos)
+22. **Nada de "círculos"**: salas **cuadradas normales con bisel de 1 o 2**, o **rombos** con puntas
+   de 1–2. Biseles de 4 o más solo en estructuras especiales. (Se descartó el mosaico de octágonos.)
+23. **Pasillos que pasan entre las salas**: serpentean, hacen vueltas/espirales y se ramifican;
+   no son anillos alrededor de cada sala.
+
+## Generador actual: 🧩 Salas y pasillos (`salas_y_pasillos.js`)
+- Cuadrícula gruesa cada 10 puntos. Salas en casillas: 8×8 (bisel 1), 18×8 o 18×18 (bisel 1–2),
+  rombos solo en salas grandes.
+- Pasillos de 2 por los bordes de las casillas y en diagonal por casillas libres, crecidos como
+  laberinto que prefiere girar (serpiente/espiral) y se ramifica; giros con bisel.
+- Cada sala abre a un pasillo vecino; los pasillos que no llevan a ninguna sala se cortan; pocos atajos.
+- Lo usa también 🏗 Construir sobre la cueva.
