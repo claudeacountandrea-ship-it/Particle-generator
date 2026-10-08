@@ -10,10 +10,10 @@ con la ronda 2 de ejemplos (`seed_round2.py`).
 - Puerta = tramo de pared existente convertido (las puertas son un subconjunto de las paredes).
 
 ## Confirmadas por el usuario
-1. **Salas cuadradas o en rombo, sin bisel.** La sala octogonal (esquinas cortadas)
-   se evita. Ancho y largo se miden en puertas/paredes enteras: nunca media pared.
-   El generador usa lados pares para que la puerta de 2 quede centrada.
-   *(cambiado: antes las salas llevaban bisel)*
+1. **Evitar ángulos de 90°.** Las salas cuadradas llevan **bisel de 2** en cada esquina,
+   salvo la esquina que cae sobre una pared compartida con otra sala. Los giros de pasillo
+   también llevan bisel (afuera se corta, adentro se rellena). Ancho y largo en paredes
+   enteras, nunca media pared.
 2. **Puertas al centro** de la pared: si el tramo recto mide un número **par** → puerta de 2;
    si es **impar** → puerta de 1. *(pizarra "¿Así es una puerta?")*
 3. **Pasillos de ancho 1 o 2 puertas**, también en diagonal. *(pizarra "Pasillo diagonal")*
@@ -24,8 +24,11 @@ con la ronda 2 de ejemplos (`seed_round2.py`).
    Con pasillo de 2: la diferencia entre los puntos de giro es 2 → diagonal de 2. *(Pizarra 2)*
 6. **No se cruzan diagonales en X** dentro de una celda. *(pizarra marcada a evitar)*
 7. **Salas en rombo**: cuadrado girado 45°, lados diagonales **pares** (4 o 6) y en cada
-   una de las 4 esquinas una **punta recta de 2**. Los pasillos rectos entran por la punta
-   (puerta de 2 = la punta entera); los diagonales, por el centro de un lado.
+   una de las 4 esquinas una **punta recta de 2**.
+11. **Puertas en las paredes, no en el bisel/punta.** Rombo: puertas en sus lados diagonales
+   (pasillos diagonales). Cuadrado: puertas en sus lados rectos. El bisel o la punta solo se
+   usaría como puerta si no hay otra opción.
+12. **Sin pasillos ciegos**: todo pasillo termina en una sala.
 10. **Salas grandes** (10×10, 14×14) y **salas vecinas que comparten pared**, con puerta de 2 al centro.
 9. **Paredes cruzadas delimitan el espacio de una pared** (por confirmar cómo se aplica).
 8. **Cruces diagonales**: un pasillo diagonal puede tener una rama perpendicular,

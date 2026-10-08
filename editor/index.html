@@ -708,8 +708,10 @@ const Gen = (() => {
 // ---------- maze generator ----------
 // Nodes on a coarse lattice (every D points) are junctions, square rooms or rombo rooms.
 // Big rooms fill their whole cell, so neighbouring rooms share a wall (with a door in it).
-// Rombos have flat tips of 2 at the 4 corners; straight corridors enter through a tip,
-// diagonal corridors through the middle of a diagonal side. Corridors are 2 wide.
+// No 90° corners: square rooms get a bevel of 2 at each corner (unless that corner sits on a
+// wall shared with another room), rombos have flat tips of 2, and corridor turns get bevels.
+// Doors go in the middle of real walls, never on a bevel: squares take straight corridors,
+// rombos diagonal ones. Corridors are 2 wide.
 // The floor is labelled per quarter-cell (void / corridor / room n) and each cell is snapped
 // to whole or half (split by one diagonal), so every wall is a whole grid segment.
 const Maze = (() => {
@@ -729,7 +731,7 @@ const Maze = (() => {
     });
     function pick(a) { return a[rnd(0, a.length - 1)]; }
     const bigSq = (i, j) => i >= 0 && j >= 0 && i < nx && j < ny && node[id(i, j)].t === 'sq' && node[id(i, j)].r === 7;
-    const ok = (n, diag) => n.t !== 'sq' || !diag;
+    const ok = (n, diag) => n.t === 'j' || (n.t === 'sq' ? !diag : diag);
     let edges, used;
     const diagCell = (i, j, di, dj) => Math.min(i, i + di) + ',' + Math.min(j, j + dj);
     const canLink = (i, j, di, dj) => {
@@ -761,17 +763,50 @@ const Maze = (() => {
       if (canLink(i, j, di, dj)) { link(i, j, di, dj); have.add([i, j, a, b].join(',')); }
     }
 
+    // prune dead ends: a corridor junction with a single link is removed, repeatedly,
+    // so every corridor ends in a room and no corridor stops in a square 90° end
+    for (let changed = true; changed;) {
+      changed = false;
+      const deg = new Array(nx * ny).fill(0);
+      for (const [i, j, a, b] of edges) { deg[id(i, j)]++; deg[id(a, b)]++; }
+      const before = edges.length;
+      edges = edges.filter(([i, j, a, b]) => !((node[id(i, j)].t === 'j' && deg[id(i, j)] === 1) || (node[id(a, b)].t === 'j' && deg[id(a, b)] === 1)));
+      for (let k = 0; k < nx * ny; k++) if (node[k].t === 'j' && deg[k] <= 1) node[k] = { t: 'x', r: 0 };
+      changed = edges.length !== before;
+    }
     // shapes: rooms get their own label (2, 3, …), corridors share label 1
-    const rooms = [], corr = [];
+    const rooms = [], corr = [], cuts = [];
+    const links = Array.from({ length: nx * ny }, () => []);
+    for (const [i, j, a, b] of edges) { links[id(i, j)].push([a - i, b - j]); links[id(a, b)].push([i - a, j - b]); }
+    const isRoom = (i, j) => i >= 0 && j >= 0 && i < nx && j < ny && node[id(i, j)].t !== 'j';
+    const touches = (i, j, a, b) => bigSq(i, j) && bigSq(a, b); // two 14×14 rooms side by side share a wall
     const columns = [], doorSegs = [];
     let nSq = 0, nRb = 0;
     for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
       const n = node[id(i, j)], [cx, cy] = P(i, j), r = n.r, lab = 2 + rooms.length;
-      if (n.t === 'j') { corr.push((x, y) => Math.abs(x - cx) <= 1 && Math.abs(y - cy) <= 1); continue; }
+      if (n.t === 'x') continue;
+      if (n.t === 'j') {
+        corr.push((x, y) => Math.abs(x - cx) <= 1 && Math.abs(y - cy) <= 1);
+        const L = links[id(i, j)], orth = L.filter(([a, b]) => !(a && b)), has = (a, b) => orth.some(d => d[0] === a && d[1] === b);
+        if (L.length === orth.length && orth.length >= 2) for (const [sx, sy] of [[1, 1], [-1, 1], [-1, -1], [1, -1]]) {
+          // outside corner of a turn: cut it with a diagonal of 2
+          if (!has(sx, 0) && !has(0, sy)) cuts.push((x, y) => Math.abs(x - cx) <= 1 && Math.abs(y - cy) <= 1 && sx * (x - cx) + sy * (y - cy) > 0);
+          // inside corner between two corridors: fill it with a diagonal of 2
+          if (has(sx, 0) && has(0, sy)) corr.push((x, y) => sx * (x - cx) >= 1 && sy * (y - cy) >= 1 && sx * (x - cx) + sy * (y - cy) <= 4);
+        }
+        continue;
+      }
       if (n.t === 'sq') {
         nSq++;
-        rooms.push({ lab, f: (x, y) => Math.abs(x - cx) <= r && Math.abs(y - cy) <= r });
-        for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) columns.push(vk(cx + a * r, cy + b * r));
+        // bevel of 2 at every corner, except where the corner lies on a wall shared with another room
+        const keep = [[1, 1], [-1, 1], [-1, -1], [1, -1]].map(([sx, sy]) => touches(i, j, i + sx, j) || touches(i, j, i, j + sy));
+        const corners = [[1, 1], [-1, 1], [-1, -1], [1, -1]];
+        rooms.push({ lab, f: (x, y) => Math.abs(x - cx) <= r && Math.abs(y - cy) <= r &&
+          corners.every(([sx, sy], k) => keep[k] || sx * (x - cx) + sy * (y - cy) <= 2 * r - 2) });
+        corners.forEach(([sx, sy], k) => {
+          if (keep[k]) columns.push(vk(cx + sx * r, cy + sy * r));
+          else columns.push(vk(cx + sx * r, cy + sy * (r - 2)), vk(cx + sx * (r - 2), cy + sy * r));
+        });
       } else {
         nRb++;
         rooms.push({ lab, f: (x, y) => Math.abs(x - cx) <= r && Math.abs(y - cy) <= r && Math.abs(x - cx) + Math.abs(y - cy) <= r + 1 });
@@ -789,7 +824,7 @@ const Maze = (() => {
       }
       // doors: 2 wide, at the middle of the wall (or the whole tip of a rombo) where the link leaves a room
       for (const [p, q] of [[[i, j], [a, b]], [[a, b], [i, j]]]) {
-        const n = node[id(...p)]; if (n.t === 'j') continue;
+        const n = node[id(...p)]; if (n.t === 'j' || n.t === 'x') continue;
         const [cx, cy] = P(...p), [qx, qy] = P(...q), d = [Math.sign(qx - cx), Math.sign(qy - cy)], diag = d[0] && d[1];
         const k = diag ? (n.r + 1) / 2 : n.r, m = [cx + d[0] * k, cy + d[1] * k];
         const pr = diag ? [d[1], -d[0]] : [Math.abs(d[1]), Math.abs(d[0])];
@@ -798,7 +833,7 @@ const Maze = (() => {
     }
     const label = (x, y) => {
       for (const r of rooms) if (r.f(x, y)) return r.lab;
-      return corr.some(f => f(x, y)) ? 1 : 0;
+      return corr.some(f => f(x, y)) && !cuts.some(f => f(x, y)) ? 1 : 0;
     };
     // quarter labels → snapped cell: [lN, lE, lS, lW]
     const cells = new Array((W - 1) * (H - 1));
@@ -827,7 +862,7 @@ const Maze = (() => {
     return {
       size: W, rows: H, walls: [...ws], doors, columns: [...new Set(columns)],
       title: `Laberinto ${nx}×${ny}`,
-      desc: `Laberinto generado: ${nSq} salas cuadradas (10×10 o 14×14), ${nRb} rombos con puntas de 2 (lado 4 o 6), salas vecinas que comparten pared con puerta al centro, pasillos de 2 rectos y diagonales.\n\nMarca con 🖍 las celdas de piso donde veas errores y explica abajo.`,
+      desc: `Laberinto generado: ${nSq} salas cuadradas (10×10 o 14×14) con bisel de 2 salvo en paredes compartidas, ${nRb} rombos con puntas de 2 y puertas en sus lados diagonales, salas vecinas que comparten pared con puerta al centro, giros de pasillo con bisel.\n\nMarca con 🖍 las celdas de piso donde veas errores y explica abajo.`,
     };
   };
 })();
