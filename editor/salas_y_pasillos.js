@@ -9,12 +9,17 @@ const Halls = (() => {
   const pick = a => a[rnd(0, a.length - 1)];
   const G = 10, M = 3;
   // cave: optional {W, H, cells: Set("x,y"), start} painted by the player
-  // opts: {central: true|false, pmin, pmax} — a special central form; rooms split by new walls until no part is longer than pmax (never shorter than pmin)
+  // opts: {central, rmin, rmax} — the boss hall in the middle (with columns); rooms are rmin..rmax squares across (1 square = 2 people), bigger ones are split into little rooms
   return function halls(n = 8, m = n, cave = null, opts = {}) {
     if (cave) { n = Math.floor((cave.W - 2 * M - 1) / G); m = Math.floor((cave.H - 2 * M - 1) / G); }
     // the lattice is not even: columns and rows are 8, 10, 12 or 14 wide, so rooms differ in size
     // (a cave keeps the even 10, to follow the painting)
-    const pitch = () => cave ? G : pick([8, 10, 10, 10, 12, 14]);
+    // scale: one square holds 2 people. A corridor is 2 squares; a room is between rmin and rmax
+    // squares across (the lattice pitch is the room plus its share of the corridor bands)
+    const rmin = Math.max(4, opts.rmin || 4), rmax = Math.max(rmin, opts.rmax || 8);
+    const pitches = []; for (let p = rmin + 2; p <= rmax + 2; p += 2) pitches.push(p); if (!pitches.length) pitches.push(rmin + 2);
+    const mid = pitches[pitches.length >> 1];
+    const pitch = () => cave ? G : pick([...pitches, mid, mid]);
     const X = [M], Y = [M]; for (let i = 0; i < n; i++) X.push(X[i] + pitch()); for (let j = 0; j < m; j++) Y.push(Y[j] + pitch());
     const W = cave ? cave.W : X[n] + M + 1, H = cave ? cave.H : Y[m] + M + 1, B = Build(W, H);
     const N = (i, j) => [X[i], Y[j]]; // lattice node
@@ -30,7 +35,7 @@ const Halls = (() => {
     // free so a corridor may cross them diagonally
     const freeCell = new Set();
     if (!cave && opts.central !== false && n >= 6 && m >= 6) { // the central form: a great rombo or a great bevelled hall
-      const cs = n >= 10 && m >= 10 ? 3 : 2, ci = (n - cs) >> 1, cj = (m - cs) >> 1;
+      const cs = n >= 10 && m >= 10 ? 3 : 2, ci = (n - cs) >> 1, cj = (m - cs) >> 1; // the boss hall: big, but smaller than before (the lattice is finer)
       const c0 = { i: ci, j: cj, w: cs, h: cs, kind: square(ci, cj, cs, cs) && Math.random() < 0.6 ? 'rb' : 'sq', bevel: 2, special: 'central' };
       rooms.push(c0); for (let b = cj; b < cj + cs; b++) for (let a = ci; a < ci + cs; a++) cell[cid(a, b)] = c0;
     }
@@ -302,13 +307,11 @@ const Halls = (() => {
     for (let l = 1; l < B.next; l++) if (B.kinds[l] === 'corr' && l !== corr && B.area(l)) B.paint(() => true, 0, [l]); // closed scraps nobody can reach
     B.snap(); B.spikes();
     // ---- partitions: rooms longer than pmax get a new wall across (never leaving a part under pmin) ----
-    const pmin = Math.max(4, opts.pmin || 4), pmax = opts.pmax || 1e9, splitPairs = [];
+    // every room bigger than the maximum is split into little rooms to explore (never under the minimum)
+    const pmin = cave ? Math.max(4, opts.pmin || 4) : rmin, pmax = cave ? opts.pmax || 1e9 : rmax + 2, splitPairs = [];
     const boxOf = l => { let a = 1e9, b = 1e9, c = -1, d = -1; const C4 = W - 1; for (let i = 0; i < B.q.length; i += 4) if (B.q[i] === l || B.q[i + 2] === l) { const cc = i >> 2, x = cc % C4, y = (cc / C4) | 0; if (x < a) a = x; if (x > c) c = x; if (y < b) b = y; if (y > d) d = y; } return [a, b, c + 1, d + 1]; };
     if (pmax < 1e9) {
-      // only some quarters of the dungeon are partitioned (clusters of little rooms); elsewhere the halls stay whole
-      const seeds = Array.from({ length: Math.max(1, Math.round(n * m / 28)) }, () => [rnd(0, n - 1), rnd(0, m - 1)]);
-      const zoned = r => seeds.some(([a, b]) => Math.max(Math.abs(a - (r.i + (r.w - 1) / 2)), Math.abs(b - (r.j + (r.h - 1) / 2))) <= 1.5);
-      const todo = rooms.filter(r => r.kind === 'sq' && r.label && !r.special && zoned(r)).map(r => r.label);
+      const todo = rooms.filter(r => r.kind === 'sq' && r.label && !r.special).map(r => r.label);
       for (let guard = 0; todo.length && guard < 2000; guard++) {
         const l = todo.pop(), [a, b, c, d] = boxOf(l), w = c - a, h = d - b;
         if (Math.max(w, h) <= pmax) continue;
@@ -335,6 +338,20 @@ const Halls = (() => {
       B.thin(); B.snap(); B.spikes(); B.bevelCorners(); tidy();
       let fixed = 0; for (let t = 0; t < 4; t++) { const k = B.cornerFix(); fixed += k; if (!k) break; }
       if (!fixed) break;
+    }
+    // ---- columns in the boss hall: little square pillars in two rows, one each side of a middle nave,
+    // never closer than 2 to a wall or to each other's gap ----
+    const bossHall = rooms.find(r => r.special === 'central');
+    let nPillars = 0;
+    if (bossHall && bossHall.label) {
+      const l = bossHall.label, C4 = W - 1, whole = (x, y) => { if (x < 0 || y < 0 || x >= C4 || y >= H - 1) return false; const i = (y * C4 + x) * 4; return B.q[i] === l && B.q[i + 1] === l && B.q[i + 2] === l && B.q[i + 3] === l; };
+      const [a, b, c, d] = boxOf(l), mx = (a + c) >> 1, my = (b + d) >> 1, xs = [], ys = [];
+      xs.push(mx + 2, mx - 3); for (let t = 0; t < 20; t++) ys.push(my + 2 + 4 * t, my - 3 - 4 * t); // two colonnades along a nave to the throne
+      for (const x of xs) for (const y of ys) {
+        let ok = true; for (let v = -2; v <= 2 && ok; v++) for (let u = -2; u <= 2 && ok; u++) if (!whole(x + u, y + v)) ok = false;
+        if (!ok) continue;
+        const pl = B.label('pillar'), i = ((y * C4) + x) * 4; for (let k = 0; k < 4; k++) B.q[i + k] = pl; nPillars++;
+      }
     }
     // ---- 6. doors ----
     const segs = B.segments(), runs = B.runs(segs), deg = new Map();
@@ -389,7 +406,7 @@ const Halls = (() => {
       let added = 0;
       const present = new Uint8Array(B.next); for (const v of B.q) present[v] = 1;
       for (let l = 1; l < B.next; l++) {
-        if (reached.has(l) || !present[l]) continue;
+        if (reached.has(l) || !present[l] || B.kinds[l] === 'pillar') continue;
         // every straight stretch of wall with a reached neighbour, longest first; a door that touches no wall wins
         const cand = segs.filter(g => (g.a === l && reached.has(g.b)) || (g.b === l && reached.has(g.a)));
         const groups = new Map(); for (const g of cand) { const k = g.d + ':' + g.line + ':' + Math.min(g.a, g.b) + ',' + Math.max(g.a, g.b); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(g); }
@@ -435,7 +452,7 @@ const Halls = (() => {
     return {
       size: W, rows: H, walls: [...segsF.map(s => s.k), ...gates], doors: [...new Set([...doors, ...gates])], columns: [], marks,
       title: cave ? 'Masmorra construida sobre tu cueva' : `Masmorra de salas y pasillos ${n}×${m}`,
-      desc: `${rooms.length} salas de tamaños distintos (columnas y filas de 8 a 14; salas cuadradas con bisel 1 o 2 y rombos con puntas de 2; ninguna menor de 4×4). ` +
+      desc: `Escala: 1 cuadrado = 2 personas; pasillos de 2, salas de ${rmin} a ${rmax} cuadrados (lo más grande se parte en minicuartos con puerta). ${rooms.length} salas (cuadradas con bisel 1 o 2 y rombos con puntas de 2). Sala del jefe en el centro${nPillars ? ` con ${nPillars} columnas` : ''}. ` +
         `Pasillos de 2 que serpentean entre ellas: crecen como un laberinto que prefiere girar (vueltas y espirales), se ramifican y a veces cortan en diagonal (${nDiag} tramos diagonales). ` +
         `Cada sala abre a un pasillo vecino; los pasillos que no llevan a ninguna sala se cortan. ${loops} atajos. ` +
         `${splitPairs.length} particiones nuevas (paredes dentro de salas, partes entre ${pmin} y ${pmax < 1e9 ? pmax : '∞'}). Sin huecos de 1, sin esquinas de 90° (biselado automático) y sin puertas pegadas a otra pared. ${nPart} puertas entre salas vecinas (salas en fila). ${rooms.filter(r => r.kind === 'gal').length} galerías (pasadizo con cuartitos a los lados, hasta 5 salidas). Las particiones se agrupan en barrios; el resto de las salas quedan enteras.\n• Piso usado: ${Math.round(100 * floor / B.q.length)}%. Ruta de la entrada a la meta: ${Math.round(routeLen / 2)} pasos.\n• Colores: verde = sala inicial, dorado = sala final (la más profunda), morado = forma central, azul = ruta.\n\nMarca con 🖍 los errores y explica abajo.`,

@@ -157,3 +157,11 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
 40. **Sin paredes sueltas** dentro de un espacio (pared con el mismo espacio a los dos lados).
 41. **Rombos sin anillo**: alrededor de un rombo solo una esquina de su cuadro es pasillo (la entrada);
    las otras esquinas son cuartitos, no una plaza de pasillo que lo rodea.
+
+## 📏 Escala y proporción
+42. **1 cuadrado del grid = 2 personas.** Pasillo = 2 cuadrados (caben 4 personas).
+43. **Salas con mínimo y máximo** (por defecto 4 a 8 cuadrados de lado). Toda sala mayor que el
+   máximo se parte con paredes y puertas en **minicuartos para explorar** (nunca menores que el mínimo).
+44. **Sala del jefe** en el centro: la más grande, pero ya no gigantesca (2×2 o 3×3 casillas de la
+   retícula fina), con **columnas** de paredes (pilares de 1×1) en dos filas a los lados de una nave
+   central, siempre a 2 o más de cualquier pared. Las columnas no cuentan como espacio cerrado ni como esquina.
