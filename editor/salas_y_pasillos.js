@@ -20,7 +20,11 @@ const Halls = (() => {
     const pitches = []; for (let p = rmin + 2; p <= rmax + 2; p += 2) pitches.push(p); if (!pitches.length) pitches.push(rmin + 2);
     const mid = pitches[pitches.length >> 1];
     const pitch = () => cave ? G : pick([...pitches, mid, mid]);
-    const X = [M], Y = [M]; for (let i = 0; i < n; i++) X.push(X[i] + pitch()); for (let j = 0; j < m; j++) Y.push(Y[j] + pitch());
+    // the pitches mirror (left = right) and rows repeat the columns, so both great diagonals of the map
+    // are square casillas all the way: room for diagonal avenues
+    const px = []; for (let i = 0; i < n; i++) px.push(i < (n + 1) >> 1 ? pitch() : px[n - 1 - i]);
+    const py = []; for (let j = 0; j < m; j++) py.push(m === n ? px[j] : pitch());
+    const X = [M], Y = [M]; for (let i = 0; i < n; i++) X.push(X[i] + px[i]); for (let j = 0; j < m; j++) Y.push(Y[j] + py[j]);
     const W = cave ? cave.W : X[n] + M + 1, H = cave ? cave.H : Y[m] + M + 1, B = Build(W, H);
     const N = (i, j) => [X[i], Y[j]]; // lattice node
     const cw = i => X[i + 1] - X[i], ch = j => Y[j + 1] - Y[j], square = (i, j, w = 1, h = 1) => X[i + w] - X[i] === Y[j + h] - Y[j];
@@ -39,8 +43,19 @@ const Halls = (() => {
       const c0 = { i: ci, j: cj, w: cs, h: cs, kind: square(ci, cj, cs, cs) && Math.random() < 0.6 ? 'rb' : 'sq', bevel: 2, special: 'central' };
       rooms.push(c0); for (let b = cj; b < cj + cs; b++) for (let a = ci; a < ci + cs; a++) cell[cid(a, b)] = c0;
     }
+    // diagonal avenues: 3 or 4 casillas kept free along a great diagonal, crossed later by one straight diagonal corridor
+    const avenues = [];
+    if (!cave && n === m && n >= 8) {
+      const len = n >= 12 ? 4 : 3, picks = [[0, 1], [n - len, 1], [0, -1], [n - len, -1]].sort(() => Math.random() - 0.5).slice(0, n >= 12 ? 2 : 1);
+      for (const [i0, sg] of picks) {
+        const cs = []; for (let t = 0; t < len; t++) { const i = i0 + t, j = sg > 0 ? i : n - 1 - i; cs.push([i, j]); }
+        if (cs.some(([i, j]) => cell[cid(i, j)] || !square(i, j))) continue;
+        for (const [i, j] of cs) freeCell.add(cid(i, j));
+        avenues.push(cs.map(([i, j]) => sg > 0 ? [[i, j], [i + 1, j + 1]] : [[i + 1, j], [i, j + 1]]));
+      }
+    }
     for (let j = 0; j < m; j++) for (let i = 0; i < n; i++) {
-      if (cell[cid(i, j)] || !cellIn(i, j)) continue;
+      if (cell[cid(i, j)] || freeCell.has(cid(i, j)) || !cellIn(i, j)) continue;
       if (square(i, j) && Math.random() < 0.4) { freeCell.add(cid(i, j)); continue; }
       let w = 1, h = 1;
       const free = (a, b) => a < n && b < m && !cell[cid(a, b)] && !freeCell.has(cid(a, b)) && cellIn(a, b);
@@ -59,7 +74,7 @@ const Halls = (() => {
         continue;
       }
       // diagonal galleries: a long hall at 45° across a square block, little rooms along both its walls
-      if (r < 0.16 && free(i + 1, j) && free(i, j + 1) && free(i + 1, j + 1)) {
+      if (r >= 0.09 && r < 0.11 && free(i + 1, j) && free(i, j + 1) && free(i + 1, j + 1)) { // rare
         const k = free(i + 2, j) && free(i + 2, j + 1) && free(i, j + 2) && free(i + 1, j + 2) && free(i + 2, j + 2) && Math.random() < 0.5 ? 3 : 2;
         if (Math.abs((X[i + k] - X[i]) - (Y[j + k] - Y[j])) <= 2) {
           const g = { i, j, w: k, h: k, kind: 'dgal', bevel: 1, slash: Math.random() < 0.5 }; rooms.push(g);
@@ -120,12 +135,18 @@ const Halls = (() => {
       const opts = neighbours(i, j).filter(([a, b]) => !seen.has(nid(a, b)));
       if (!opts.length) { stack.splice(k, 1); continue; }
       // winding: prefer to turn (that is what makes the snakes and spirals), diagonals now and then
-      let w = opts.map(([a, b, d]) => { const dir = [a - i, b - j] + ''; return (d ? 3 : 1) * (last && dir === last ? 0.35 : 1); });
+      let w = opts.map(([a, b, d]) => { const dir = [a - i, b - j] + ''; return (d ? 3 : 1) * (last && dir === last ? (d ? 4 : 0.35) : 1); }); // a diagonal likes to go on straight (an avenue)
       let t = Math.random() * w.reduce((s, v) => s + v, 0), c = 0; for (; c < opts.length - 1; c++) { t -= w[c]; if (t <= 0) break; }
       const [a, b, d] = opts[c];
       if (d) usedDiagCell.add(cid(Math.min(i, a), Math.min(j, b)));
       edges.set(ekey(nid(i, j), nid(a, b)), { a: [i, j], b: [a, b], diag: d });
       seen.add(nid(a, b)); stack.push([a, b, [a - i, b - j] + '']);
+    }
+    // the avenues: one straight diagonal corridor each (a shortcut across the map)
+    const avenueKeys = new Set();
+    for (const av of avenues) {
+      if (av.some(([a, b]) => usedDiagCell.has(cid(Math.min(a[0], b[0]), Math.min(a[1], b[1]))))) continue;
+      for (const [a, b] of av) { usedDiagCell.add(cid(Math.min(a[0], b[0]), Math.min(a[1], b[1]))); const k = ekey(nid(...a), nid(...b)); edges.set(k, { a, b, diag: true }); avenueKeys.add(k); seen.add(nid(...a)); seen.add(nid(...b)); }
     }
     for (const c of freeCell) if (!usedDiagCell.has(c)) {
       const i = c % n, j = (c / n) | 0, room = { i, j, w: 1, h: 1, kind: 'sq', bevel: 1 };
@@ -148,7 +169,7 @@ const Halls = (() => {
       }
     }
     // ---- 4. cut back corridor ends that lead to no room ----
-    const needed = new Set(roomDoors.map(([, s]) => ekey(nid(...s[0]), nid(...s[1]))));
+    const needed = new Set([...roomDoors.map(([, s]) => ekey(nid(...s[0]), nid(...s[1]))), ...avenueKeys]);
     const startKey = nid(si, sj);
     for (let changed = true; changed;) {
       changed = false;
@@ -318,6 +339,32 @@ const Halls = (() => {
       B.paint((x, y) => x >= x0 && x <= x0 + G && y >= y0 && y <= y0 + G && (diagDown ? (x - x0) > (y - y0) : (x - x0) + (y - y0) < G), L1, [0], [x0, y0, x0 + G, y0 + G]);
       B.paint((x, y) => x >= x0 && x <= x0 + G && y >= y0 && y <= y0 + G && (diagDown ? (x - x0) < (y - y0) : (x - x0) + (y - y0) > G), L2, [0], [x0, y0, x0 + G, y0 + G]);
     }
+    // diagonal galleries: where a diagonal corridor runs straight for 2 or more casillas (an avenue),
+    // the rooms on both sides give it a row of little rooms: rectangles turned 45°, all the same depth,
+    // their back wall one straight diagonal, each with its door onto the corridor
+    const diagCubes = [], plainRoom = new Set(rooms.filter(r => r.kind === 'sq' && !r.special && r.label).map(r => r.label));
+    const isDiag = (p, q) => { const e = edges.get(ekey(nid(...p), nid(...q))); return !!e && e.diag; };
+    const doneE = new Set();
+    for (const e of edges.values()) {
+      if (!e.diag || doneE.has(ekey(nid(...e.a), nid(...e.b)))) continue;
+      const di = e.b[0] - e.a[0], dj = e.b[1] - e.a[1];
+      let s0 = e.a; while (isDiag([s0[0] - di, s0[1] - dj], s0)) s0 = [s0[0] - di, s0[1] - dj];
+      const chain = [s0]; for (let p = s0; isDiag(p, [p[0] + di, p[1] + dj]); p = [p[0] + di, p[1] + dj]) { chain.push([p[0] + di, p[1] + dj]); doneE.add(ekey(nid(...p), nid(p[0] + di, p[1] + dj))); }
+      if (chain.length < 3) continue; // one casilla only: too short for a row
+      const [px, py] = N(...chain[0]), [qx, qy] = N(...chain[chain.length - 1]), dx = Math.sign(qx - px), dy = Math.sign(qy - py);
+      const along = (x, y) => (x - px) * dx + (y - py) * dy, perp = (x, y) => (x - px) * dy - (y - py) * dx, Lu = along(qx, qy);
+      const d = 5, u0 = 2 + d, u1 = Lu - 2 - d; if (u1 - u0 < 8) continue;
+      const nc = Math.max(1, Math.round((u1 - u0) / 9)), cuts = []; for (let t = 0; t <= nc; t++) cuts.push(u0 + 2 * Math.round(t * (u1 - u0) / nc / 2));
+      const bb = [Math.min(px, qx) - 12, Math.min(py, qy) - 12, Math.max(px, qx) + 12, Math.max(py, qy) + 12];
+      for (const side of [1, -1]) {
+        if (Math.random() < 0.15) continue; // now and then one side stays plain
+        for (let t = 0; t < nc; t++) {
+          const a0 = cuts[t], a1 = cuts[t + 1], cu = B.label('room');
+          B.paint((x, y) => { const u = along(x, y), v = side * perp(x, y); return v > 2 && v <= 2 + d && u > a0 && u <= a1; }, cu, [...plainRoom], bb);
+          diagCubes.push(cu);
+        }
+      }
+    }
     // the way in: a corridor from the start node to the map edge
     { const [sx, sy] = N(si, sj); if (!cave) B.paint((x, y) => Math.abs(x - sx) <= 1 && y >= sy && y <= H, corr); }
     // rock shut inside the dungeon (bits left at corners and by diagonals) joins the room beside it
@@ -413,6 +460,8 @@ const Halls = (() => {
     for (const r of rooms) if (r.kind === 'gal' || r.kind === 'dgal') for (const c of r.cubicles) {
       const run = runs.get(Math.min(c, r.label) + ',' + Math.max(c, r.label)); const d = run && B.safeDoor(run, deg); if (d) doors.push(...d);
     }
+    // the little rooms along diagonal corridors open onto the corridor
+    for (const c of diagCubes) { const run = runs.get(Math.min(c, corr) + ',' + Math.max(c, corr)); const d = run && B.safeDoor(run, deg); if (d) doors.push(...d); }
     // partitions: some rooms open straight into the room next door (rooms in a row to cross)
     const roomLabels = new Set(rooms.flatMap(r => r.labels || []));
     let nPart = 0;
@@ -485,7 +534,7 @@ const Halls = (() => {
       size: W, rows: H, walls: [...segsF.map(s => s.k), ...gates], doors: [...new Set([...doors, ...gates])], columns: [], marks,
       title: cave ? 'Masmorra construida sobre tu cueva' : `Masmorra de salas y pasillos ${n}×${m}`,
       desc: `Escala: 1 cuadrado = 2 personas; pasillos de 2, salas de ${rmin} a ${rmax} cuadrados (lo más grande se parte en minicuartos con puerta). ${rooms.length} salas (cuadradas con bisel 1 o 2 y rombos con puntas de 2). Sala del jefe en el centro${nPillars ? ` con ${nPillars} columnas` : ''}. ` +
-        `Pasillos de 2 que serpentean entre ellas: crecen como un laberinto que prefiere girar (vueltas y espirales), se ramifican y a veces cortan en diagonal (${nDiag} tramos diagonales). ${rooms.filter(r => r.kind === 'rb').length} salas rombo (vacías y grandes). ${rooms.filter(r => r.kind === 'dgal').length} galerías en diagonal (salón a 45° con cuartitos en sus dos paredes). ` +
+        `Pasillos de 2 que serpentean entre ellas: crecen como un laberinto que prefiere girar (vueltas y espirales), se ramifican y a veces cortan en diagonal (${nDiag} tramos diagonales). ${rooms.filter(r => r.kind === 'rb').length} salas rombo (vacías y grandes). ${diagCubes.length} cuartitos en fila a los lados de los pasillos diagonales (galerías en diagonal)${rooms.some(r => r.kind === 'dgal') ? `, y ${rooms.filter(r => r.kind === 'dgal').length} salón diagonal en bloque` : ''}. ` +
         `Cada sala abre a un pasillo vecino; los pasillos que no llevan a ninguna sala se cortan. ${loops} atajos. ` +
         `${splitPairs.length} particiones nuevas (paredes dentro de salas, partes entre ${pmin} y ${pmax < 1e9 ? pmax : '∞'}). Sin huecos de 1, sin esquinas de 90° (biselado automático) y sin puertas pegadas a otra pared. ${nPart} puertas entre salas vecinas (salas en fila). ${rooms.filter(r => r.kind === 'gal').length} galerías (pasadizo con cuartitos a los lados, hasta 5 salidas). Las particiones se agrupan en barrios; el resto de las salas quedan enteras.\n• Piso usado: ${Math.round(100 * floor / B.q.length)}%. Ruta de la entrada a la meta: ${Math.round(routeLen / 2)} pasos.\n• Colores: verde = sala inicial, dorado = sala final (la más profunda), morado = forma central, azul = ruta.\n\nMarca con 🖍 los errores y explica abajo.`,
     };
