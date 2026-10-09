@@ -205,3 +205,16 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
 55. **Toda sala tiene entrada real**: ninguna sala puede tener su única puerta hacia el exterior (lo negro).
    En la vista ⬛ una puerta hacia afuera solo cuenta como entrada si está en el borde del mapa; si no,
    esa sala sale gris (cerrada) y la generación descarta ese intento.
+56. **Entrada**: el pasillo de entrada sube desde el borde de abajo hasta un punto del contorno que no
+   tenga nada del mapa debajo (no cruza salas). Lo que quede sin ningún acceso vuelve a ser roca.
+57. **Sin salas casi triángulo**: una sala pequeña (≤ 60 celdas) con forma de triángulo se une a la sala
+   vecina con más pared en común (queda un trapecio), o si no tiene sala al lado, al pasillo (ensanche).
+   Una sola pasada, para que no se encadene.
+58. **Tramos de pasillo cortos**: se corta el tramo más largo con compuertas o pasos estrechos (también
+   en pasillos diagonales y justo pasada cada vuelta en L) hasta que ninguno pase de 40 cuadrados o no
+   quede sitio limpio. Donde la pared de una sala llega al pasillo, la partición continúa esa pared
+   (media pared) y la puerta de 1 va en el lado limpio.
+59. **Engaños**: (a) compuerta justo pasada una vuelta en L: desde antes parece la puerta de un cuarto y
+   es el camino; (b) puertas en ángulo en las esquinas (una a sala, otra que sigue el pasillo);
+   (c) **salas de paso disfrazadas**: una sala que toca dos tramos de pasillo distintos recibe puerta a
+   ambos (≈ 1 cada 30 casillas): parece un cuarto más y es un atajo.
