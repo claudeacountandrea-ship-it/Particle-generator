@@ -168,3 +168,9 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
 45. **Equilibrio de formas**: rombos solo de 2×2 casillas (uno chico se ve como octágono), pero
    frecuentes (~1 de cada 10 salas; basta que el cuadro sea casi cuadrado). Pasillos diagonales más
    frecuentes (~10 tramos en 12×12), y sus triángulos sobrantes dan salas con una pared diagonal.
+46. **Galerías en diagonal**: un salón a 45° que cruza un bloque de 2×2 o 3×3 casillas de esquina a
+   esquina (por ahí se entra), con una fila de cuartitos en cada pared; las paredes entre cuartitos
+   son diagonales perpendiculares al salón (una "T" girada, permitida). Los dos triángulos grandes
+   que sobran son salas.
+47. **Rombos vacíos y grandes**: un rombo no lleva columnas ni particiones; algunos ocupan 3×3 casillas.
+   Si la sala del jefe sale rombo, queda vacía; si sale cuadrada, lleva las columnas.

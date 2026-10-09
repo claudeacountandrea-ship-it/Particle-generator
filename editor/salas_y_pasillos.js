@@ -58,11 +58,22 @@ const Halls = (() => {
         for (let b = j; b < j + 3; b++) for (let a = i; a < i + g.w; a++) cell[cid(a, b)] = g;
         continue;
       }
+      // diagonal galleries: a long hall at 45° across a square block, little rooms along both its walls
+      if (r < 0.16 && free(i + 1, j) && free(i, j + 1) && free(i + 1, j + 1)) {
+        const k = free(i + 2, j) && free(i + 2, j + 1) && free(i, j + 2) && free(i + 1, j + 2) && free(i + 2, j + 2) && Math.random() < 0.5 ? 3 : 2;
+        if (Math.abs((X[i + k] - X[i]) - (Y[j + k] - Y[j])) <= 2) {
+          const g = { i, j, w: k, h: k, kind: 'dgal', bevel: 1, slash: Math.random() < 0.5 }; rooms.push(g);
+          for (let b = j; b < j + k; b++) for (let a = i; a < i + k; a++) cell[cid(a, b)] = g;
+          continue;
+        }
+      }
       if (r < 0.36 && free(i + 1, j) && free(i, j + 1) && free(i + 1, j + 1)) { w = 2; h = 2; }
       else if (r < 0.3 && free(i + 1, j)) w = 2; else if (r < 0.45 && free(i, j + 1)) h = 2;
       // rombos only over 2×2 casillas (nearly square is enough): a small one would read as an octagon
-      const near = Math.abs((X[i + w] - X[i]) - (Y[j + h] - Y[j])) <= 2;
+      let near = Math.abs((X[i + w] - X[i]) - (Y[j + h] - Y[j])) <= 2;
       const kind = w === 2 && h === 2 && near && Math.random() < 0.8 ? 'rb' : 'sq';
+      // some rombos are big: 3×3 casillas, empty inside
+      if (kind === 'rb' && Math.random() < 0.35 && [[2, 0], [2, 1], [0, 2], [1, 2], [2, 2]].every(([a, b]) => free(i + a, j + b)) && Math.abs((X[i + 3] - X[i]) - (Y[j + 3] - Y[j])) <= 2) { w = 3; h = 3; }
       const room = { i, j, w, h, kind, bevel: w * h === 1 ? 1 : rnd(1, 2) }; // small rooms: bevel 1, so they stay square
       rooms.push(room);
       for (let b = j; b < j + h; b++) for (let a = i; a < i + w; a++) cell[cid(a, b)] = room;
@@ -130,7 +141,7 @@ const Halls = (() => {
       const onTree = sides.filter(([p, q]) => edges.has(ekey(nid(...p), nid(...q))));
       if (!onTree.length) { lacking.push(r); continue; }
       const cand = onTree;
-      const nDoors = r.kind === 'gal' ? rnd(3, 5) : r.w * r.h > 1 && Math.random() < 0.5 ? 2 : 1;
+      const nDoors = r.kind === 'gal' || r.kind === 'dgal' ? rnd(3, 5) : r.w * r.h > 1 && Math.random() < 0.5 ? 2 : 1;
       for (const s of [...cand].sort(() => Math.random() - .5).slice(0, nDoors)) {
         edges.set(ekey(nid(...s[0]), nid(...s[1])), { a: s[0], b: s[1], diag: false });
         roomDoors.push([r, s]);
@@ -261,6 +272,25 @@ const Halls = (() => {
             r.cubicles.push(c); r.labels.push(c); a = b;
           }
         }
+      } else if (r.kind === 'dgal') {
+        // u runs along the hall (corner to corner of the block), v across it; walls fall on cell diagonals.
+        // The hall and its two rows of little rooms make a whole rectangle turned 45° inside the block;
+        // the hall goes on to both corners (its way in), the two big triangles left are rooms
+        const S = Math.min(x1 - x0, y1 - y0), ox = r.slash ? x0 + S : x0, oy = y0, dx = r.slash ? -1 : 1;
+        const U = (x, y) => dx * (x - ox) + (y - oy), V = (x, y) => dx * (x - ox) - (y - oy);
+        const hw = r.w >= 3 ? 3 : 2, d = r.w >= 3 ? 6 : 5, e = hw + d, L = 2 * S - 2 * e;
+        const nc = Math.max(1, Math.floor(L / 8)), cuts = []; for (let t = 0; t <= nc; t++) cuts.push(e + 2 * Math.round(t * L / nc / 2));
+        B.paint(inR, l, [0], rb); B.kinds[l] = 'gal'; // the hall: all that is not a little room or a corner room
+        r.cubicles = [];
+        for (const side of [1, -1]) {
+          for (let t = 0; t < nc; t++) {
+            const c = B.label('room'), a0 = cuts[t], a1 = cuts[t + 1];
+            B.paint((x, y) => { const u = U(x, y), v = side * V(x, y); return inR(x, y) && v > hw && v <= e && u > a0 && u <= a1; }, c, [l], rb);
+            r.cubicles.push(c); r.labels.push(c);
+          }
+          const t = B.label('room');
+          B.paint((x, y) => inR(x, y) && side * V(x, y) > e, t, [l], rb); r.labels.push(t);
+        }
       } else if (r.kind === 'rb') {
         const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, R = Math.min(x1 - x0, y1 - y0) / 2 - 1;
         B.paint(inR, corr, [0], rb); // the corners around it are corridor, so its doors go on the diagonal sides
@@ -345,7 +375,7 @@ const Halls = (() => {
     // never closer than 2 to a wall or to each other's gap ----
     const bossHall = rooms.find(r => r.special === 'central');
     let nPillars = 0;
-    if (bossHall && bossHall.label) {
+    if (bossHall && bossHall.label && bossHall.kind !== 'rb') { // a rombo stays empty
       const l = bossHall.label, C4 = W - 1, whole = (x, y) => { if (x < 0 || y < 0 || x >= C4 || y >= H - 1) return false; const i = (y * C4 + x) * 4; return B.q[i] === l && B.q[i + 1] === l && B.q[i + 2] === l && B.q[i + 3] === l; };
       const [a, b, c, d] = boxOf(l), mx = (a + c) >> 1, my = (b + d) >> 1, xs = [], ys = [];
       xs.push(mx + 2, mx - 3); for (let t = 0; t < 20; t++) ys.push(my + 2 + 4 * t, my - 3 - 4 * t); // two colonnades along a nave to the throne
@@ -380,7 +410,7 @@ const Halls = (() => {
       const run = runs.get(Math.min(l, corr) + ',' + Math.max(l, corr)); const d = run && B.safeDoor(run, deg); if (d) { doors.push(...d); break; }
     }
     // galleries: every little room opens onto the hall
-    for (const r of rooms) if (r.kind === 'gal') for (const c of r.cubicles) {
+    for (const r of rooms) if (r.kind === 'gal' || r.kind === 'dgal') for (const c of r.cubicles) {
       const run = runs.get(Math.min(c, r.label) + ',' + Math.max(c, r.label)); const d = run && B.safeDoor(run, deg); if (d) doors.push(...d);
     }
     // partitions: some rooms open straight into the room next door (rooms in a row to cross)
@@ -455,7 +485,7 @@ const Halls = (() => {
       size: W, rows: H, walls: [...segsF.map(s => s.k), ...gates], doors: [...new Set([...doors, ...gates])], columns: [], marks,
       title: cave ? 'Masmorra construida sobre tu cueva' : `Masmorra de salas y pasillos ${n}×${m}`,
       desc: `Escala: 1 cuadrado = 2 personas; pasillos de 2, salas de ${rmin} a ${rmax} cuadrados (lo más grande se parte en minicuartos con puerta). ${rooms.length} salas (cuadradas con bisel 1 o 2 y rombos con puntas de 2). Sala del jefe en el centro${nPillars ? ` con ${nPillars} columnas` : ''}. ` +
-        `Pasillos de 2 que serpentean entre ellas: crecen como un laberinto que prefiere girar (vueltas y espirales), se ramifican y a veces cortan en diagonal (${nDiag} tramos diagonales). ${rooms.filter(r => r.kind === 'rb').length} salas rombo. ` +
+        `Pasillos de 2 que serpentean entre ellas: crecen como un laberinto que prefiere girar (vueltas y espirales), se ramifican y a veces cortan en diagonal (${nDiag} tramos diagonales). ${rooms.filter(r => r.kind === 'rb').length} salas rombo (vacías y grandes). ${rooms.filter(r => r.kind === 'dgal').length} galerías en diagonal (salón a 45° con cuartitos en sus dos paredes). ` +
         `Cada sala abre a un pasillo vecino; los pasillos que no llevan a ninguna sala se cortan. ${loops} atajos. ` +
         `${splitPairs.length} particiones nuevas (paredes dentro de salas, partes entre ${pmin} y ${pmax < 1e9 ? pmax : '∞'}). Sin huecos de 1, sin esquinas de 90° (biselado automático) y sin puertas pegadas a otra pared. ${nPart} puertas entre salas vecinas (salas en fila). ${rooms.filter(r => r.kind === 'gal').length} galerías (pasadizo con cuartitos a los lados, hasta 5 salidas). Las particiones se agrupan en barrios; el resto de las salas quedan enteras.\n• Piso usado: ${Math.round(100 * floor / B.q.length)}%. Ruta de la entrada a la meta: ${Math.round(routeLen / 2)} pasos.\n• Colores: verde = sala inicial, dorado = sala final (la más profunda), morado = forma central, azul = ruta.\n\nMarca con 🖍 los errores y explica abajo.`,
     };
