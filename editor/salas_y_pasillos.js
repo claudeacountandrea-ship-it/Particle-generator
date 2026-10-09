@@ -258,6 +258,17 @@ const Halls = (() => {
         const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, R = (x1 - x0) / 2 - 1;
         B.paint(inR, corr, [0], rb); // the corners around it are corridor, so its doors go on the diagonal sides
         B.paint((x, y) => Math.abs(x - cx) <= R && Math.abs(y - cy) <= R && Math.abs(x - cx) + Math.abs(y - cy) <= R + 1, l, null, rb);
+        // no ring around it: the corners of its square become little rooms around it
+        const linked = (i, j) => nodeLinks.has(nid(i, j)) ? nodeLinks.get(nid(i, j)).length : 0;
+        const corners = [[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([sx, sy]) => {
+          let k = 0;
+          for (let t = 0; t * 2 <= r.w; t++) k += linked(sx < 0 ? r.i + t : r.i + r.w - t, sy < 0 ? r.j : r.j + r.h);
+          for (let t = 1; t * 2 <= r.h; t++) k += linked(sx < 0 ? r.i : r.i + r.w, sy < 0 ? r.j + t : r.j + r.h - t);
+          return { sx, sy, k };
+        });
+        // only the corner where the most corridors arrive stays corridor (the way in): no plaza around it
+        const keep = [...corners].sort((a, b) => b.k - a.k)[0];
+        for (const c of corners) if (c !== keep) B.paint((x, y) => inR(x, y) && c.sx * (x - cx) > 0 && c.sy * (y - cy) > 0, B.label('room'), [corr], rb);
       } else B.paint(inR, l, [0], rb);
     }
     // a cell crossed by a diagonal corridor: its leftover triangles join a room beside them

@@ -571,18 +571,19 @@ $('lineBtn').onclick = () => setLine(!lineMode);
 $('fLine').onclick = () => setLine(!lineMode);
 function setFloor(on) { floorOn = on; fvCache = null; $('floorBtn').classList.toggle('on', on); $('fFloor').classList.toggle('on', on); draw(); }
 $('floorBtn').onclick = () => setFloor(!floorOn);
-// marks in red what breaks the rules: too thin, a space under 4×4, a bare 90° corner, a door touching a wall
+// marks in red what breaks the rules: too thin, a space under 4×4, a bare 90° corner, a door touching a wall, a sharp edge, a loose wall
 $('rulesBtn').onclick = () => {
   const r = checkRules(W, H, walls, doors); snapshot();
   for (const [k, v] of [...marks]) if (v === 0) marks.delete(k);
   for (const [x, y] of r.tiny) marks.set(vk(x, y), 0);
   for (const [x, y] of r.thin) marks.set(vk(x, y), 0);
   const around = ([x, y], c) => { for (const [a, b] of [[x - 1, y - 1], [x, y - 1], [x - 1, y], [x, y]]) if (a >= 0 && b >= 0 && a < W - 1 && b < H - 1) marks.set(vk(a, b), c); };
-  for (const p of r.corners) around(p, 0);
+  for (const p of [...r.corners, ...r.sharp]) around(p, 0);
+  for (const k of r.blades) for (const p of parseW(k)) around(p, 0);
   for (const k of r.badDoors) for (const p of parseW(k)) around(p, 0);
   dirty = true; draw();
-  const n = r.thin.length + r.tiny.length + r.corners.length + r.badDoors.length;
-  toast(n ? `${r.thin.length} finos · ${r.tiny.length} chicos · ${r.corners.length} esquinas 90° · ${r.badDoors.length} puertas malas` : 'Cumple las reglas ✔');
+  const n = r.thin.length + r.tiny.length + r.corners.length + r.badDoors.length + r.sharp.length + r.blades.length;
+  toast(n ? `${r.thin.length} finos · ${r.tiny.length} chicos · ${r.corners.length} esquinas 90° · ${r.badDoors.length} puertas malas · ${r.sharp.length} filos · ${r.blades.length} paredes sueltas` : 'Cumple las reglas ✔');
 };
 $('fFloor').onclick = () => setFloor(!floorOn);
 function setFull(on) { document.body.classList.toggle('full', on); layout(); }
@@ -1207,7 +1208,23 @@ const Build = (W, H) => {
         const at = [[x, y - 1, 3], [x, y - 1, 2], [x, y, 0], [x, y, 3], [x - 1, y, 1], [x - 1, y, 0], [x - 1, y - 1, 2], [x - 1, y - 1, 1]];
         const ix = at.map(([a, b, k]) => (b * C + a) * 4 + k), r = ix.map(i => q[i]);
         let ch = 0; for (let i = 0; i < 8; i++) if (r[i] !== r[(i + 1) & 7]) ch++;
-        if (ch !== 2) continue;
+        if (ch < 2) continue;
+        // a "V" of two diagonals (a sharp edge), at a bare tip or where a shared wall ends in a "Y":
+        // each wedge cell goes whole to the space on its other side, so the "Y" becomes a "T"
+        let vs = -1; for (let i = 0; i < 8; i++) { const c1 = at[i], c2 = at[(i + 1) & 7];
+          if ((c1[0] !== c2[0] || c1[1] !== c2[1]) && r[i] === r[(i + 1) & 7] && r[(i + 7) & 7] !== r[i] && r[(i + 2) & 7] !== r[i]) { vs = i; break; } }
+        if (vs >= 0) {
+          const A = r[vs], cells = [at[vs], at[(vs + 1) & 7]].map(([a, b, k]) => [(b * C + a) * 4, k]);
+          const to = cells.map(([base, k]) => { const o = [0, 1, 2, 3].filter(t => q[base + t] !== A).map(t => q[base + t]); return o.length === 2 && o[0] === o[1] ? o[0] : null; });
+          if (to.every(v => v !== null)) { cells.forEach(([base], j) => { for (let t = 0; t < 4; t++) q[base + t] = to[j]; }); n++; continue; }
+        }
+        // a 45° wedge (a bevel pressed against another wall): that half cell goes whole to its other side
+        let acute = false;
+        for (let i = 0; i < 8 && !acute; i++) if (r[i] !== r[(i + 7) & 7] && r[i] !== r[(i + 1) & 7]) {
+          const [a, b] = at[i], base = (b * C + a) * 4, o = [0, 1, 2, 3].filter(t => q[base + t] !== r[i]).map(t => q[base + t]);
+          if (o.length === 2 && o[0] === o[1]) { for (let t = 0; t < 4; t++) q[base + t] = o[0]; n++; acute = true; }
+        }
+        if (acute || ch !== 2) continue;
         let s = -1; for (let i = 0; i < 8; i++) if (r[i] !== r[(i + 7) & 7] && r[i] === r[(i + 1) & 7] && r[(i + 2) & 7] !== r[i]) { s = i; break; }
         if (s < 0) continue; // the arc of 2 quarters inside the square corner starts at s
         const A = r[s], Bl = r[(s + 2) & 7], c1 = at[s], c2 = at[(s + 1) & 7];
@@ -1819,6 +1836,17 @@ const Halls = (() => {
         const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, R = (x1 - x0) / 2 - 1;
         B.paint(inR, corr, [0], rb); // the corners around it are corridor, so its doors go on the diagonal sides
         B.paint((x, y) => Math.abs(x - cx) <= R && Math.abs(y - cy) <= R && Math.abs(x - cx) + Math.abs(y - cy) <= R + 1, l, null, rb);
+        // no ring around it: the corners of its square become little rooms around it
+        const linked = (i, j) => nodeLinks.has(nid(i, j)) ? nodeLinks.get(nid(i, j)).length : 0;
+        const corners = [[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([sx, sy]) => {
+          let k = 0;
+          for (let t = 0; t * 2 <= r.w; t++) k += linked(sx < 0 ? r.i + t : r.i + r.w - t, sy < 0 ? r.j : r.j + r.h);
+          for (let t = 1; t * 2 <= r.h; t++) k += linked(sx < 0 ? r.i : r.i + r.w, sy < 0 ? r.j + t : r.j + r.h - t);
+          return { sx, sy, k };
+        });
+        // only the corner where the most corridors arrive stays corridor (the way in): no plaza around it
+        const keep = [...corners].sort((a, b) => b.k - a.k)[0];
+        for (const c of corners) if (c !== keep) B.paint((x, y) => inR(x, y) && c.sx * (x - cx) > 0 && c.sy * (y - cy) > 0, B.label('room'), [corr], rb);
       } else B.paint(inR, l, [0], rb);
     }
     // a cell crossed by a diagonal corridor: its leftover triangles join a room beside them
@@ -2242,12 +2270,28 @@ function checkRules(w, h, ws, ds) {
     const [x, y] = v.split(',').map(Number);
     if (x > 0 && y > 0 && x < w - 1 && y < h - 1) corners.push([x, y]); // the map border may square off
   }
+  // sharp edges (filos): two walls at 45°, or a "V" of two diagonals, at any point (also a "Y")
+  const sharp = [];
+  for (const [v, d] of dirs) {
+    if (d.length < 2) continue;
+    const [x, y] = v.split(',').map(Number); if (x <= 0 || y <= 0 || x >= w - 1 || y >= h - 1) continue;
+    const a = d.map(([dx, dy]) => Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) & 7).sort((p, q) => p - q);
+    for (let i = 0; i < a.length; i++) { const p = a[i], q = i + 1 < a.length ? a[i + 1] : a[0] + 8, gap = q - p;
+      if (gap === 1 || (gap === 2 && p % 2 === 1)) { sharp.push([x, y]); break; } }
+  }
+  // blades: a wall with the same space on both sides (a loose wall inside a room)
+  const blades = [];
+  for (const k of ws) { const [[x1, y1], [x2, y2]] = parseW(k); let a, b;
+    if (y1 === y2) { if (y1 === 0 || y1 === R) continue; const x = Math.min(x1, x2); a = Qi(x, y1 - 1, 2); b = Qi(x, y1, 0); }
+    else if (x1 === x2) { if (x1 === 0 || x1 === C) continue; a = Qi(x1 - 1, y1, 1); b = Qi(x1, y1, 3); }
+    else { const x = Math.min(x1, x2), y = Math.min(y1, y2); a = Qi(x, y, 0); b = Qi(x, y, 2); }
+    if (find(a) === find(b)) blades.push(k); }
   const badDoors = [];
   for (const k of ds) {
     const [p, q] = parseW(k);
     for (const e of [p, q]) { const d = dirs.get(vk(...e)) || []; if (d.length > 2 && !d.every(dd => ds.has(wk(e, [e[0] + dd[0], e[1] + dd[1]])) || (dd[0] === q[0] - p[0] && dd[1] === q[1] - p[1]) || (dd[0] === p[0] - q[0] && dd[1] === p[1] - q[1]))) { badDoors.push(k); break; } }
   }
-  return { thin, tiny, corners, badDoors };
+  return { thin, tiny, corners, badDoors, sharp, blades };
 }
 
 async function savePadGen(pad, msg) {
@@ -2276,10 +2320,10 @@ $('bigBtn').onclick = () => {
   let m = null, best = 1e9, chk = null;
   for (let t = 0; t < 3 && best > 0; t++) {
     const g = Halls(+$('bigN').value, undefined, null, { central: $('bigCentral').checked, pmin: +$('pMin').value, pmax: pmax || 1e9 });
-    const r = checkRules(g.size, g.rows, new Set(g.walls), new Set(g.doors)), bad = r.thin.length + r.tiny.length + r.corners.length + r.badDoors.length;
+    const r = checkRules(g.size, g.rows, new Set(g.walls), new Set(g.doors)), bad = r.thin.length + r.tiny.length + r.corners.length + r.badDoors.length + r.sharp.length + r.blades.length;
     if (bad < best) { best = bad; m = g; chk = r; }
   }
-  m.desc += `\n• Revisión de reglas: ${chk.thin.length} huecos finos, ${chk.tiny.length} celdas en espacios menores de 4×4, ${chk.corners.length} esquinas de 90°, ${chk.badDoors.length} puertas que tocan otra pared.`;
+  m.desc += `\n• Revisión de reglas: ${chk.thin.length} huecos finos, ${chk.tiny.length} celdas en espacios menores de 4×4, ${chk.corners.length} esquinas de 90°, ${chk.badDoors.length} puertas que tocan otra pared, ${chk.sharp.length} filos (puntas en V o a 45°), ${chk.blades.length} paredes sueltas dentro de un espacio.`;
   savePadGen({ author: 'claude', gen: true, ask: true, reply: '', kind: 'good', order: 4000 + pads.length, createdAt: Date.now(), ...m, marks: m.marks || {} }, 'Masmorra grande generada');
 };
 $('miniBtn').onclick = () => {

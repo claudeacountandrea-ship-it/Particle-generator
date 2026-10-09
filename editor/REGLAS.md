@@ -151,3 +151,9 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
    vecina en vez de poner una puerta mala.
 - La generación grande prueba hasta 3 veces y se queda con la que rompe menos reglas; el resultado de
   la revisión queda escrito al final de la descripción. 🔍 marca en rojo lo que falle en cualquier dibujo.
+39. **Sin filos**: ninguna punta en "V" ni pared a 45° contra otra. Donde la pared compartida entre
+   dos salas llega a un pasillo y las dos salas tenían bisel (una "Y" que se mete en el camino), los
+   biseles se quitan y queda una **T** limpia (esquina recta permitida porque es pared compartida).
+40. **Sin paredes sueltas** dentro de un espacio (pared con el mismo espacio a los dos lados).
+41. **Rombos sin anillo**: alrededor de un rombo solo una esquina de su cuadro es pasillo (la entrada);
+   las otras esquinas son cuartitos, no una plaza de pasillo que lo rodea.
