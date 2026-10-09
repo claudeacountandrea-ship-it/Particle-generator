@@ -199,3 +199,9 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
    puertas de unas salas se vuelve una **antesala** (cuarto propio, su boca es una puerta a lo ancho del
    pasillo, solo donde las paredes siguen rectas); las salas que daban a él ahora abren a la antesala.
 53. La avenida diagonal se recorta al contorno del mapa (no sobresale del círculo).
+54. **Mezcla de particiones en los pasillos**: compuertas (pared de 2 que es toda puerta) y **pasos
+   estrechos** (media pared + puerta de 1). Van junto a casi todas las puertas de salas, a 1/4–1/2–3/4
+   de los tramos largos y en las bocas de los cruces (~35–50 en 16×16).
+55. **Toda sala tiene entrada real**: ninguna sala puede tener su única puerta hacia el exterior (lo negro).
+   En la vista ⬛ una puerta hacia afuera solo cuenta como entrada si está en el borde del mapa; si no,
+   esa sala sale gris (cerrada) y la generación descarta ese intento.
