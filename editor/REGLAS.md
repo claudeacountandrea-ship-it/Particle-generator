@@ -192,3 +192,10 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
    cuadrado de la retícula. Tamaño por defecto 16×16 casillas (hay 20×20). Las avenidas diagonales
    se ponen dentro del círculo, entre el borde y la sala del jefe, apuntando al centro.
    La generación grande descarta el intento que deje alguna parte cerrada sin acceso.
+51. **Muchas más particiones en los pasillos que rodean las salas**: además de las compuertas junto a
+   las puertas (ahora casi siempre), cada tramo recto de pasillo de 8 o más lleva a menudo una
+   compuerta a mitad: el pasillo se vuelve una cadena de tramos (~35–40 compuertas en 16×16).
+52. **Los pasillos sin salida se aprovechan como cuartos**: un tramo de pasillo que solo lleva a las
+   puertas de unas salas se vuelve una **antesala** (cuarto propio, su boca es una puerta a lo ancho del
+   pasillo, solo donde las paredes siguen rectas); las salas que daban a él ahora abren a la antesala.
+53. La avenida diagonal se recorta al contorno del mapa (no sobresale del círculo).

@@ -295,6 +295,20 @@ const Halls = (() => {
       }
     }
     for (const [bb, f] of cuts) B.paint(f, 0, [corr], bb);
+    // dead ends: a corridor stretch that only leads to the doors of some rooms becomes an anteroom
+    // (a room of its own, its mouth one door across the corridor); those rooms then open onto it
+    const anteDoors = [];
+    for (const e of edges.values()) {
+      if (e.diag || leaf(e.a) === leaf(e.b) || Math.random() < 0.25) continue;
+      const [x1, y1] = N(...(leaf(e.a) ? e.b : e.a)), [x2, y2] = N(...(leaf(e.a) ? e.a : e.b));
+      const dx = Math.sign(x2 - x1), dy = Math.sign(y2 - y1), L = Math.abs(x2 - x1) + Math.abs(y2 - y1);
+      if (L < 10) continue; // under 2×8 it would be smaller than a square
+      const al = (x, y) => (x - x1) * dx + (y - y1) * dy, pp = (x, y) => Math.abs((x - x1) * dy - (y - y1) * dx);
+      const l = B.label('room');
+      B.paint((x, y) => al(x, y) > 2 && pp(x, y) <= 1, l, [corr], [Math.min(x1, x2) - 2, Math.min(y1, y2) - 2, Math.max(x1, x2) + 2, Math.max(y1, y2) + 2]);
+      const mx = x1 + 2 * dx, my = y1 + 2 * dy;
+      if (dx) anteDoors.push(wk([mx, my - 1], [mx, my]), wk([mx, my], [mx, my + 1])); else anteDoors.push(wk([mx - 1, my], [mx, my]), wk([mx, my], [mx + 1, my]));
+    }
     // rooms fill their cells; on a side with no corridor they reach the middle of the band and share
     // the wall with the room next door (no rock left between rooms)
     const ext = (i, j, side) => { // side: 0 left, 1 right, 2 top, 3 bottom
@@ -382,17 +396,18 @@ const Halls = (() => {
       const [px, py] = N(...ends[0]), [qx, qy] = N(...ends[1]), dx = Math.sign(qx - px), dy = Math.sign(qy - py), G = cw(Math.min(av[0][0][0], av[0][1][0]));
       const along = (x, y) => (x - px) * dx + (y - py) * dy, perp = (x, y) => (x - px) * dy - (y - py) * dx, Lu = along(qx, qy);
       const bb = [Math.min(px, qx) - G, Math.min(py, qy) - G, Math.max(px, qx) + G, Math.max(py, qy) + G];
+      const inMap = (x, y) => { if (!round) return true; let i = 0, j = 0; while (i < n - 1 && X[i + 1] <= x) i++; while (j < m - 1 && Y[j + 1] <= y) j++; return cellIn(i, j); };
       const hall = B.label('gal'), notCorr = [...Array(B.next + 64).keys()].filter(l => l !== corr);
-      B.paint((x, y) => { const u = along(x, y); return u >= 0 && u <= Lu && Math.abs(perp(x, y)) <= 2; }, hall, null, bb);
+      B.paint((x, y) => { const u = along(x, y); return u >= 0 && u <= Lu && Math.abs(perp(x, y)) <= 2 && inMap(x, y); }, hall, null, bb);
       avenueHalls.push(hall);
       // in its middle the hall opens into a rombo: a square turned 45°, as wide as the avenue (its tips get flat later)
       const cm0 = 2 * G * Math.floor(Lu / (2 * G) / 2), cm1 = cm0 + 2 * G;
       const chamber = B.label('room'); avenueRombos.push(chamber);
-      B.paint((x, y) => { const u = along(x, y); return u > cm0 && u <= cm1 && Math.abs(perp(x, y)) <= G; }, chamber, notCorr, bb);
+      B.paint((x, y) => { const u = along(x, y); return u > cm0 && u <= cm1 && Math.abs(perp(x, y)) <= G && inMap(x, y); }, chamber, notCorr, bb);
       for (const side of [1, -1]) for (let k = 0; k * G < Lu; k++) {
         if (k * G >= cm0 && k * G < cm1) continue;
         const cu = B.label('room'), a0 = k * G, a1 = Math.min(Lu, (k + 1) * G);
-        B.paint((x, y) => { const u = along(x, y), v = side * perp(x, y); return v > 2 && v <= G && u > a0 && u <= a1; }, cu, notCorr, bb);
+        B.paint((x, y) => { const u = along(x, y), v = side * perp(x, y); return v > 2 && v <= G && u > a0 && u <= a1 && inMap(x, y); }, cu, notCorr, bb);
         diagCubes.push([cu, hall]);
       }
     }
@@ -467,6 +482,16 @@ const Halls = (() => {
     const segs = B.segments(), runs = B.runs(segs), deg = new Map();
     for (const s of segs) for (const p of parseW(s.k)) { const v = vk(...p); deg.set(v, (deg.get(v) || 0) + 1); }
     const doors = [];
+    { // an anteroom's mouth is a door across the corridor: only where both corridor walls run straight past it
+      const ws0 = new Set(segs.map(g => g.k));
+      for (let t = 0; t < anteDoors.length; t += 2) {
+        const pair = [anteDoors[t], anteDoors[t + 1]]; if (!pair.every(k => ws0.has(k))) continue;
+        const pts = pair.flatMap(parseW), mid = pts.find((q, i) => pts.findIndex(o => o[0] === q[0] && o[1] === q[1]) !== i);
+        const ends = pts.filter(q => !(q[0] === mid[0] && q[1] === mid[1]));
+        const ok = deg.get(vk(...mid)) === 2 && ends.every(q => { const ax = q[0] === mid[0]; const a1 = ax ? [q[0] - 1, q[1]] : [q[0], q[1] - 1], a2 = ax ? [q[0] + 1, q[1]] : [q[0], q[1] + 1]; return deg.get(vk(...q)) === 3 && ws0.has(wk(q, a1)) && ws0.has(wk(q, a2)); });
+        if (ok) doors.push(...pair);
+      }
+    }
     const opened = new Set();
     for (const r of rooms) if (r.kind === 'rb') { // rombo: a door in the middle of a diagonal side
       const run = runs.get(Math.min(r.label, corr) + ',' + Math.max(r.label, corr)); const d = run && B.safeDoor(run, deg); if (d) { doors.push(...d); opened.add(r); }
@@ -551,20 +576,29 @@ const Halls = (() => {
       const cand = [];
       for (const [key, list] of byLine) {
         const h = key[0] === 'h', L = +key.slice(1); list.sort((a, b) => a - b);
-        for (let t = 0; t < list.length;) { let e = t; while (e + 1 < list.length && list[e + 1] === list[e] + 1) e++; cand.push([h, L, list[t], list[e] + 1]); t = e + 1; }
+        for (let t = 0; t < list.length;) { let e = t; while (e + 1 < list.length && list[e + 1] === list[e] + 1) e++; cand.push([h, L, list[t], list[e] + 1, false]); t = e + 1; }
+      }
+      // and halfway along long straight corridor stretches: the corridors that go round the rooms become
+      // a chain of stretches, each one a small choice
+      for (const e of edges.values()) {
+        if (e.diag) continue;
+        const [x1, y1] = N(...e.a), [x2, y2] = N(...e.b);
+        if (Math.abs(x2 - x1) + Math.abs(y2 - y1) < 8) continue;
+        if (y1 === y2) { const xm = Math.round((x1 + x2) / 2); cand.push([true, y1 - 1, xm, xm, true]); }
+        else { const ym = Math.round((y1 + y2) / 2); cand.push([false, x1 - 1, ym, ym, true]); }
       }
       // (u, v) → (x, y): u runs along the wall, v across it
-      for (const [h, L, a, b] of cand.sort(() => Math.random() - 0.5)) {
-        if (Math.random() < 0.45) continue;
+      for (const [h, L, a, b, mid] of cand.sort(() => Math.random() - 0.5)) {
+        if (Math.random() < (mid ? 0.4 : 0.15)) continue;
         const P = (u, v) => h ? [u, v] : [v, u], seg = (u1, v1, u2, v2) => wk(P(u1, v1), P(u2, v2)), cellAt = (u, v) => { const [x, y] = P(u, v); return isCorrQ(x, y); };
-        for (const sd of [1, -1]) {
+        for (const sd of mid ? [1] : [1, -1]) {
           const rows = sd > 0 ? [L, L + 1] : [L - 1, L - 2]; // the two rows of the corridor on that side
           let ok = true;
           for (let u = a - 2; u < b + 2 && ok; u++) { if (!rows.every(v => cellAt(u, v))) ok = false; if (!plain(seg(u, L + 2 * sd, u + 1, L + 2 * sd))) ok = false; }
           for (const u of [a - 2, a - 1, b, b + 1]) if (!plain(seg(u, L, u + 1, L))) ok = false;
           if (!ok) continue;
           const straight = u => [P(u, L), P(u, L + 2 * sd)].every(q => degF.get(q + '') === 2); // nothing else meets the walls where the gate ends
-          const sides = (Math.random() < 0.25 ? [a - 1, b + 1] : [Math.random() < 0.5 ? a - 1 : b + 1]).filter(straight);
+          const sides = (mid ? [a] : Math.random() < 0.25 ? [a - 1, b + 1] : [Math.random() < 0.5 ? a - 1 : b + 1]).filter(straight);
           if (!sides.length) continue;
           for (const gu of sides) {
             if (placed.some(([hh, LL, uu]) => hh === h && Math.abs(LL - L) <= 2 && Math.abs(uu - gu) < 6)) continue;
