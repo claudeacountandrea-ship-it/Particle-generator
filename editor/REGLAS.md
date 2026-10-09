@@ -165,3 +165,6 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
 44. **Sala del jefe** en el centro: la más grande, pero ya no gigantesca (2×2 o 3×3 casillas de la
    retícula fina), con **columnas** de paredes (pilares de 1×1) en dos filas a los lados de una nave
    central, siempre a 2 o más de cualquier pared. Las columnas no cuentan como espacio cerrado ni como esquina.
+45. **Equilibrio de formas**: rombos solo de 2×2 casillas (uno chico se ve como octágono), pero
+   frecuentes (~1 de cada 10 salas; basta que el cuadro sea casi cuadrado). Pasillos diagonales más
+   frecuentes (~10 tramos en 12×12), y sus triángulos sobrantes dan salas con una pared diagonal.
