@@ -129,3 +129,11 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
    triángulos se suman a las salas vecinas (salas con una pared diagonal), sin triángulos sueltos.
 34. **Particiones**: puertas entre salas vecinas (salas en fila), galerías con cuartitos y
    compuertas en pasillos. Toda zona encerrada recibe una puerta: nada queda sin acceso.
+
+## 🏰 Generación grande (botón "Generar masmorra grande")
+- Tamaño 8×8 a 16×16 casillas (hasta 167×167 puntos).
+- **Forma central**: un gran rombo o una gran sala con bisel 2 en el centro (morado).
+- **Sala inicial** (verde): la primera a la que se llega desde la entrada; **sala final** (dorado):
+  la más profunda. **Ruta** (azul): el camino real de una a otra, respetando paredes y puertas.
+- **Particiones con mínimo y máximo**: toda sala más larga que el máximo se parte con una pared nueva
+  con puerta, sin dejar partes más cortas que el mínimo (minicuartos dentro de salas).
