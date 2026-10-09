@@ -12,8 +12,13 @@ const Halls = (() => {
   // opts: {central: true|false, pmin, pmax} — a special central form; rooms split by new walls until no part is longer than pmax (never shorter than pmin)
   return function halls(n = 8, m = n, cave = null, opts = {}) {
     if (cave) { n = Math.floor((cave.W - 2 * M - 1) / G); m = Math.floor((cave.H - 2 * M - 1) / G); }
-    const W = cave ? cave.W : G * n + 2 * M + 1, H = cave ? cave.H : G * m + 2 * M + 1, B = Build(W, H);
-    const N = (i, j) => [M + G * i, M + G * j]; // lattice node
+    // the lattice is not even: columns and rows are 8, 10, 12 or 14 wide, so rooms differ in size
+    // (a cave keeps the even 10, to follow the painting)
+    const pitch = () => cave ? G : pick([8, 10, 10, 10, 12, 14]);
+    const X = [M], Y = [M]; for (let i = 0; i < n; i++) X.push(X[i] + pitch()); for (let j = 0; j < m; j++) Y.push(Y[j] + pitch());
+    const W = cave ? cave.W : X[n] + M + 1, H = cave ? cave.H : Y[m] + M + 1, B = Build(W, H);
+    const N = (i, j) => [X[i], Y[j]]; // lattice node
+    const cw = i => X[i + 1] - X[i], ch = j => Y[j + 1] - Y[j], square = (i, j, w = 1, h = 1) => X[i + w] - X[i] === Y[j + h] - Y[j];
     const nid = (i, j) => j * (n + 1) + i, cid = (i, j) => j * n + i;
     const painted = cave ? (x, y) => cave.cells.has(vk(Math.floor(x), Math.floor(y))) : () => true;
     const cellIn = (i, j) => { if (!cave) return true; let a = 0; for (let y = 0; y < G; y++) for (let x = 0; x < G; x++) if (painted(M + G * i + x + .5, M + G * j + y + .5)) a++; return a / (G * G) >= 0.3; };
@@ -26,31 +31,31 @@ const Halls = (() => {
     const freeCell = new Set();
     if (!cave && opts.central !== false && n >= 6 && m >= 6) { // the central form: a great rombo or a great bevelled hall
       const cs = n >= 10 && m >= 10 ? 3 : 2, ci = (n - cs) >> 1, cj = (m - cs) >> 1;
-      const c0 = { i: ci, j: cj, w: cs, h: cs, kind: Math.random() < 0.6 ? 'rb' : 'sq', bevel: 2, special: 'central' };
+      const c0 = { i: ci, j: cj, w: cs, h: cs, kind: square(ci, cj, cs, cs) && Math.random() < 0.6 ? 'rb' : 'sq', bevel: 2, special: 'central' };
       rooms.push(c0); for (let b = cj; b < cj + cs; b++) for (let a = ci; a < ci + cs; a++) cell[cid(a, b)] = c0;
     }
     for (let j = 0; j < m; j++) for (let i = 0; i < n; i++) {
       if (cell[cid(i, j)] || !cellIn(i, j)) continue;
-      if (Math.random() < 0.2) { freeCell.add(cid(i, j)); continue; }
+      if (square(i, j) && Math.random() < 0.3) { freeCell.add(cid(i, j)); continue; }
       let w = 1, h = 1;
       const free = (a, b) => a < n && b < m && !cell[cid(a, b)] && !freeCell.has(cid(a, b)) && cellIn(a, b);
       const r = Math.random();
       // galleries: a long corridor with little rooms (partitions) on both sides
       if (r < 0.05 && free(i + 1, j) && free(i + 2, j)) {
-        const big = free(i, j + 1) && free(i + 1, j + 1) && free(i + 2, j + 1) && Math.random() < 0.5;
-        const g = { i, j, w: 3, h: big ? 2 : 1, kind: 'gal', axis: 'x', bevel: 1 }; rooms.push(g);
+        const big = free(i, j + 1) && free(i + 1, j + 1) && free(i + 2, j + 1); if (!big) continue; // only wide galleries: their little rooms are at least 5 deep
+        const g = { i, j, w: 3, h: 2, kind: 'gal', axis: 'x', bevel: 1 }; rooms.push(g);
         for (let b = j; b < j + g.h; b++) for (let a = i; a < i + 3; a++) cell[cid(a, b)] = g;
         continue;
       }
       if (r < 0.09 && free(i, j + 1) && free(i, j + 2)) {
-        const big = free(i + 1, j) && free(i + 1, j + 1) && free(i + 1, j + 2) && Math.random() < 0.5;
-        const g = { i, j, w: big ? 2 : 1, h: 3, kind: 'gal', axis: 'y', bevel: 1 }; rooms.push(g);
+        const big = free(i + 1, j) && free(i + 1, j + 1) && free(i + 1, j + 2); if (!big) continue;
+        const g = { i, j, w: 2, h: 3, kind: 'gal', axis: 'y', bevel: 1 }; rooms.push(g);
         for (let b = j; b < j + 3; b++) for (let a = i; a < i + g.w; a++) cell[cid(a, b)] = g;
         continue;
       }
       if (r < 0.28 && free(i + 1, j) && free(i, j + 1) && free(i + 1, j + 1)) { w = 2; h = 2; }
       else if (r < 0.3 && free(i + 1, j)) w = 2; else if (r < 0.45 && free(i, j + 1)) h = 2;
-      const kind = w === 2 && h === 2 && Math.random() < 0.5 ? 'rb' : 'sq'; // rombos only when big, so they read as rombos
+      const kind = w === 2 && h === 2 && square(i, j, 2, 2) && Math.random() < 0.6 ? 'rb' : 'sq'; // rombos only when big, so they read as rombos
       const room = { i, j, w, h, kind, bevel: w * h === 1 ? 1 : rnd(1, 2) }; // small rooms: bevel 1, so they stay square
       rooms.push(room);
       for (let b = j; b < j + h; b++) for (let a = i; a < i + w; a++) cell[cid(a, b)] = room;
@@ -80,7 +85,7 @@ const Halls = (() => {
         const a = i + di, b = j + dj;
         if (a < 0 || b < 0 || a > n || b > m || !nodeIn(a, b) || nodeBlocked(a, b)) continue;
         const ci = Math.min(i, a), cj = Math.min(j, b);
-        if (cell[cid(ci, cj)] || usedDiagCell.has(cid(ci, cj)) || (cave && !cellIn(ci, cj))) continue;
+        if (cell[cid(ci, cj)] || usedDiagCell.has(cid(ci, cj)) || !square(ci, cj) || (cave && !cellIn(ci, cj))) continue;
         out.push([a, b, true]);
       }
       return out;
@@ -97,7 +102,7 @@ const Halls = (() => {
       const opts = neighbours(i, j).filter(([a, b]) => !seen.has(nid(a, b)));
       if (!opts.length) { stack.splice(k, 1); continue; }
       // winding: prefer to turn (that is what makes the snakes and spirals), diagonals now and then
-      let w = opts.map(([a, b, d]) => { const dir = [a - i, b - j] + ''; return (d ? 1.4 : 1) * (last && dir === last ? 0.35 : 1); });
+      let w = opts.map(([a, b, d]) => { const dir = [a - i, b - j] + ''; return (d ? 2 : 1) * (last && dir === last ? 0.35 : 1); });
       let t = Math.random() * w.reduce((s, v) => s + v, 0), c = 0; for (; c < opts.length - 1; c++) { t -= w[c]; if (t <= 0) break; }
       const [a, b, d] = opts[c];
       if (d) usedDiagCell.add(cid(Math.min(i, a), Math.min(j, b)));
@@ -176,13 +181,18 @@ const Halls = (() => {
     for (const e of edges.values()) for (const [p, q] of [[e.a, e.b], [e.b, e.a]]) {
       const k = nid(...p); if (!nodeLinks.has(k)) nodeLinks.set(k, []); nodeLinks.get(k).push([q[0] - p[0], q[1] - p[1]]);
     }
+    const linkCount = new Map(); for (const e of edges.values()) for (const p of [e.a, e.b]) linkCount.set(nid(...p), (linkCount.get(nid(...p)) || 0) + 1);
+    const leaf = p => linkCount.get(nid(...p)) === 1 && nid(...p) !== nid(si, sj);
     for (const e of edges.values()) {
       const [x1, y1] = N(...e.a), [x2, y2] = N(...e.b), dx = Math.sign(x2 - x1), dy = Math.sign(y2 - y1);
       if (e.diag) {
         const along = (x, y) => (x - x1) * dx + (y - y1) * dy, perp = (x, y) => (x - x1) * dy - (y - y1) * dx, L = along(x2, y2);
         B.paint((x, y) => Math.abs(perp(x, y)) <= 2 && along(x, y) >= 0 && along(x, y) <= L, corr, null, [Math.min(x1, x2) - 3, Math.min(y1, y2) - 3, Math.max(x1, x2) + 3, Math.max(y1, y2) + 3]);
       } else {
-        const lo = [Math.min(x1, x2) - 1, Math.min(y1, y2) - 1], hi = [Math.max(x1, x2) + 1, Math.max(y1, y2) + 1];
+        // a band 2 wide; it goes past a node only where that node is not a dead end
+        const ea = leaf(e.a) ? 0 : 1, eb = leaf(e.b) ? 0 : 1, first = (x1 < x2 || y1 < y2);
+        const lo = [Math.min(x1, x2) - (dx ? (first ? ea : eb) : 1), Math.min(y1, y2) - (dy ? (first ? ea : eb) : 1)];
+        const hi = [Math.max(x1, x2) + (dx ? (first ? eb : ea) : 1), Math.max(y1, y2) + (dy ? (first ? eb : ea) : 1)];
         B.paint((x, y) => x >= lo[0] && x <= hi[0] && y >= lo[1] && y <= hi[1], corr, null, [lo[0], lo[1], hi[0], hi[1]]);
       }
     }
@@ -190,7 +200,7 @@ const Halls = (() => {
     // so a stretch becomes a small chamber to open on the way
     const gateSegs = [];
     for (const e of edges.values()) {
-      if (e.diag || Math.random() > 0.18 || needed.has(ekey(nid(...e.a), nid(...e.b)))) continue; // never in front of a room door
+      if (true) continue; // gates removed: a door across a 2-wide corridor always touches both walls
       const [x1, y1] = N(...e.a), [x2, y2] = N(...e.b), mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
       if (y1 === y2) gateSegs.push(wk([mx, my - 1], [mx, my]), wk([mx, my], [mx, my + 1]));
       else gateSegs.push(wk([mx - 1, my], [mx, my]), wk([mx, my], [mx + 1, my]));
@@ -202,6 +212,7 @@ const Halls = (() => {
     for (const [k, L] of nodeLinks) {
       const i = k % (n + 1), j = (k / (n + 1)) | 0, [cx, cy] = N(i, j);
       const nb = [cx - 5, cy - 5, cx + 5, cy + 5];
+      if (L.length === 1 && k !== nid(si, sj)) continue; // dead end: no square cap
       B.paint((x, y) => Math.abs(x - cx) <= 1 && Math.abs(y - cy) <= 1, corr, null, nb);
       const has = (a, b) => L.some(d => d[0] === a && d[1] === b);
       for (const [sx, sy] of [[1, 1], [-1, 1], [-1, -1], [1, -1]]) {
@@ -221,12 +232,12 @@ const Halls = (() => {
       const q = side <= 1 ? [p[0], p[1] + 1] : [p[0] + 1, p[1]];
       return !isCorr(p, q);
     };
-    const cellRect = (i, j) => { const [x0, y0] = N(i, j), x1 = x0 + G, y1 = y0 + G; return [x0 + (ext(i, j, 0) ? 0 : 1), y0 + (ext(i, j, 2) ? 0 : 1), x1 - (ext(i, j, 1) ? 0 : 1), y1 - (ext(i, j, 3) ? 0 : 1)]; };
+    const cellRect = (i, j) => { const [x0, y0] = N(i, j), x1 = X[i + 1], y1 = Y[j + 1]; return [x0 + (ext(i, j, 0) ? 0 : 1), y0 + (ext(i, j, 2) ? 0 : 1), x1 - (ext(i, j, 1) ? 0 : 1), y1 - (ext(i, j, 3) ? 0 : 1)]; };
     for (const r of rooms) {
       const l = B.label('room'); r.label = l; r.labels = [l];
       const rects = []; for (let b = r.j; b < r.j + r.h; b++) for (let a = r.i; a < r.i + r.w; a++) rects.push(cellRect(a, b));
       const inR = (x, y) => rects.some(([a, b, c, d]) => x >= a && x <= c && y >= b && y <= d);
-      const [x0, y0] = N(r.i, r.j), x1 = x0 + G * r.w, y1 = y0 + G * r.h, rb = [x0 - 1, y0 - 1, x1 + 1, y1 + 1];
+      const [x0, y0] = N(r.i, r.j), x1 = X[r.i + r.w], y1 = Y[r.j + r.h], rb = [x0 - 1, y0 - 1, x1 + 1, y1 + 1];
       if (r.kind === 'gal') {
         // hall along the long axis; little rooms on both sides, each one opening onto the hall
         B.paint(inR, l, [0], rb);
@@ -251,7 +262,7 @@ const Halls = (() => {
     }
     // a cell crossed by a diagonal corridor: its leftover triangles join a room beside them
     for (const c of usedDiagCell) {
-      const i = c % n, j = (c / n) | 0, [x0, y0] = N(i, j);
+      const i = c % n, j = (c / n) | 0, [x0, y0] = N(i, j), G = cw(i);
       const owner = (a, b, side) => (a >= 0 && b >= 0 && a < n && b < m && cell[cid(a, b)] && cell[cid(a, b)].label && ext(a, b, side)) ? cell[cid(a, b)].label : 0;
       const L1 = owner(i, j - 1, 3) || owner(i + 1, j, 0), L2 = owner(i, j + 1, 2) || owner(i - 1, j, 1);
       const diagDown = edges.has(ekey(nid(i, j), nid(i + 1, j + 1))); // "\" crossing
@@ -262,7 +273,7 @@ const Halls = (() => {
     // the way in: a corridor from the start node to the map edge
     { const [sx, sy] = N(si, sj); if (!cave) B.paint((x, y) => Math.abs(x - sx) <= 1 && y >= sy && y <= H, corr); }
     // rock shut inside the dungeon (bits left at corners and by diagonals) joins the room beside it
-    { const C4 = W - 1, R4 = H - 1, q = B.q, out = new Uint8Array(q.length), st = [];
+    const fillRock = () => { const C4 = W - 1, R4 = H - 1, q = B.q, out = new Uint8Array(q.length), st = [];
       const nbr = i => { const c = i >> 2, k = i & 3, x = c % C4, y = (c / C4) | 0, o = [c * 4 + ((k + 1) & 3), c * 4 + ((k + 3) & 3)];
         if (k === 0) o.push(y > 0 ? ((y - 1) * C4 + x) * 4 + 2 : -1); if (k === 2) o.push(y < R4 - 1 ? ((y + 1) * C4 + x) * 4 : -1);
         if (k === 3) o.push(x > 0 ? (y * C4 + x - 1) * 4 + 1 : -1); if (k === 1) o.push(x < C4 - 1 ? (y * C4 + x + 1) * 4 + 3 : -1); return o; };
@@ -273,16 +284,20 @@ const Halls = (() => {
           const to = Object.keys(c).sort((a, b) => c[b] - c[a])[0]; if (to) q[i] = +to; else left++; }
         if (!left) break; }
       // what is still shut in (a triangle between corridors) becomes a small room of its own
-      for (let i = 0; i < q.length; i++) if (!q[i] && !out[i]) { const l = B.label('room'), st2 = [i]; q[i] = l; while (st2.length) for (const j of nbr(st2.pop())) if (j >= 0 && !q[j] && !out[j]) { q[j] = l; st2.push(j); } } }
+      for (let i = 0; i < q.length; i++) if (!q[i] && !out[i]) { const l = B.label('room'), st2 = [i]; q[i] = l; while (st2.length) for (const j of nbr(st2.pop())) if (j >= 0 && !q[j] && !out[j]) { q[j] = l; st2.push(j); } } };
+    fillRock();
     B.snap(); B.pieces();
     // corridor scraps that touch nothing become rock
     for (let l = 1; l < B.next; l++) if (B.kinds[l] === 'corr' && l !== corr && B.area(l)) B.paint(() => true, 0, [l]); // closed scraps nobody can reach
     B.snap(); B.spikes();
     // ---- partitions: rooms longer than pmax get a new wall across (never leaving a part under pmin) ----
-    const pmin = Math.max(3, opts.pmin || 3), pmax = opts.pmax || 1e9, splitPairs = [];
+    const pmin = Math.max(4, opts.pmin || 4), pmax = opts.pmax || 1e9, splitPairs = [];
     const boxOf = l => { let a = 1e9, b = 1e9, c = -1, d = -1; const C4 = W - 1; for (let i = 0; i < B.q.length; i += 4) if (B.q[i] === l || B.q[i + 2] === l) { const cc = i >> 2, x = cc % C4, y = (cc / C4) | 0; if (x < a) a = x; if (x > c) c = x; if (y < b) b = y; if (y > d) d = y; } return [a, b, c + 1, d + 1]; };
     if (pmax < 1e9) {
-      const todo = rooms.filter(r => r.kind === 'sq' && r.label).map(r => r.label);
+      // only some quarters of the dungeon are partitioned (clusters of little rooms); elsewhere the halls stay whole
+      const seeds = Array.from({ length: Math.max(1, Math.round(n * m / 28)) }, () => [rnd(0, n - 1), rnd(0, m - 1)]);
+      const zoned = r => seeds.some(([a, b]) => Math.max(Math.abs(a - (r.i + (r.w - 1) / 2)), Math.abs(b - (r.j + (r.h - 1) / 2))) <= 1.5);
+      const todo = rooms.filter(r => r.kind === 'sq' && r.label && !r.special && zoned(r)).map(r => r.label);
       for (let guard = 0; todo.length && guard < 2000; guard++) {
         const l = todo.pop(), [a, b, c, d] = boxOf(l), w = c - a, h = d - b;
         if (Math.max(w, h) <= pmax) continue;
@@ -292,6 +307,23 @@ const Halls = (() => {
         splitPairs.push([l, n2]); todo.push(l, n2);
       }
       B.snap();
+    }
+    // ---- clean up: nothing thinner than 2, no space smaller than 4×4 (it joins its biggest neighbour) ----
+    // spaces under 4×4 join the neighbour they share most wall with
+    const tidy = () => { fillRock(); B.snap(); B.pieces(); for (let pass = 0; pass < 4; pass++) {
+      const sg = B.segments(), area = new Float64Array(B.next); let merged = 0;
+      for (const v of B.q) area[v] += 0.25;
+      for (let l = 1; l < B.next; l++) {
+        const a = area[l]; if (!a || a >= 16) continue;
+        const sh = new Map(); for (const g of sg) { const o = g.a === l ? g.b : g.b === l ? g.a : -1; if (o > 0) sh.set(o, (sh.get(o) || 0) + 1); }
+        const best = [...sh].sort((p, q) => q[1] - p[1])[0]; if (best) { B.paint(() => true, best[0], [l]); merged++; }
+      }
+      B.snap(); if (!merged) break;
+    } };
+    for (let round = 0; round < 4; round++) {
+      B.thin(); B.snap(); B.spikes(); B.bevelCorners(); tidy();
+      let fixed = 0; for (let t = 0; t < 4; t++) { const k = B.cornerFix(); fixed += k; if (!k) break; }
+      if (!fixed) break;
     }
     // ---- 6. doors ----
     const segs = B.segments(), runs = B.runs(segs), deg = new Map();
@@ -337,21 +369,35 @@ const Halls = (() => {
       if (out.length) doors.push(...out.map(g => g.k));
     }
     // any space nobody can reach yet gets a door to a reached neighbour (repeat until all are in)
-    for (let pass = 0; pass < 6; pass++) {
+    let segs2 = segs, merges = 0;
+    for (let pass = 0; pass < 8; pass++) {
+      const segs = segs2;
       const allD = new Set([...doors, ...gates]), adjL = new Map();
       for (const g of segs) if (allD.has(g.k)) for (const [u, v] of [[g.a, g.b], [g.b, g.a]]) { if (!adjL.has(u)) adjL.set(u, []); adjL.get(u).push(v); }
       const reached = new Set([corr]), qq = [corr]; while (qq.length) for (const v of adjL.get(qq.pop()) || []) if (!reached.has(v)) { reached.add(v); qq.push(v); }
       let added = 0;
+      const present = new Uint8Array(B.next); for (const v of B.q) present[v] = 1;
       for (let l = 1; l < B.next; l++) {
-        if (reached.has(l) || !B.area(l)) continue;
-        let best = null; for (const [key, run] of runs) { const [a, b] = key.split(',').map(Number); if ((a === l && reached.has(b)) || (b === l && reached.has(a))) if (!best || run.length > best.length) best = run; }
-        const d = best && (B.safeDoor(best, deg) || B.door(best)); if (d) { doors.push(...d); added++; }
+        if (reached.has(l) || !present[l]) continue;
+        // every straight stretch of wall with a reached neighbour, longest first; a door that touches no wall wins
+        const cand = segs.filter(g => (g.a === l && reached.has(g.b)) || (g.b === l && reached.has(g.a)));
+        const groups = new Map(); for (const g of cand) { const k = g.d + ':' + g.line + ':' + Math.min(g.a, g.b) + ',' + Math.max(g.a, g.b); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(g); }
+        const runsL = []; for (const G of groups.values()) { G.sort((p, q) => p.pos - q.pos); let r = [G[0]]; for (let i = 1; i <= G.length; i++) { if (i < G.length && G[i].pos === G[i - 1].pos + 1) { r.push(G[i]); continue; } runsL.push(r); if (i < G.length) r = [G[i]]; } }
+        runsL.sort((p, q) => q.length - p.length);
+        let d = null; for (const r of runsL) { d = B.safeDoor(r, deg); if (d) break; }
+        if (d) { doors.push(...d); added++; }
+        else if (runsL.length) { // no door fits without touching a wall: the space joins its reached neighbour
+          const g = runsL[0][0], to = g.a === l ? g.b : g.a; B.paint(() => true, to, [l]); added++; merges++;
+        }
       }
       if (!added) break;
+      if (merges) { merges = 0; for (let t = 0; t < 4 && B.cornerFix(); t++); tidy(); segs2 = B.segments(); const ws = new Set(segs2.map(g => g.k)); for (let i = doors.length - 1; i >= 0; i--) if (!ws.has(doors[i])) doors.splice(i, 1);
+        deg.clear(); for (const s of segs2) for (const p of parseW(s.k)) { const v = vk(...p); deg.set(v, (deg.get(v) || 0) + 1); } }
     }
+    const segsF = segs2;
     // ---- the way: start, the deepest room (goal), the central form, and the route between them ----
     const marks = {}; let routeLen = 0, goalLabel = 0;
-    { const allW = new Set([...segs.map(g => g.k), ...gates]), allD = new Set([...doors, ...gates]);
+    { const allW = new Set([...segsF.map(g => g.k), ...gates]), allD = new Set([...doors, ...gates]);
       const blocks = k => allW.has(k) && !allD.has(k), C4 = W - 1, R4 = H - 1, Qn = C4 * R4 * 4, Qi = (x, y, k) => (y * C4 + x) * 4 + k;
       const nbrs = i => { const c = i >> 2, k = i & 3, x = c % C4, y = (c / C4) | 0, out = [];
         const d1 = blocks(wk([x, y], [x + 1, y + 1])), d2 = blocks(wk([x + 1, y], [x, y + 1]));
@@ -376,12 +422,12 @@ const Halls = (() => {
     let floor = 0; for (const v of B.q) if (v) floor++;
     const nDiag = [...edges.values()].filter(e => e.diag).length;
     return {
-      size: W, rows: H, walls: [...segs.map(s => s.k), ...gates], doors: [...new Set([...doors, ...gates])], columns: [], marks,
+      size: W, rows: H, walls: [...segsF.map(s => s.k), ...gates], doors: [...new Set([...doors, ...gates])], columns: [], marks,
       title: cave ? 'Masmorra construida sobre tu cueva' : `Masmorra de salas y pasillos ${n}×${m}`,
-      desc: `${rooms.length} salas (cuadradas 8×8 con bisel 1, dobles o grandes con bisel 1 o 2, y rombos con puntas de 2). ` +
+      desc: `${rooms.length} salas de tamaños distintos (columnas y filas de 8 a 14; salas cuadradas con bisel 1 o 2 y rombos con puntas de 2; ninguna menor de 4×4). ` +
         `Pasillos de 2 que serpentean entre ellas: crecen como un laberinto que prefiere girar (vueltas y espirales), se ramifican y a veces cortan en diagonal (${nDiag} tramos diagonales). ` +
         `Cada sala abre a un pasillo vecino; los pasillos que no llevan a ninguna sala se cortan. ${loops} atajos. ` +
-        `${splitPairs.length} particiones nuevas (paredes dentro de salas, partes entre ${pmin} y ${pmax < 1e9 ? pmax : '∞'}). ${nPart} puertas entre salas vecinas (salas en fila). ${rooms.filter(r => r.kind === 'gal').length} galerías (pasadizo con cuartitos a los lados, hasta 5 salidas) y ${gates.length / 2} compuertas que parten los pasillos en tramos.\n• Piso usado: ${Math.round(100 * floor / B.q.length)}%. Ruta de la entrada a la meta: ${Math.round(routeLen / 2)} pasos.\n• Colores: verde = sala inicial, dorado = sala final (la más profunda), morado = forma central, azul = ruta.\n\nMarca con 🖍 los errores y explica abajo.`,
+        `${splitPairs.length} particiones nuevas (paredes dentro de salas, partes entre ${pmin} y ${pmax < 1e9 ? pmax : '∞'}). Sin huecos de 1, sin esquinas de 90° (biselado automático) y sin puertas pegadas a otra pared. ${nPart} puertas entre salas vecinas (salas en fila). ${rooms.filter(r => r.kind === 'gal').length} galerías (pasadizo con cuartitos a los lados, hasta 5 salidas). Las particiones se agrupan en barrios; el resto de las salas quedan enteras.\n• Piso usado: ${Math.round(100 * floor / B.q.length)}%. Ruta de la entrada a la meta: ${Math.round(routeLen / 2)} pasos.\n• Colores: verde = sala inicial, dorado = sala final (la más profunda), morado = forma central, azul = ruta.\n\nMarca con 🖍 los errores y explica abajo.`,
     };
   };
 })();

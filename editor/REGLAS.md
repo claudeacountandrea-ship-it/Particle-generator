@@ -137,3 +137,17 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
   la más profunda. **Ruta** (azul): el camino real de una a otra, respetando paredes y puertas.
 - **Particiones con mínimo y máximo**: toda sala más larga que el máximo se parte con una pared nueva
   con puerta, sin dejar partes más cortas que el mínimo (minicuartos dentro de salas).
+- **Particiones por barrios**: no se parte todo. Solo algunos grupos de salas se dividen (zonas de
+  minicuartos); el resto quedan salas enteras grandes, para que el plano tenga contraste.
+- **Retícula irregular**: columnas y filas de 8, 10, 12 o 14 puntos, así las salas tienen tamaños
+  distintos (no todo es la misma cuadrícula). Los pasillos diagonales solo cruzan casillas cuadradas.
+
+## 🔍 Reglas duras (las revisa el botón "Revisar reglas" y la generación grande)
+35. **Nada más fino que 2**: ninguna pared puede quedar a 1 de otra pared (ni piso ni roca de 1).
+36. **Ningún espacio menor de 4×4**: lo que queda más chico se une a su vecino con más pared en común.
+37. **Sin esquinas de 90°**: toda esquina recta se bisela medio cuadro, y toda punta en "V" de dos
+   diagonales se aplana con una punta de 2 (el borde del mapa puede quedar recto).
+38. **Ninguna puerta toca otra pared**: si una zona no admite una puerta limpia, se une a la zona
+   vecina en vez de poner una puerta mala.
+- La generación grande prueba hasta 3 veces y se queda con la que rompe menos reglas; el resultado de
+  la revisión queda escrito al final de la descripción. 🔍 marca en rojo lo que falle en cualquier dibujo.
