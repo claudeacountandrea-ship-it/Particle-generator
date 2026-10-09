@@ -174,6 +174,12 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
    central) y la pared exterior una sola diagonal recta que pasa por las esquinas de las casillas
    vecinas. Ningún pasillo recto entra a la avenida por los costados. Va en las grandes diagonales
    del mapa (retícula espejo, casillas iguales ahí), 1–2 por mapa, separada una casilla de la esquina.
-   El salón diagonal dentro de un bloque queda solo como posibilidad rara (~2%).
-47. **Rombos vacíos y grandes**: un rombo no lleva columnas ni particiones; algunos ocupan 3×3 casillas.
-   Si la sala del jefe sale rombo, queda vacía; si sale cuadrada, lleva las columnas.
+   El salón diagonal dentro de un bloque ya no se usa (dejaba triángulos grandes).
+47. **Rombos = cuadrados girados, sin triángulos.** Un rombo metido en un cuadro de la retícula
+   siempre deja 4 triángulos en las esquinas: ya no se hace. El rombo vive en el medio de cada avenida
+   diagonal: el pasillo central se abre en un cuadrado girado tan ancho como la avenida (vacío, grande,
+   puntas planas de 2), con puerta a cada mitad del pasillo. La sala del jefe es siempre cuadrada con columnas.
+48. **Pasillos diagonales cortos**: un tramo diagonal suelto es de una casilla y luego gira; lo largo
+   en diagonal es solo la avenida (3 casillas), y no la cruza ni toca ningún pasillo recto (sus esquinas
+   exteriores tampoco llevan pasillo).
+

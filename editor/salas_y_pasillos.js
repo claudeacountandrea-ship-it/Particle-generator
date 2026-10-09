@@ -22,7 +22,7 @@ const Halls = (() => {
     const pitch = () => cave ? G : pick([...pitches, mid, mid]);
     // the pitches mirror (left = right) and rows repeat the columns, so both great diagonals of the map
     // are square casillas all the way: room for diagonal avenues
-    const avLen = n >= 12 ? 4 : 3; // the corners of the map keep one pitch, so an avenue there is one straight even rectangle
+    const avLen = 3; // the corners of the map keep one pitch, so an avenue there is one straight even rectangle
     const px = []; for (let i = 0; i < n; i++) px.push(i < (n + 1) >> 1 ? (i <= avLen + 1 && !cave ? mid : pitch()) : px[n - 1 - i]);
     const py = []; for (let j = 0; j < m; j++) py.push(m === n ? px[j] : pitch());
     const X = [M], Y = [M]; for (let i = 0; i < n; i++) X.push(X[i] + px[i]); for (let j = 0; j < m; j++) Y.push(Y[j] + py[j]);
@@ -41,7 +41,7 @@ const Halls = (() => {
     const freeCell = new Set();
     if (!cave && opts.central !== false && n >= 6 && m >= 6) { // the central form: a great rombo or a great bevelled hall
       const cs = n >= 10 && m >= 10 ? 3 : 2, ci = (n - cs) >> 1, cj = (m - cs) >> 1; // the boss hall: big, but smaller than before (the lattice is finer)
-      const c0 = { i: ci, j: cj, w: cs, h: cs, kind: square(ci, cj, cs, cs) && Math.random() < 0.6 ? 'rb' : 'sq', bevel: 2, special: 'central' };
+      const c0 = { i: ci, j: cj, w: cs, h: cs, kind: 'sq', bevel: 2, special: 'central' };
       rooms.push(c0); for (let b = cj; b < cj + cs; b++) for (let a = ci; a < ci + cs; a++) cell[cid(a, b)] = c0;
     }
     // diagonal avenues: 3 or 4 casillas kept free along a great diagonal, crossed later by one straight diagonal corridor
@@ -61,6 +61,8 @@ const Halls = (() => {
         // its inner points take no straight corridor: nothing crosses the long rectangle
         const cnt = new Map(); for (const [a, b] of av) for (const q of [a, b]) cnt.set(q + '', (cnt.get(q + '') || 0) + 1);
         for (const [k, c] of cnt) if (c === 2) avenueInner.add(k);
+        // the other two corners of each of its casillas lie on the rectangle's outer wall: no corridor there either
+        for (const [i, j] of cs) for (const q of [[i, j], [i + 1, j], [i, j + 1], [i + 1, j + 1]]) if (!cnt.has(q + '')) avenueInner.add(q + '');
         // at its two ends no straight corridor may go in along its sides either
         const ends = [...cnt].filter(([, c]) => c === 1).map(([k]) => k.split(',').map(Number));
         const [e0, e1] = ends, ddx = Math.sign(e1[0] - e0[0]), ddy = Math.sign(e1[1] - e0[1]);
@@ -87,7 +89,7 @@ const Halls = (() => {
         continue;
       }
       // diagonal galleries: a long hall at 45° across a square block, little rooms along both its walls
-      if (r >= 0.09 && r < 0.11 && free(i + 1, j) && free(i, j + 1) && free(i + 1, j + 1)) { // rare
+      if (false) { // the diagonal hall boxed in a block left big triangles: not used
         const k = free(i + 2, j) && free(i + 2, j + 1) && free(i, j + 2) && free(i + 1, j + 2) && free(i + 2, j + 2) && Math.random() < 0.5 ? 3 : 2;
         if (Math.abs((X[i + k] - X[i]) - (Y[j + k] - Y[j])) <= 2) {
           const g = { i, j, w: k, h: k, kind: 'dgal', bevel: 1, slash: Math.random() < 0.5 }; rooms.push(g);
@@ -99,7 +101,7 @@ const Halls = (() => {
       else if (r < 0.3 && free(i + 1, j)) w = 2; else if (r < 0.45 && free(i, j + 1)) h = 2;
       // rombos only over 2×2 casillas (nearly square is enough): a small one would read as an octagon
       let near = Math.abs((X[i + w] - X[i]) - (Y[j + h] - Y[j])) <= 2;
-      const kind = w === 2 && h === 2 && near && Math.random() < 0.8 ? 'rb' : 'sq';
+      const kind = 'sq'; // no rombo inside a square of the lattice: it always leaves 4 triangles; rombos live in the avenues
       // some rombos are big: 3×3 casillas, empty inside
       if (kind === 'rb' && Math.random() < 0.35 && [[2, 0], [2, 1], [0, 2], [1, 2], [2, 2]].every(([a, b]) => free(i + a, j + b)) && Math.abs((X[i + 3] - X[i]) - (Y[j + 3] - Y[j])) <= 2) { w = 3; h = 3; }
       const room = { i, j, w, h, kind, bevel: w * h === 1 ? 1 : rnd(1, 2) }; // small rooms: bevel 1, so they stay square
@@ -149,7 +151,7 @@ const Halls = (() => {
       const opts = neighbours(i, j).filter(([a, b]) => !seen.has(nid(a, b)));
       if (!opts.length) { stack.splice(k, 1); continue; }
       // winding: prefer to turn (that is what makes the snakes and spirals), diagonals now and then
-      let w = opts.map(([a, b, d]) => { const dir = [a - i, b - j] + ''; return (d ? 3 : 1) * (last && dir === last ? (d ? 4 : 0.35) : 1); }); // a diagonal likes to go on straight (an avenue)
+      let w = opts.map(([a, b, d]) => { const dir = [a - i, b - j] + ''; return (d ? 2 : 1) * (last && dir === last ? 0.35 : 1); }); // diagonals stay short: one casilla, then a turn
       let t = Math.random() * w.reduce((s, v) => s + v, 0), c = 0; for (; c < opts.length - 1; c++) { t -= w[c]; if (t <= 0) break; }
       const [a, b, d] = opts[c];
       if (d) usedDiagCell.add(cid(Math.min(i, a), Math.min(j, b)));
@@ -356,7 +358,7 @@ const Halls = (() => {
     // diagonal galleries = the avenues: a long rectangle turned 45°, stamped whole over what is there.
     // A corridor of 2 runs down its middle (in at both ends); on each side a row of little rooms, each one
     // casilla long, its outer wall one straight diagonal through the corners of the casillas beside it
-    const diagCubes = [], avenueHalls = [];
+    const diagCubes = [], avenueHalls = [], avenueRombos = [];
     for (const av of avenues) {
       if (!av.every(([a, b]) => edges.has(ekey(nid(...a), nid(...b))))) continue;
       const ends = []; { const c = new Map(); for (const e of av) for (const q of e) c.set(q + '', [(c.get(q + '') || [0])[0] + 1, q]); for (const [n1, q] of c.values()) if (n1 === 1) ends.push(q); }
@@ -366,7 +368,12 @@ const Halls = (() => {
       const hall = B.label('gal'), notCorr = [...Array(B.next + 64).keys()].filter(l => l !== corr);
       B.paint((x, y) => { const u = along(x, y); return u >= 0 && u <= Lu && Math.abs(perp(x, y)) <= 2; }, hall, null, bb);
       avenueHalls.push(hall);
+      // in its middle the hall opens into a rombo: a square turned 45°, as wide as the avenue (its tips get flat later)
+      const cm0 = 2 * G * Math.floor(Lu / (2 * G) / 2), cm1 = cm0 + 2 * G;
+      const chamber = B.label('room'); avenueRombos.push(chamber);
+      B.paint((x, y) => { const u = along(x, y); return u > cm0 && u <= cm1 && Math.abs(perp(x, y)) <= G; }, chamber, notCorr, bb);
       for (const side of [1, -1]) for (let k = 0; k * G < Lu; k++) {
+        if (k * G >= cm0 && k * G < cm1) continue;
         const cu = B.label('room'), a0 = k * G, a1 = Math.min(Lu, (k + 1) * G);
         B.paint((x, y) => { const u = along(x, y), v = side * perp(x, y); return v > 2 && v <= G && u > a0 && u <= a1; }, cu, notCorr, bb);
         diagCubes.push([cu, hall]);
@@ -471,6 +478,8 @@ const Halls = (() => {
     for (const [c, h] of diagCubes) { const run = runs.get(Math.min(c, h) + ',' + Math.max(c, h)); const d = run && B.safeDoor(run, deg); if (d) doors.push(...d); }
     // the avenue's hall opens at its ends onto the corridors
     for (const h of avenueHalls) { const run = runs.get(Math.min(h, corr) + ',' + Math.max(h, corr)); const d = run && B.safeDoor(run, deg); if (d) doors.push(...d); }
+    // the rombo in the middle of the avenue opens onto both halves of the hall
+    for (const c of avenueRombos) for (const [key, run] of runs) { const [a, b] = key.split(',').map(Number); if ((a === c || b === c) && B.kinds[a === c ? b : a] === 'gal') { const d = B.safeDoor(run, deg); if (d) doors.push(...d); } }
     // partitions: some rooms open straight into the room next door (rooms in a row to cross)
     const roomLabels = new Set(rooms.flatMap(r => r.labels || []));
     let nPart = 0;
@@ -543,7 +552,7 @@ const Halls = (() => {
       size: W, rows: H, walls: [...segsF.map(s => s.k), ...gates], doors: [...new Set([...doors, ...gates])], columns: [], marks,
       title: cave ? 'Masmorra construida sobre tu cueva' : `Masmorra de salas y pasillos ${n}×${m}`,
       desc: `Escala: 1 cuadrado = 2 personas; pasillos de 2, salas de ${rmin} a ${rmax} cuadrados (lo más grande se parte en minicuartos con puerta). ${rooms.length} salas (cuadradas con bisel 1 o 2 y rombos con puntas de 2). Sala del jefe en el centro${nPillars ? ` con ${nPillars} columnas` : ''}. ` +
-        `Pasillos de 2 que serpentean entre ellas: crecen como un laberinto que prefiere girar (vueltas y espirales), se ramifican y a veces cortan en diagonal (${nDiag} tramos diagonales). ${rooms.filter(r => r.kind === 'rb').length} salas rombo (vacías y grandes). ${diagCubes.length} cuartitos en fila a los lados de los pasillos diagonales (galerías en diagonal)${rooms.some(r => r.kind === 'dgal') ? `, y ${rooms.filter(r => r.kind === 'dgal').length} salón diagonal en bloque` : ''}. ` +
+        `Pasillos de 2 que serpentean entre ellas: crecen como un laberinto que prefiere girar (vueltas y espirales), se ramifican y a veces cortan en diagonal (${nDiag} tramos diagonales). ${avenueRombos.length} salas rombo (cuadrados girados en medio de las avenidas, vacías y grandes, sin triángulos alrededor). ${diagCubes.length} cuartitos en fila a los lados de los pasillos diagonales (galerías en diagonal)${rooms.some(r => r.kind === 'dgal') ? `, y ${rooms.filter(r => r.kind === 'dgal').length} salón diagonal en bloque` : ''}. ` +
         `Cada sala abre a un pasillo vecino; los pasillos que no llevan a ninguna sala se cortan. ${loops} atajos. ` +
         `${splitPairs.length} particiones nuevas (paredes dentro de salas, partes entre ${pmin} y ${pmax < 1e9 ? pmax : '∞'}). Sin huecos de 1, sin esquinas de 90° (biselado automático) y sin puertas pegadas a otra pared. ${nPart} puertas entre salas vecinas (salas en fila). ${rooms.filter(r => r.kind === 'gal').length} galerías (pasadizo con cuartitos a los lados, hasta 5 salidas). Las particiones se agrupan en barrios; el resto de las salas quedan enteras.\n• Piso usado: ${Math.round(100 * floor / B.q.length)}%. Ruta de la entrada a la meta: ${Math.round(routeLen / 2)} pasos.\n• Colores: verde = sala inicial, dorado = sala final (la más profunda), morado = forma central, azul = ruta.\n\nMarca con 🖍 los errores y explica abajo.`,
     };
