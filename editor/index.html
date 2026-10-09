@@ -2323,6 +2323,61 @@ const Halls = (() => {
       }
       maxPiece = Math.round(maxPiece);
     }
+    // ---- hard to find: the boss hall gets a single door, onto its deepest neighbour; the way down to the
+    // next floor is drawn among the deepest spaces (counted in doors from the entrance), a dead end if possible ----
+    let forcedGoal = 0, bossDepth = -1, goalDepth = -1, maxDepth = 0;
+    if (!cave) {
+      const C4 = W - 1, R4 = H - 1, n4 = C4 * R4 * 4, Qi = (x, y, k) => (y * C4 + x) * 4 + k;
+      const graph = () => {
+        const ws = new Set([...segsF.map(g => g.k), ...gates, ...halfWalls]), ds = new Set([...doors, ...gates]);
+        const par = new Int32Array(n4).map((_, i) => i), find = i => { while (par[i] !== i) { par[i] = par[par[i]]; i = par[i]; } return i; }, join = (a, b) => { a = find(a); b = find(b); if (a !== b) par[a] = b; };
+        for (let y = 0; y < R4; y++) for (let x = 0; x < C4; x++) {
+          const d1 = ws.has(wk([x, y], [x + 1, y + 1])), d2 = ws.has(wk([x + 1, y], [x, y + 1]));
+          if (!d2) { join(Qi(x, y, 0), Qi(x, y, 1)); join(Qi(x, y, 2), Qi(x, y, 3)); }
+          if (!d1) { join(Qi(x, y, 0), Qi(x, y, 3)); join(Qi(x, y, 1), Qi(x, y, 2)); }
+          if (x + 1 < C4 && !ws.has(wk([x + 1, y], [x + 1, y + 1]))) join(Qi(x, y, 1), Qi(x + 1, y, 3));
+          if (y + 1 < R4 && !ws.has(wk([x, y + 1], [x + 1, y + 1]))) join(Qi(x, y, 2), Qi(x, y + 1, 0));
+        }
+        const sideOf = k => { const [[ax, ay], [bx, by]] = parseW(k);
+          if (ay === by) { const x = Math.min(ax, bx); return [ay > 0 ? find(Qi(x, ay - 1, 2)) : -1, ay < R4 ? find(Qi(x, ay, 0)) : -1]; }
+          if (ax === bx) { const y = Math.min(ay, by); return [ax > 0 ? find(Qi(ax - 1, y, 1)) : -1, ax < C4 ? find(Qi(ax, y, 3)) : -1]; }
+          const x = Math.min(ax, bx), y = Math.min(ay, by); return [find(Qi(x, y, 0)), find(Qi(x, y, 2))]; };
+        const floorS = v => v >= 0 && B.q[v] !== 0, adj = new Map(); let entry = -1;
+        for (const k of ds) { const [a, b] = sideOf(k); if (floorS(a) && floorS(b)) { if (a === b) continue; if (!adj.has(a)) adj.set(a, new Set()); if (!adj.has(b)) adj.set(b, new Set()); adj.get(a).add(b); adj.get(b).add(a); } else if (floorS(a) || floorS(b)) entry = floorS(a) ? a : b; }
+        const depth = new Map(); if (entry >= 0) { depth.set(entry, 0); const q = [entry]; for (let i = 0; i < q.length; i++) for (const v of adj.get(q[i]) || []) if (!depth.has(v)) { depth.set(v, depth.get(q[i]) + 1); q.push(v); } }
+        return { find, sideOf, adj, depth, floorS };
+      };
+      const degA = new Map(); for (const k of [...segsF.map(g => g.k), ...gates, ...halfWalls]) for (const q of parseW(k)) degA.set(vk(...q), (degA.get(vk(...q)) || 0) + 1);
+      const boss = rooms.find(r => r.special === 'central');
+      if (boss && boss.label) {
+        const bl = boss.label; let bi = -1; for (let i = 0; i < n4; i++) if (B.q[i] === bl) { bi = i; break; }
+        if (bi >= 0) {
+          let g = graph(); const bs = g.find(bi), saved = [...doors], before = g.depth.size;
+          // its doors go, except those that are the only way into a space behind it
+          const bdoors = doors.filter(k => g.sideOf(k).includes(bs));
+          for (const k of bdoors) doors.splice(doors.indexOf(k), 1);
+          g = graph();
+          for (const k of bdoors) { const o = g.sideOf(k).find(v => v !== bs); if (o !== undefined && g.floorS(o) && !g.depth.has(o)) doors.push(k); }
+          g = graph();
+          // the walls of the boss hall, grouped by the space on their other side, in straight runs
+          const groups = new Map();
+          for (const sg of segsF) { if (sg.a !== bl && sg.b !== bl) continue; const o = g.sideOf(sg.k).find(v => v !== g.find(bi)); if (o === undefined || !g.depth.has(o)) continue;
+            const key = o + ':' + sg.d + ':' + sg.line; if (!groups.has(key)) groups.set(key, { d: g.depth.get(o), list: [] }); groups.get(key).list.push(sg); }
+          const runs2 = []; for (const { d, list } of groups.values()) { list.sort((p, q) => p.pos - q.pos); let r = [list[0]]; for (let i = 1; i <= list.length; i++) { if (i < list.length && list[i].pos === list[i - 1].pos + 1) { r.push(list[i]); continue; } runs2.push({ d, r }); if (i < list.length) r = [list[i]]; } }
+          runs2.sort((p, q) => q.d - p.d || q.r.length - p.r.length);
+          let ok = false; for (const { r } of runs2) { const d = r.length >= 2 ? B.safeDoor(r, degA) : null; if (d) { doors.push(...d); ok = true; break; } }
+          if (!ok || graph().depth.size < before) { doors.length = 0; doors.push(...saved); }
+        }
+      }
+      const g = graph(); for (const v of g.depth.values()) maxDepth = Math.max(maxDepth, v);
+      if (boss && boss.label) { for (let i = 0; i < n4; i++) if (B.q[i] === boss.label) { bossDepth = g.depth.get(g.find(i)) ?? -1; break; } }
+      // the way down: any room deep in the dungeon (75% of the deepest or more), a dead end when there is one
+      const seenL = new Set(), cand = [];
+      for (let i = 0; i < n4; i += 4) { const l = B.q[i]; if (!l || seenL.has(l) || B.kinds[l] !== 'room' || (boss && l === boss.label)) continue; seenL.add(l);
+        const sp = g.find(i), d = g.depth.get(sp); if (d === undefined || d < 0.75 * maxDepth || B.area(l) < 24) continue; cand.push([l, d, (g.adj.get(sp) || new Set()).size]); }
+      const dead = cand.filter(c => c[2] <= 1), pool = dead.length ? dead : cand;
+      if (pool.length) { const c = pick(pool); forcedGoal = c[0]; goalDepth = c[1]; }
+    }
     // ---- the way: start, the deepest room (goal), the central form, and the route between them ----
     const marks = {}; let routeLen = 0, goalLabel = 0;
     { const allW = new Set([...segsF.map(g => g.k), ...gates, ...halfWalls]), allD = new Set([...doors, ...gates]);
@@ -2347,7 +2402,8 @@ const Halls = (() => {
       // the way down to the next floor: a room drawn by luck among those at least 40% of the deepest distance
       // away (it may be halfway or at the very bottom: nothing tells where it is)
       const far = [...near].filter(([l, i]) => l !== startRoom && (!central || l !== central.label) && B.area(l) >= 30 && dist[i] >= 0.4 * maxD);
-      if (far.length) { const [l, i] = pick(far); goalLabel = l; gq = i; gd = dist[i]; }
+      if (forcedGoal && near.has(forcedGoal)) { goalLabel = forcedGoal; gq = near.get(forcedGoal); gd = dist[gq]; }
+      else if (far.length) { const [l, i] = pick(far); goalLabel = l; gq = i; gd = dist[i]; }
       for (let i = 0; i < Qn; i += 4) { const l = B.q[i], k = vk((i >> 2) % C4, ((i >> 2) / C4) | 0);
         if (central && l === central.label) marks[k] = 4; else if (l === goalLabel) marks[k] = 1; else if (l === startRoom) marks[k] = 2; }
       for (let i = gq; i >= 0; i = prev[i]) { const k = vk((i >> 2) % C4, ((i >> 2) / C4) | 0); if (marks[k] === undefined) marks[k] = 5; }
@@ -2362,7 +2418,7 @@ const Halls = (() => {
       desc: `Escala: 1 cuadrado = 2 personas; pasillos de 2, salas de ${rmin} a ${rmax} cuadrados (lo más grande se parte en minicuartos con puerta). ${rooms.length} salas (cuadradas con bisel 1 o 2 y rombos con puntas de 2). Sala del jefe en el centro${nPillars ? ` con ${nPillars} columnas` : ''}. ` +
         `Pasillos de 2 que serpentean entre ellas: crecen como un laberinto que prefiere girar (vueltas y espirales), se ramifican y a veces cortan en diagonal (${nDiag} tramos diagonales). ${avenueRombos.length} salas rombo (cuadrados girados en medio de las avenidas, vacías y grandes, sin triángulos alrededor). ${diagCubes.length} cuartitos en fila a los lados de los pasillos diagonales (galerías en diagonal)${rooms.some(r => r.kind === 'dgal') ? `, y ${rooms.filter(r => r.kind === 'dgal').length} salón diagonal en bloque` : ''}. ` +
         `Cada sala abre a un pasillo vecino; los pasillos que no llevan a ninguna sala se cortan. ${loops} atajos. ` +
-        `${splitPairs.length} particiones nuevas (paredes dentro de salas, partes entre ${pmin} y ${pmax < 1e9 ? pmax : '∞'}). Sin huecos de 1, sin esquinas de 90° (biselado automático) y sin puertas pegadas a otra pared. ${nPart} puertas entre salas vecinas (salas en fila). ${rooms.filter(r => r.kind === 'gal').length} galerías (pasadizo con cuartitos a los lados, hasta 5 salidas). ${(gates.length - halfWalls.length) / 2} compuertas y ${halfWalls.length} pasos estrechos (media pared y puerta de 1) que parten los pasillos: junto a las puertas de las salas, a lo largo de los tramos (también en diagonal), en las bocas de los cruces y justo pasada cada vuelta en L (desde antes de la vuelta parece la puerta de un cuarto). Ningún tramo de pasillo pasa de ${maxPiece} cuadrados. ${nThrough} salas de paso disfrazadas (parecen un cuarto más, pero unen dos tramos de pasillo).${round ? ' Contorno circular irregular.' : ''}\n• Piso usado: ${Math.round(100 * floor / B.q.length)}%. Ruta de la entrada a la meta: ${Math.round(routeLen / 2)} pasos.\n• Entrada desde afuera por ${entDir[1] > 0 ? 'abajo' : entDir[1] < 0 ? 'arriba' : entDir[0] > 0 ? 'la derecha' : 'la izquierda'}. El jefe y la bajada al piso siguiente están donde tocó (suerte): nunca junto a la entrada, a veces a media distancia, a veces al fondo.\n• Colores: verde = sala inicial, dorado = bajada al piso siguiente, morado = sala del jefe (opcional), azul = ruta a la bajada.\n\nMarca con 🖍 los errores y explica abajo.`,
+        `${splitPairs.length} particiones nuevas (paredes dentro de salas, partes entre ${pmin} y ${pmax < 1e9 ? pmax : '∞'}). Sin huecos de 1, sin esquinas de 90° (biselado automático) y sin puertas pegadas a otra pared. ${nPart} puertas entre salas vecinas (salas en fila). ${rooms.filter(r => r.kind === 'gal').length} galerías (pasadizo con cuartitos a los lados, hasta 5 salidas). ${(gates.length - halfWalls.length) / 2} compuertas y ${halfWalls.length} pasos estrechos (media pared y puerta de 1) que parten los pasillos: junto a las puertas de las salas, a lo largo de los tramos (también en diagonal), en las bocas de los cruces y justo pasada cada vuelta en L (desde antes de la vuelta parece la puerta de un cuarto). Ningún tramo de pasillo pasa de ${maxPiece} cuadrados. ${nThrough} salas de paso disfrazadas (parecen un cuarto más, pero unen dos tramos de pasillo).${round ? ' Contorno circular irregular.' : ''}\n• Piso usado: ${Math.round(100 * floor / B.q.length)}%. Ruta de la entrada a la meta: ${Math.round(routeLen / 2)} pasos.\n• Entrada desde afuera por ${entDir[1] > 0 ? 'abajo' : entDir[1] < 0 ? 'arriba' : entDir[0] > 0 ? 'la derecha' : 'la izquierda'}. El jefe y la bajada al piso siguiente están donde tocó (suerte), pero escondidos: la sala del jefe tiene una sola puerta, hacia su vecino más hondo (a ${bossDepth} puertas de la entrada); la bajada está entre lo más hondo del mapa (a ${goalDepth} de ${maxDepth} puertas), en un callejón sin salida cuando lo hay.\n• Colores: verde = sala inicial, dorado = bajada al piso siguiente, morado = sala del jefe (opcional), azul = ruta a la bajada.\n\nMarca con 🖍 los errores y explica abajo.`,
     };
   };
 })();

@@ -228,3 +228,7 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
    de la distancia máxima desde la entrada: a veces a media distancia, a veces al fondo. Nada la anuncia.
 63. Sin anillos ni pistas de dónde está el jefe o la bajada. Si un intento no tiene puerta de entrada en
    el borde, se vuelve a generar.
+64. **Escondidos**: la sala del jefe tiene una sola puerta, hacia su vecino más hondo (salvo que algún
+   cuarto detrás solo se abra a ella). La bajada al 2º piso se sortea entre los espacios a 75% o más de la
+   profundidad máxima (en puertas desde la entrada), y si hay, en un callejón sin salida. Medido: jefe a
+   ~15 puertas, bajada a ~15 de ~17 de profundidad máxima (antes 7 y 8).
