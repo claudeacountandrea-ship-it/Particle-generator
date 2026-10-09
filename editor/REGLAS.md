@@ -218,3 +218,13 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
    es el camino; (b) puertas en ángulo en las esquinas (una a sala, otra que sigue el pasillo);
    (c) **salas de paso disfrazadas**: una sala que toca dos tramos de pasillo distintos recibe puerta a
    ambos (≈ 1 cada 30 casillas): parece un cuarto más y es un atajo.
+
+## 🎲 Suerte (no hay ayuda de dónde está nada)
+60. **Entrada desde afuera** del primer piso, por un lado al azar (abajo, arriba, derecha o izquierda);
+   el pasillo de entrada no cruza nada del mapa.
+61. **Sala del jefe donde toque**: cualquier sitio con espacio, pero nunca junto a la entrada (a más de
+   media anchura del mapa). Es opcional; tiene columnas.
+62. **Bajada al piso siguiente donde toque**: una sala grande elegida al azar entre las que están a 40% o más
+   de la distancia máxima desde la entrada: a veces a media distancia, a veces al fondo. Nada la anuncia.
+63. Sin anillos ni pistas de dónde está el jefe o la bajada. Si un intento no tiene puerta de entrada en
+   el borde, se vuelve a generar.

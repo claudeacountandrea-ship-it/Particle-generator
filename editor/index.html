@@ -210,7 +210,7 @@ body.full #fbar { display: flex; gap: 6px; position: fixed; left: 0; right: 0; b
       <label><input type="checkbox" id="bigCentral" checked> sala del jefe</label>
     </div>
     <button id="bigBtn" class="primary">🏰 Generar masmorra grande</button>
-    <p class="help">Verde = sala inicial · dorado = sala final · morado = sala del jefe (con columnas) · azul = ruta. Escala: 1 cuadrado = 2 personas, pasillos de 2. Las salas miden entre el mínimo y el máximo; lo más grande se parte en minicuartos con puerta para explorar.</p>
+    <p class="help">Verde = sala inicial · dorado = bajada al piso siguiente · morado = sala del jefe (opcional, con columnas) · azul = ruta. La entrada, el jefe y la bajada salen en lugares al azar. Escala: 1 cuadrado = 2 personas, pasillos de 2. Las salas miden entre el mínimo y el máximo; lo más grande se parte en minicuartos con puerta para explorar.</p>
   </div>
   <div class="bar">
     <button id="grandSym">🏛 Gran masmorra simétrica</button>
@@ -1639,11 +1639,9 @@ const Halls = (() => {
     // every cell is a room (rooms that share a wall where no corridor passes), except a few kept
     // free so a corridor may cross them diagonally
     const freeCell = new Set();
-    if (!cave && opts.central !== false && n >= 6 && m >= 6) { // the central form: a great rombo or a great bevelled hall
-      const cs = n >= 14 && m >= 14 ? 3 : 2, ci = (n - cs) >> 1, cj = (m - cs) >> 1; // the boss hall: big, but smaller than before (the lattice is finer)
-      const c0 = { i: ci, j: cj, w: cs, h: cs, kind: 'sq', bevel: 2, special: 'central' };
-      rooms.push(c0); for (let b = cj; b < cj + cs; b++) for (let a = ci; a < ci + cs; a++) cell[cid(a, b)] = c0;
-    }
+    // the way in comes from outside the map, from a side chosen by luck (down, up, right or left)
+    const entDir = cave ? [0, 1] : pick([[0, 1], [0, -1], [1, 0], [-1, 0]]);
+    const ex = entDir[0] ? (entDir[0] > 0 ? n : 0) : n / 2, ey = entDir[1] ? (entDir[1] > 0 ? m : 0) : m / 2;
     // diagonal avenues: 3 or 4 casillas kept free along a great diagonal, crossed later by one straight diagonal corridor
     const avenues = [], avenueInner = new Set(), avenueCells = new Set(), avenueSide = new Set(), avenueEndBlock = new Map();
     {
@@ -1669,6 +1667,21 @@ const Halls = (() => {
         const [e0, e1] = ends, ddx = Math.sign(e1[0] - e0[0]), ddy = Math.sign(e1[1] - e0[1]);
         avenueEndBlock.set(e0 + '', [[ddx, 0], [0, ddy]]); avenueEndBlock.set(e1 + '', [[-ddx, 0], [0, -ddy]]);
       }
+    }
+    // the boss hall: anywhere (luck), but never beside the entrance — at least half the map away from it
+    if (!cave && opts.central !== false && n >= 6 && m >= 6) {
+      const cs = n >= 14 && m >= 14 ? 3 : 2, spots = [], spots2 = [];
+      for (let cj = 0; cj + cs <= m; cj++) for (let ci = 0; ci + cs <= n; ci++) {
+        let ok = true; for (let b = cj - 1; b <= cj + cs && ok; b++) for (let a2 = ci - 1; a2 <= ci + cs && ok; a2++) { const inside = a2 >= ci && a2 < ci + cs && b >= cj && b < cj + cs;
+          if (inside && (cell[cid(a2, b)] || freeCell.has(cid(a2, b)) || !cellIn(a2, b))) ok = false;
+          if (!inside && (a2 < 0 || b < 0 || a2 >= n || b >= m || !cellIn(a2, b))) ok = false; } // a ring of casillas round it stays in the map
+        if (!ok) continue;
+        const d = Math.hypot(ci + cs / 2 - ex, cj + cs / 2 - ey);
+        if (d >= 0.5 * Math.max(n, m)) spots.push([ci, cj]); else if (d >= 0.3 * Math.max(n, m)) spots2.push([ci, cj]);
+      }
+      const sp = spots.length ? pick(spots) : spots2.length ? pick(spots2) : null;
+      if (sp) { const [ci, cj] = sp, c0 = { i: ci, j: cj, w: cs, h: cs, kind: 'sq', bevel: 2, special: 'central' };
+        rooms.push(c0); for (let b = cj; b < cj + cs; b++) for (let a2 = ci; a2 < ci + cs; a2++) cell[cid(a2, b)] = c0; }
     }
     for (let j = 0; j < m; j++) for (let i = 0; i < n; i++) {
       if (cell[cid(i, j)] || freeCell.has(cid(i, j)) || !cellIn(i, j)) continue;
@@ -1745,8 +1758,13 @@ const Halls = (() => {
     if (cave && cave.start) { const [x, y] = cave.start.split(',').map(Number); si = Math.round((x - M) / G); sj = Math.round((y - M) / G); }
     // the way in comes up from the bottom edge of the map: the start is a point on the outline with nothing
     // of the dungeon below it (so the entrance corridor crosses no room), as low and as central as possible
-    const openBelow = (i, j) => { for (let jj = j; jj < m; jj++) for (const ii of [i - 1, i]) if (ii >= 0 && ii < n && cellIn(ii, jj)) return false; return true; };
-    if (!cave) { let best = null, bs = -1e9; for (let j = m; j >= 0; j--) for (let i = 1; i < n; i++) if (nodeIn(i, j) && !nodeBlocked(i, j) && openBelow(i, j)) { const sc = j * 100 - Math.abs(i - n / 2); if (sc > bs) { bs = sc; best = [i, j]; } } if (best) [si, sj] = best; }
+    // nothing of the dungeon between the start point and the map edge on the entrance side
+    const openOut = (i, j) => { const [dx, dy] = entDir;
+      if (dy) { for (let jj = dy > 0 ? j : j - 1; dy > 0 ? jj < m : jj >= 0; jj += dy) for (const ii of [i - 1, i]) if (ii >= 0 && ii < n && cellIn(ii, jj)) return false; }
+      else { for (let ii = dx > 0 ? i : i - 1; dx > 0 ? ii < n : ii >= 0; ii += dx) for (const jj of [j - 1, j]) if (jj >= 0 && jj < m && cellIn(ii, jj)) return false; }
+      return true; };
+    if (!cave) { let best = null, bs = -1e9; for (let j = 0; j <= m; j++) for (let i = 0; i <= n; i++) if ((entDir[0] ? j > 0 && j < m : i > 0 && i < n) && nodeIn(i, j) && !nodeBlocked(i, j) && openOut(i, j)) {
+        const sc = (i * entDir[0] + j * entDir[1]) * 100 - (entDir[0] ? Math.abs(j - m / 2) : Math.abs(i - n / 2)); if (sc > bs) { bs = sc; best = [i, j]; } } if (best) [si, sj] = best; }
     if (!nodeIn(si, sj) || nodeBlocked(si, sj)) { outer: for (let j = m; j >= 0; j--) for (let i = 0; i <= n; i++) if (nodeIn(i, j) && !nodeBlocked(i, j)) { si = i; sj = j; break outer; } }
     const seen = new Set([nid(si, sj)]), stack = [[si, sj, null]];
     while (stack.length) {
@@ -2000,7 +2018,8 @@ const Halls = (() => {
       }
     }
     // the way in: a corridor from the start node to the map edge
-    { const [sx, sy] = N(si, sj); if (!cave) B.paint((x, y) => Math.abs(x - sx) <= 1 && y >= sy && y <= H, corr); }
+    { const [sx, sy] = N(si, sj), [dx, dy] = entDir;
+      if (!cave) B.paint((x, y) => dy ? Math.abs(x - sx) <= 1 && (dy > 0 ? y >= sy : y <= sy) : Math.abs(y - sy) <= 1 && (dx > 0 ? x >= sx : x <= sx), corr); }
     // rock shut inside the dungeon (bits left at corners and by diagonals) joins the room beside it
     const fillRock = () => { const C4 = W - 1, R4 = H - 1, q = B.q, out = new Uint8Array(q.length), st = [];
       const nbr = i => { const c = i >> 2, k = i & 3, x = c % C4, y = (c / C4) | 0, o = [c * 4 + ((k + 1) & 3), c * 4 + ((k + 3) & 3)];
@@ -2095,7 +2114,7 @@ const Halls = (() => {
     // ---- 6. doors ----
     const segs = B.segments(), runs = B.runs(segs), deg = new Map();
     for (const s of segs) for (const p of parseW(s.k)) { const v = vk(...p); deg.set(v, (deg.get(v) || 0) + 1); }
-    const doors = [];
+    const doors = []; let entranceOK = !!cave;
     { // an anteroom's mouth is a door across the corridor: only where both corridor walls run straight past it
       const ws0 = new Set(segs.map(g => g.k));
       for (let t = 0; t < anteDoors.length; t += 2) {
@@ -2147,9 +2166,10 @@ const Halls = (() => {
     // gates only where the corridor really is (both sides corridor floor)
     const wallSet = new Set(segs.map(g => g.k));
     const gates = gateSegs.filter(k => !wallSet.has(k));
-    if (!cave) { // the entrance: the bottom edge of the map
-      const out = segs.filter(g => g.d === 'h' && g.line === H - 1 && (g.a === corr || g.b === corr)).sort((u, v) => u.pos - v.pos);
-      if (out.length) doors.push(...out.map(g => g.k));
+    if (!cave) { // the entrance: on the map's edge, on the side the way in comes from
+      const [dx, dy] = entDir, edgeLine = dy > 0 ? H - 1 : dx > 0 ? W - 1 : 0, dd = dy ? 'h' : 'v';
+      const out = segs.filter(g => g.d === dd && g.line === edgeLine && (g.a === corr || g.b === corr)).sort((u, v) => u.pos - v.pos);
+      if (out.length) { doors.push(...out.map(g => g.k)); entranceOK = true; }
     }
     // any space nobody can reach yet gets a door to a reached neighbour (repeat until all are in)
     let segs2 = segs, merges = 0;
@@ -2314,19 +2334,26 @@ const Halls = (() => {
         if (k === 2) { if (!d2) out.push(Qi(x, y, 3)); if (!d1) out.push(Qi(x, y, 1)); if (y < R4 - 1 && !blocks(wk([x, y + 1], [x + 1, y + 1]))) out.push(Qi(x, y + 1, 0)); }
         if (k === 3) { if (!d2) out.push(Qi(x, y, 2)); if (!d1) out.push(Qi(x, y, 0)); if (x > 0 && !blocks(wk([x, y], [x, y + 1]))) out.push(Qi(x - 1, y, 1)); }
         return out; };
-      const [sx, sy] = N(si, sj); let s0 = Qi(Math.min(C4 - 1, sx), Math.min(R4 - 1, Math.max(0, sy - 1)), 2);
-      if (!B.q[s0]) for (let i = 0; i < Qn; i++) if (B.q[i] === corr) { s0 = i; break; }
+      const [sx, sy] = N(si, sj); let s0 = -1;
+      for (let r2 = 0; r2 < 4 && s0 < 0; r2++) for (let y = Math.max(0, sy - 1 - r2); y <= Math.min(R4 - 1, sy + r2) && s0 < 0; y++) for (let x = Math.max(0, sx - 1 - r2); x <= Math.min(C4 - 1, sx + r2); x++) if (B.q[Qi(x, y, 0)] === corr) { s0 = Qi(x, y, 0); break; }
+      if (s0 < 0) for (let i = 0; i < Qn; i++) if (B.q[i] === corr) { s0 = i; break; }
       const dist = new Int32Array(Qn).fill(-1), prev = new Int32Array(Qn).fill(-1), qq = [s0]; dist[s0] = 0;
       for (let h = 0; h < qq.length; h++) for (const j of nbrs(qq[h])) if (dist[j] < 0 && B.q[j]) { dist[j] = dist[qq[h]] + 1; prev[j] = qq[h]; qq.push(j); }
       // the start room: the first room reached; the goal: the room whose nearest point is farthest
       const near = new Map(); for (let i = 0; i < Qn; i++) if (dist[i] >= 0 && B.kinds[B.q[i]] === 'room') { const l = B.q[i]; if (!near.has(l) || dist[i] < dist[near.get(l)]) near.set(l, i); }
-      let startRoom = 0, sd = 1e9, gd = -1, gq = -1;
-      for (const [l, i] of near) { if (dist[i] < sd) { sd = dist[i]; startRoom = l; } if (dist[i] > gd && B.area(l) >= 30) { gd = dist[i]; goalLabel = l; gq = i; } }
+      let startRoom = 0, sd = 1e9, gd = -1, gq = -1, maxD = 0;
       const central = rooms.find(r => r.special === 'central');
+      for (const [l, i] of near) { if (dist[i] < sd) { sd = dist[i]; startRoom = l; } maxD = Math.max(maxD, dist[i]); }
+      // the way down to the next floor: a room drawn by luck among those at least 40% of the deepest distance
+      // away (it may be halfway or at the very bottom: nothing tells where it is)
+      const far = [...near].filter(([l, i]) => l !== startRoom && (!central || l !== central.label) && B.area(l) >= 30 && dist[i] >= 0.4 * maxD);
+      if (far.length) { const [l, i] = pick(far); goalLabel = l; gq = i; gd = dist[i]; }
       for (let i = 0; i < Qn; i += 4) { const l = B.q[i], k = vk((i >> 2) % C4, ((i >> 2) / C4) | 0);
         if (central && l === central.label) marks[k] = 4; else if (l === goalLabel) marks[k] = 1; else if (l === startRoom) marks[k] = 2; }
       for (let i = gq; i >= 0; i = prev[i]) { const k = vk((i >> 2) % C4, ((i >> 2) / C4) | 0); if (marks[k] === undefined) marks[k] = 5; }
       routeLen = gd; }
+    // no way in from outside (rare): draw the dungeon again
+    if (!entranceOK && (opts._try || 0) < 5) return halls(n, m, cave, { ...opts, _try: (opts._try || 0) + 1 });
     let floor = 0; for (const v of B.q) if (v) floor++;
     const nDiag = [...edges.values()].filter(e => e.diag).length;
     return {
@@ -2335,7 +2362,7 @@ const Halls = (() => {
       desc: `Escala: 1 cuadrado = 2 personas; pasillos de 2, salas de ${rmin} a ${rmax} cuadrados (lo más grande se parte en minicuartos con puerta). ${rooms.length} salas (cuadradas con bisel 1 o 2 y rombos con puntas de 2). Sala del jefe en el centro${nPillars ? ` con ${nPillars} columnas` : ''}. ` +
         `Pasillos de 2 que serpentean entre ellas: crecen como un laberinto que prefiere girar (vueltas y espirales), se ramifican y a veces cortan en diagonal (${nDiag} tramos diagonales). ${avenueRombos.length} salas rombo (cuadrados girados en medio de las avenidas, vacías y grandes, sin triángulos alrededor). ${diagCubes.length} cuartitos en fila a los lados de los pasillos diagonales (galerías en diagonal)${rooms.some(r => r.kind === 'dgal') ? `, y ${rooms.filter(r => r.kind === 'dgal').length} salón diagonal en bloque` : ''}. ` +
         `Cada sala abre a un pasillo vecino; los pasillos que no llevan a ninguna sala se cortan. ${loops} atajos. ` +
-        `${splitPairs.length} particiones nuevas (paredes dentro de salas, partes entre ${pmin} y ${pmax < 1e9 ? pmax : '∞'}). Sin huecos de 1, sin esquinas de 90° (biselado automático) y sin puertas pegadas a otra pared. ${nPart} puertas entre salas vecinas (salas en fila). ${rooms.filter(r => r.kind === 'gal').length} galerías (pasadizo con cuartitos a los lados, hasta 5 salidas). ${(gates.length - halfWalls.length) / 2} compuertas y ${halfWalls.length} pasos estrechos (media pared y puerta de 1) que parten los pasillos: junto a las puertas de las salas, a lo largo de los tramos (también en diagonal), en las bocas de los cruces y justo pasada cada vuelta en L (desde antes de la vuelta parece la puerta de un cuarto). Ningún tramo de pasillo pasa de ${maxPiece} cuadrados. ${nThrough} salas de paso disfrazadas (parecen un cuarto más, pero unen dos tramos de pasillo).${round ? ' Contorno circular irregular.' : ''}\n• Piso usado: ${Math.round(100 * floor / B.q.length)}%. Ruta de la entrada a la meta: ${Math.round(routeLen / 2)} pasos.\n• Colores: verde = sala inicial, dorado = sala final (la más profunda), morado = forma central, azul = ruta.\n\nMarca con 🖍 los errores y explica abajo.`,
+        `${splitPairs.length} particiones nuevas (paredes dentro de salas, partes entre ${pmin} y ${pmax < 1e9 ? pmax : '∞'}). Sin huecos de 1, sin esquinas de 90° (biselado automático) y sin puertas pegadas a otra pared. ${nPart} puertas entre salas vecinas (salas en fila). ${rooms.filter(r => r.kind === 'gal').length} galerías (pasadizo con cuartitos a los lados, hasta 5 salidas). ${(gates.length - halfWalls.length) / 2} compuertas y ${halfWalls.length} pasos estrechos (media pared y puerta de 1) que parten los pasillos: junto a las puertas de las salas, a lo largo de los tramos (también en diagonal), en las bocas de los cruces y justo pasada cada vuelta en L (desde antes de la vuelta parece la puerta de un cuarto). Ningún tramo de pasillo pasa de ${maxPiece} cuadrados. ${nThrough} salas de paso disfrazadas (parecen un cuarto más, pero unen dos tramos de pasillo).${round ? ' Contorno circular irregular.' : ''}\n• Piso usado: ${Math.round(100 * floor / B.q.length)}%. Ruta de la entrada a la meta: ${Math.round(routeLen / 2)} pasos.\n• Entrada desde afuera por ${entDir[1] > 0 ? 'abajo' : entDir[1] < 0 ? 'arriba' : entDir[0] > 0 ? 'la derecha' : 'la izquierda'}. El jefe y la bajada al piso siguiente están donde tocó (suerte): nunca junto a la entrada, a veces a media distancia, a veces al fondo.\n• Colores: verde = sala inicial, dorado = bajada al piso siguiente, morado = sala del jefe (opcional), azul = ruta a la bajada.\n\nMarca con 🖍 los errores y explica abajo.`,
     };
   };
 })();
