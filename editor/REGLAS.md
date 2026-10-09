@@ -168,11 +168,12 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
 45. **Equilibrio de formas**: rombos solo de 2×2 casillas (uno chico se ve como octágono), pero
    frecuentes (~1 de cada 10 salas; basta que el cuadro sea casi cuadrado). Pasillos diagonales más
    frecuentes (~10 tramos en 12×12), y sus triángulos sobrantes dan salas con una pared diagonal.
-46. **Galerías en diagonal = a lo largo de los pasillos diagonales**, no encerradas en un cuadro.
-   La retícula es espejo (filas = columnas) para que las dos grandes diagonales del mapa sean casillas
-   cuadradas; ahí se reservan 1–2 **avenidas** (pasillo diagonal recto de 3–4 casillas, un atajo).
-   Todo pasillo diagonal recto de 2+ casillas lleva a cada lado una fila de cuartitos (rectángulos
-   a 45°, misma profundidad, pared trasera diagonal recta), cada uno con puerta al pasillo.
+46. **Galerías en diagonal = un rectángulo largo girado 45°** (la avenida), no un cuadro grande.
+   Se dibuja entero encima de lo que haya: pasillo de 2 al centro (con puerta a los pasillos en sus
+   dos puntas), una fila de cuartitos a cada lado (cada uno una casilla de largo, puerta al pasillo
+   central) y la pared exterior una sola diagonal recta que pasa por las esquinas de las casillas
+   vecinas. Ningún pasillo recto entra a la avenida por los costados. Va en las grandes diagonales
+   del mapa (retícula espejo, casillas iguales ahí), 1–2 por mapa, separada una casilla de la esquina.
    El salón diagonal dentro de un bloque queda solo como posibilidad rara (~2%).
 47. **Rombos vacíos y grandes**: un rombo no lleva columnas ni particiones; algunos ocupan 3×3 casillas.
    Si la sala del jefe sale rombo, queda vacía; si sale cuadrada, lleva las columnas.
