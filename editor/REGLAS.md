@@ -183,3 +183,12 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
    en diagonal es solo la avenida (3 casillas), y no la cruza ni toca ningún pasillo recto (sus esquinas
    exteriores tampoco llevan pasillo).
 
+49. **Compuertas junto a las puertas**: donde la puerta de una sala da a un pasillo recto de 2, se
+   cierra el pasillo justo al lado (a 1 de la puerta, a veces a los dos lados) con una compuerta: una
+   pared de 2 a lo ancho que es toda puerta. Ahí se elige: entrar a la sala o abrir la compuerta y
+   seguir. La compuerta solo va donde las paredes del pasillo siguen rectas (nada más llega a sus
+   puntas), nunca deja un trozo de pasillo menor de 4×4, y el revisor la acepta como puerta buena.
+50. **Mapa circular**: el contorno general es un círculo con ondulación suave (orgánico), no el
+   cuadrado de la retícula. Tamaño por defecto 16×16 casillas (hay 20×20). Las avenidas diagonales
+   se ponen dentro del círculo, entre el borde y la sala del jefe, apuntando al centro.
+   La generación grande descarta el intento que deje alguna parte cerrada sin acceso.
