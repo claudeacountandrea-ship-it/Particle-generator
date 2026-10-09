@@ -232,3 +232,7 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
    cuarto detrás solo se abra a ella). La bajada al 2º piso se sortea entre los espacios a 75% o más de la
    profundidad máxima (en puertas desde la entrada), y si hay, en un callejón sin salida. Medido: jefe a
    ~15 puertas, bajada a ~15 de ~17 de profundidad máxima (antes 7 y 8).
+65. **Un poco menos de puertas, no muchas menos**: puertas sala↔sala al azar 20% (antes 30%), y se tapia
+   una cuarta parte de las conexiones sobrantes (las que solo cierran una vuelta), sin aislar nada.
+   Sin límite de puertas por sala: más decisiones es mejor. Medido: vueltas 54 → 37, profundidad máx
+   14 → 18, jefe y bajada a ~18 puertas de la entrada (antes ~15).
