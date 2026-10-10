@@ -330,3 +330,9 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
 91. **Tabiques en las plazas**: donde el pasillo es más ancho que 5, la partición es un tabique: pared de lado a lado
    (hasta 10) con una puerta de 2 en su medio. Un tabique o compuerta que deja una pared suelta, un hueco fino o un
    trocito se quita. Medido (19×19): tramos 83, mediana 43; el mayor ~850 (antes 2550).
+92. **Capa de particiones**: cada tramo del laberinto (recto, diagonal y los de los barrios) reserva su compuerta en el
+   medio apenas se ponen las puertas: los dos extremos cuentan ya como columnas, así la puerta de una sala queda en el
+   medio de su pared entre su columna y la de la compuerta. Luego cada tramo recibe su compuerta ahí (o hasta 2 al
+   lado; tabique con puerta si es ancho). Al final cada puerta de sala se vuelve a centrar entre sus columnas reales.
+   Medido: tramos con compuerta 76 → 99 de 244 (19×19); tramos de pasillo 63 → 84 (19×19), 52 → 67 (16×16);
+   puertas centradas 98%.
