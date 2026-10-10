@@ -247,3 +247,9 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
    las grandes diagonales: se sortean en cualquier parte dentro del contorno, separadas entre sí (hasta 5 en
    16×16, 3 en 10–12). Salas inclinadas: ~7 → ~17 por mapa. (Se deshizo la protección de pasillos diagonales
    de ayer: dejaba salas gigantes y deformes.)
+70. **Barrios en diagonal (mínimo 30% de salas en diagonal)**: 1 barrio (10–12) o 2 (14+) por mapa, cada uno un
+   cuadrado girado 45° construido con una cuadrícula girada: todas sus salas son rombos o rectángulos inclinados
+   (cada celda girada: rombo entero 25%, o partida en dos rectángulos 75%), y sus pasillos van en diagonal,
+   también por el borde del barrio (60% de los tramos del borde abiertos) para poder rodearlo. Se colocan al azar
+   dentro del contorno; las avenidas que chocan con un barrio se quitan; el jefe y la entrada no lo cruzan.
+   Medido: salas en diagonal 31% (16×16: ~58 de ~187; 12×12: ~32 de ~105).
