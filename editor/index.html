@@ -1141,7 +1141,8 @@ const Build = (W, H) => {
           const d = pc.slice(i, i + w); if (d.every(s => parseW(s.k).every(p => deg.get(vk(...p)) === 2))) return d.map(s => s.k); } }
       const n = run.length, w = n >= 2 ? (n % 2 ? 1 : 2) : 1;
       const ok = i => run.slice(i, i + w).every(s => parseW(s.k).every(p => deg.get(vk(...p)) === 2));
-      const order = [...Array(n - w + 1).keys()].sort((a, b) => Math.abs(a - (n - w) / 2) - Math.abs(b - (n - w) / 2));
+      // (never touching the ends of the run: there the wall turns, a corner is a column too)
+      const order = [...Array(n - w + 1).keys()].filter(i => i > 0 && i < n - w).sort((a, b) => Math.abs(a - (n - w) / 2) - Math.abs(b - (n - w) / 2));
       for (const i of order) if (ok(i)) return run.slice(i, i + w).map(s => s.k);
       return null;
     },
@@ -2470,7 +2471,7 @@ const Halls = (() => {
     const segsF = segs2;
     // ---- compuertas: beside a room's door, the corridor is closed by a gate (a wall of 2 across it,
     // all door), so at that door one chooses: go into the room, or open the gate and go on ----
-    const halfWalls = [], divCols = []; let nResv = 0, nRecentred = 0, nThrough = 0, maxPiece = 0, nGateAll = 0, nDivWall = 0, nDivSegs = 0;
+    const halfWalls = [], divCols = []; let nSemi = 0, nResv = 0, nRecentred = 0, nThrough = 0, maxPiece = 0, nGateAll = 0, nDivWall = 0, nDivSegs = 0;
     if (!cave && opts.gates !== false) {
       const wallSet = new Set(segsF.map(g => g.k)), doorSet = new Set(doors), isCorrQ = (x, y) => B.Q(x, y, 0) === corr && B.Q(x, y, 2) === corr && B.Q(x, y, 1) === corr && B.Q(x, y, 3) === corr;
       const plain = k => wallSet.has(k) && !doorSet.has(k), degF = new Map();
@@ -2543,7 +2544,15 @@ const Halls = (() => {
                 if (pts2.slice(1, -1).some(q => degF.has(q + '')) || !wallStraight(e, a)) return null;
                 return { segs: pts2.slice(1).map((q, i) => wk(pts2[i], q)), c: pts2[n2 >> 1], ends: [wpts[t], e], ortho: false, half: -1 }; };
               const L2 = wpts.length - 1;
-              if (sd < 0) { const g1 = gate(1) || gate(3), g2 = gate(L2 - 1) || gate(L2 - 3); if (g1 && g2) { lanes.push([g1, g2]); placed.push(g1, g2); } }
+              if (sd < 0) { const g1 = gate(1) || gate(3), g2 = gate(L2 - 1) || gate(L2 - 3); if (g1 && g2) { lanes.push([g1, g2]); placed.push(g1, g2);
+                  // this lane, shut at both ends, is a little room of the corridor: it gets a door into the room beside it
+                  // (in the middle of that wall, between the two gates' columns): one lane goes on, the other leads in
+                  const t1 = wpts.findIndex(q => q + '' === g1.ends[0] + ''), t2 = wpts.findIndex(q => q + '' === g2.ends[0] + ''), outer = [];
+                  for (let t = t1; t < t2; t++) { const n2 = reach(wpts[t], pp), n3 = reach(wpts[t + 1], pp); if (!n2 || n2 !== n3) { outer.push(null); continue; }
+                    const e1 = add(wpts[t], pp, n2), e2 = add(wpts[t + 1], pp, n2), k = wk(e1, e2), sg = segsF.find(g => g.k === k);
+                    outer.push(sg && !doorSet.has(k) && [sg.a, sg.b].some(l => l && B.kinds[l] === 'room') ? sg : null); }
+                  let best = [], cur = []; for (const sg of [...outer, null]) { if (sg) cur.push(sg); else { if (cur.length > best.length) best = cur; cur = []; } }
+                  if (best.length >= 4) { const dg = new Map(degF); for (const g of [g1, g2]) dg.set(g.ends[1] + '', 3); const d = B.safeDoor(best, dg); if (d) { doors.push(...d); for (const k of d) doorSet.add(k); nSemi++; } } } }
               else { // the other lane, the same length, is gone through differently: a narrow pass halfway (half wall from the
                 // corridor wall, a door of 1 against the middle wall)
                 for (const t of [L2 >> 1, (L2 >> 1) + 1, (L2 >> 1) - 1]) { const g = gate(t); if (!g) continue;
@@ -2731,16 +2740,17 @@ const Halls = (() => {
       { const allW = new Set([...segsF.map(g => g.k), ...gk(), ...hk(), ...dividers.flatMap(d => d.segs)]), gSet = new Set(gk()), hSet = new Set(hk()), dirs = new Map();
         for (const k of allW) { const [a, b] = parseW(k); for (const [p1, p2] of [[a, b], [b, a]]) { const kk = p1 + ''; if (!dirs.has(kk)) dirs.set(kk, []); dirs.get(kk).push([p2[0] - p1[0], p2[1] - p1[1]]); } }
         const isCol = q => { const d = dirs.get(q + '') || []; return !(d.length === 2 && d[0][0] === -d[1][0] && d[0][1] === -d[1][1]); };
-        const dset = new Set(doors), seen = new Set();
+        const dset = new Set(doors), seen = new Set(), segMap = new Map(segsF.map(g => [g.k, g]));
         for (const k of [...doors]) { if (seen.has(k) || gSet.has(k)) continue; const [p0, q0] = parseW(k), st = [q0[0] - p0[0], q0[1] - p0[1]];
           let a = p0, b = q0; seen.add(k); const run = [k];
           while (dset.has(wk([a[0] - st[0], a[1] - st[1]], a))) { const na = [a[0] - st[0], a[1] - st[1]]; run.push(wk(na, a)); seen.add(wk(na, a)); a = na; }
           while (dset.has(wk(b, [b[0] + st[0], b[1] + st[1]]))) { const nb = [b[0] + st[0], b[1] + st[1]]; run.push(wk(b, nb)); seen.add(wk(b, nb)); b = nb; }
-          if (isCol(a) || isCol(b)) continue; // (a door already against a column is left alone)
+          // (a door against a column moves too, when its wall goes on beyond the door on the other side)
           let l = 0, c = a; while (!isCol(c) && l < 40) { c = [c[0] - st[0], c[1] - st[1]]; l++; } let r = 0; c = b; while (!isCol(c) && r < 40) { c = [c[0] + st[0], c[1] + st[1]]; r++; }
           const sh = Math.trunc((r - l) / 2); if (Math.abs(r - l) < 2 || !sh) continue;
           const na = [a[0] + sh * st[0], a[1] + sh * st[1]], w = run.length, nk = []; for (let i = 0; i < w; i++) nk.push(wk([na[0] + i * st[0], na[1] + i * st[1]], [na[0] + (i + 1) * st[0], na[1] + (i + 1) * st[1]]));
-          if (!nk.every(x => allW.has(x) && !gSet.has(x) && !hSet.has(x) && (dset.has(x) ? run.includes(x) : true))) continue;
+          const pair = g => g ? Math.min(g.a, g.b) + ',' + Math.max(g.a, g.b) : '', p0k = pair(segMap.get(run[0])); // (the same two spaces on both sides as before)
+          if (!p0k || !nk.every(x => allW.has(x) && !gSet.has(x) && !hSet.has(x) && (dset.has(x) ? run.includes(x) : true) && pair(segMap.get(x)) === p0k)) continue;
           for (const x of run) { const i = doors.indexOf(x); if (i >= 0) doors.splice(i, 1); dset.delete(x); } for (const x of nk) { doors.push(x); dset.add(x); } nRecentred++; } }
       nDivWall = dividers.filter(d => d.keep).length; const dvSegs = dividers.filter(d => d.keep).flatMap(d => d.segs); halfWalls.push(...dvSegs); nDivSegs = dvSegs.length;
       // every point of a middle wall is kept (not drawn): the rules know that wall is meant, standing free between its two columns
@@ -2768,7 +2778,7 @@ const Halls = (() => {
     }
     // ---- hard to find: the boss hall gets a single door, onto its deepest neighbour; the way down to the
     // next floor is drawn among the deepest spaces (counted in doors from the entrance), a dead end if possible ----
-    let forcedGoal = 0, bossDepth = -1, goalDepth = -1, maxDepth = 0, nWalled = 0, nShut = 0, nShutSegs = 0, wayDoors = 0, wayChoices = 0, wayDead = 0;
+    let forcedGoal = 0, bossDepth = -1, goalDepth = -1, maxDepth = 0, nWalled = 0, nShut = 0, nShutSegs = 0, nRescued = 0, wayDoors = 0, wayChoices = 0, wayDead = 0;
     if (!cave) {
       const C4 = W - 1, R4 = H - 1, n4 = C4 * R4 * 4, Qi = (x, y, k) => (y * C4 + x) * 4 + k;
       // the spaces only depend on the walls (doors are walls too), which do not change here: worked out once
@@ -2839,6 +2849,17 @@ const Halls = (() => {
           if (!ok || graph().depth.size < before) { doors.length = 0; doors.push(...saved); }
         }
       }
+      // last check of the ways: a space nobody can reach any more gets a door (in the middle of a wall between two
+      // columns) into a reached neighbour, so nothing is ever left shut away
+      for (let pass = 0; pass < 6; pass++) { const g1 = graph(); let added = 0; const dA = new Map(degA);
+        const runsBy = new Map(); for (const sg of segsF) { if (doors.includes(sg.k)) continue; const [a, b] = g1.sideOf(sg.k); if (a === b || !g1.floorS(a) || !g1.floorS(b)) continue;
+          const ra = g1.depth.has(a), rb = g1.depth.has(b); if (ra === rb) continue; const lost = ra ? b : a; if ([B.q[lost]].some(l => B.kinds[l] === 'pillar')) continue;
+          const key = lost + ':' + sg.d + ':' + sg.line + ':' + (ra ? a : b); if (!runsBy.has(key)) runsBy.set(key, []); runsBy.get(key).push(sg); }
+        const done = new Set();
+        for (const [key, list] of [...runsBy].sort((p, q) => q[1].length - p[1].length)) { const lost = key.split(':')[0]; if (done.has(lost)) continue;
+          list.sort((p, q) => p.pos - q.pos); let run = [list[0]]; const rr = []; for (let i = 1; i <= list.length; i++) { if (i < list.length && list[i].pos === list[i - 1].pos + 1) { run.push(list[i]); continue; } rr.push(run); if (i < list.length) run = [list[i]]; }
+          rr.sort((p, q) => q.length - p.length); for (const r of rr) { const d = B.safeDoor(r, dA); if (d) { doors.push(...d); done.add(lost); added++; nRescued++; break; } } }
+        if (!added) break; }
       const g = graph(); for (const v of g.depth.values()) maxDepth = Math.max(maxDepth, v);
       if (boss && boss.label) { for (let i = 0; i < n4; i++) if (B.q[i] === boss.label) { bossDepth = g.depth.get(g.find(i)) ?? -1; break; } }
       // the way down: any room deep in the dungeon (75% of the deepest or more), a dead end when there is one
@@ -2902,7 +2923,7 @@ const Halls = (() => {
       desc: `Escala: 1 cuadrado = 2 personas; pasillos de 2, salas de ${rmin} a ${rmax} cuadrados (lo más grande se parte en minicuartos con puerta). ${rooms.length} salas (cuadradas con bisel 1 o 2 y rombos con puntas de 2). Sala del jefe en el centro${nPillars ? ` con ${nPillars} columnas` : ''}. ` +
         `Pasillos de 2 que serpentean entre ellas: crecen como un laberinto que prefiere girar (vueltas y espirales), se ramifican y a veces cortan en diagonal (${nDiag} tramos diagonales). ${distRooms.length} salas en ${districts.length - nLoose.n} barrios en diagonal, repartidos y separados, y ${nLoose.n} rombos sueltos entre las salas cuadradas (con su pasillo diagonal alrededor); salas en diagonal en total: ${Math.round(100 * diagShare)}% (rombos y rectángulos girados, con pasillos en diagonal también por su borde). ${avenueRombos.length} salas rombo (cuadrados girados en medio de las avenidas, vacías y grandes, sin triángulos alrededor). ${diagCubes.length} cuartitos en fila a los lados de los pasillos diagonales (galerías en diagonal)${rooms.some(r => r.kind === 'dgal') ? `, y ${rooms.filter(r => r.kind === 'dgal').length} salón diagonal en bloque` : ''}. ` +
         `Cada sala abre a un pasillo vecino; de los pasillos que no llevan a ninguna sala, unos se cortan y ${nDead} quedan como callejón sin salida. ${loops} atajos. ` +
-        `${splitPairs.length} particiones nuevas (paredes dentro de salas, partes entre ${pmin} y ${pmax < 1e9 ? pmax : '∞'}). Sin huecos de 1, sin esquinas de 90° (biselado automático) y sin puertas pegadas a otra pared. ${nPart} puertas entre salas vecinas (salas en fila). ${rooms.filter(r => r.kind === 'gal').length} galerías (pasadizo con cuartitos a los lados, hasta 5 salidas). ${nGateAll - (halfWalls.length - nDivSegs - nShutSegs) - nShut} compuertas y ${halfWalls.length - nDivSegs - nShutSegs} pasos estrechos (media pared y puerta de 1) que parten los pasillos: junto a las puertas de las salas, a lo largo de los tramos (también en diagonal), en las bocas de los cruces y justo pasada cada vuelta en L (desde antes de la vuelta parece la puerta de un cuarto). Ningún tramo de pasillo pasa de ${maxPiece} cuadrados. ${nThrough} salas de paso disfrazadas (parecen un cuarto más, pero unen dos tramos de pasillo).${round ? ' Contorno circular irregular.' : ''} Pasillos anchos: ${nIsl} salas isla en medio (el camino las rodea como una dona, ${nIslSolid} quedaron como bloque sólido), ${nSolid} salas sin puerta posible dejadas como bloque sólido en vez de ensanchar el pasillo, y ${nDiv} paredes al medio que parten el camino en dos, y ${nFill} rellenos pegados a la pared que dejan el pasillo de ancho parejo. ${nDivWall} pasillos anchos partidos en dos pasillos con una pared compartida en medio (con una columna en cada punta: los carriles se separan y se juntan ahí; las compuertas de los carriles son las decisiones).\n• Piso usado: ${Math.round(100 * floor / B.q.length)}%. Ruta de la entrada a la meta: ${Math.round(routeLen / 2)} pasos. Camino a la bajada: ${wayDoors} puertas o compuertas que cruzar, ${wayChoices} decisiones en el camino (lugares con 3 salidas o más); ${wayDead} pasillos sin salida (tramos con una sola salida) en todo el piso.\n• Entrada desde afuera por ${entDir[1] > 0 ? 'abajo' : entDir[1] < 0 ? 'arriba' : entDir[0] > 0 ? 'la derecha' : 'la izquierda'}. El jefe y la bajada al piso siguiente están donde tocó (suerte), pero escondidos: la sala del jefe tiene una sola puerta, hacia su vecino más hondo (a ${bossDepth} puertas de la entrada); la bajada está entre lo más hondo del mapa (a ${goalDepth} de ${maxDepth} puertas), en un callejón sin salida cuando lo hay. ${nShut} compuertas sobrantes cerradas como pared (obturadores: el camino da más vuelta y aparecen callejones), ${nWalled} puertas sobrantes tapiadas (una cuarta parte de las vueltas) para que el camino sea algo más largo sin perder decisiones.\n• Colores: verde = sala inicial, dorado = bajada al piso siguiente, morado = sala del jefe (opcional), azul = ruta a la bajada.\n\nMarca con 🖍 los errores y explica abajo.`,
+        `${splitPairs.length} particiones nuevas (paredes dentro de salas, partes entre ${pmin} y ${pmax < 1e9 ? pmax : '∞'}). Sin huecos de 1, sin esquinas de 90° (biselado automático) y sin puertas pegadas a otra pared. ${nPart} puertas entre salas vecinas (salas en fila). ${rooms.filter(r => r.kind === 'gal').length} galerías (pasadizo con cuartitos a los lados, hasta 5 salidas). ${nGateAll - (halfWalls.length - nDivSegs - nShutSegs) - nShut} compuertas y ${halfWalls.length - nDivSegs - nShutSegs} pasos estrechos (media pared y puerta de 1) que parten los pasillos: junto a las puertas de las salas, a lo largo de los tramos (también en diagonal), en las bocas de los cruces y justo pasada cada vuelta en L (desde antes de la vuelta parece la puerta de un cuarto). Ningún tramo de pasillo pasa de ${maxPiece} cuadrados. ${nThrough} salas de paso disfrazadas (parecen un cuarto más, pero unen dos tramos de pasillo).${round ? ' Contorno circular irregular.' : ''} Pasillos anchos: ${nIsl} salas isla en medio (el camino las rodea como una dona, ${nIslSolid} quedaron como bloque sólido), ${nSolid} salas sin puerta posible dejadas como bloque sólido en vez de ensanchar el pasillo, y ${nDiv} paredes al medio que parten el camino en dos, y ${nFill} rellenos pegados a la pared que dejan el pasillo de ancho parejo. ${nDivWall} pasillos anchos partidos en dos pasillos con una pared compartida en medio (${nSemi} de sus carriles son semicuartos con puerta a la sala de al lado) (con una columna en cada punta: los carriles se separan y se juntan ahí; las compuertas de los carriles son las decisiones).\n• Piso usado: ${Math.round(100 * floor / B.q.length)}%. Ruta de la entrada a la meta: ${Math.round(routeLen / 2)} pasos. Camino a la bajada: ${wayDoors} puertas o compuertas que cruzar, ${wayChoices} decisiones en el camino (lugares con 3 salidas o más); ${wayDead} pasillos sin salida (tramos con una sola salida) en todo el piso.\n• Entrada desde afuera por ${entDir[1] > 0 ? 'abajo' : entDir[1] < 0 ? 'arriba' : entDir[0] > 0 ? 'la derecha' : 'la izquierda'}. El jefe y la bajada al piso siguiente están donde tocó (suerte), pero escondidos: la sala del jefe tiene una sola puerta, hacia su vecino más hondo (a ${bossDepth} puertas de la entrada); la bajada está entre lo más hondo del mapa (a ${goalDepth} de ${maxDepth} puertas), en un callejón sin salida cuando lo hay. ${nShut} compuertas sobrantes cerradas como pared (obturadores: el camino da más vuelta y aparecen callejones), ${nWalled} puertas sobrantes tapiadas (una cuarta parte de las vueltas) para que el camino sea algo más largo sin perder decisiones.\n• Colores: verde = sala inicial, dorado = bajada al piso siguiente, morado = sala del jefe (opcional), azul = ruta a la bajada.\n\nMarca con 🖍 los errores y explica abajo.`,
     };
   };
 })();

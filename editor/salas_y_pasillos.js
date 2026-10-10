@@ -830,7 +830,7 @@ const Halls = (() => {
     const segsF = segs2;
     // ---- compuertas: beside a room's door, the corridor is closed by a gate (a wall of 2 across it,
     // all door), so at that door one chooses: go into the room, or open the gate and go on ----
-    const halfWalls = [], divCols = []; let nResv = 0, nRecentred = 0, nThrough = 0, maxPiece = 0, nGateAll = 0, nDivWall = 0, nDivSegs = 0;
+    const halfWalls = [], divCols = []; let nSemi = 0, nResv = 0, nRecentred = 0, nThrough = 0, maxPiece = 0, nGateAll = 0, nDivWall = 0, nDivSegs = 0;
     if (!cave && opts.gates !== false) {
       const wallSet = new Set(segsF.map(g => g.k)), doorSet = new Set(doors), isCorrQ = (x, y) => B.Q(x, y, 0) === corr && B.Q(x, y, 2) === corr && B.Q(x, y, 1) === corr && B.Q(x, y, 3) === corr;
       const plain = k => wallSet.has(k) && !doorSet.has(k), degF = new Map();
@@ -903,7 +903,15 @@ const Halls = (() => {
                 if (pts2.slice(1, -1).some(q => degF.has(q + '')) || !wallStraight(e, a)) return null;
                 return { segs: pts2.slice(1).map((q, i) => wk(pts2[i], q)), c: pts2[n2 >> 1], ends: [wpts[t], e], ortho: false, half: -1 }; };
               const L2 = wpts.length - 1;
-              if (sd < 0) { const g1 = gate(1) || gate(3), g2 = gate(L2 - 1) || gate(L2 - 3); if (g1 && g2) { lanes.push([g1, g2]); placed.push(g1, g2); } }
+              if (sd < 0) { const g1 = gate(1) || gate(3), g2 = gate(L2 - 1) || gate(L2 - 3); if (g1 && g2) { lanes.push([g1, g2]); placed.push(g1, g2);
+                  // this lane, shut at both ends, is a little room of the corridor: it gets a door into the room beside it
+                  // (in the middle of that wall, between the two gates' columns): one lane goes on, the other leads in
+                  const t1 = wpts.findIndex(q => q + '' === g1.ends[0] + ''), t2 = wpts.findIndex(q => q + '' === g2.ends[0] + ''), outer = [];
+                  for (let t = t1; t < t2; t++) { const n2 = reach(wpts[t], pp), n3 = reach(wpts[t + 1], pp); if (!n2 || n2 !== n3) { outer.push(null); continue; }
+                    const e1 = add(wpts[t], pp, n2), e2 = add(wpts[t + 1], pp, n2), k = wk(e1, e2), sg = segsF.find(g => g.k === k);
+                    outer.push(sg && !doorSet.has(k) && [sg.a, sg.b].some(l => l && B.kinds[l] === 'room') ? sg : null); }
+                  let best = [], cur = []; for (const sg of [...outer, null]) { if (sg) cur.push(sg); else { if (cur.length > best.length) best = cur; cur = []; } }
+                  if (best.length >= 4) { const dg = new Map(degF); for (const g of [g1, g2]) dg.set(g.ends[1] + '', 3); const d = B.safeDoor(best, dg); if (d) { doors.push(...d); for (const k of d) doorSet.add(k); nSemi++; } } } }
               else { // the other lane, the same length, is gone through differently: a narrow pass halfway (half wall from the
                 // corridor wall, a door of 1 against the middle wall)
                 for (const t of [L2 >> 1, (L2 >> 1) + 1, (L2 >> 1) - 1]) { const g = gate(t); if (!g) continue;
@@ -1091,16 +1099,17 @@ const Halls = (() => {
       { const allW = new Set([...segsF.map(g => g.k), ...gk(), ...hk(), ...dividers.flatMap(d => d.segs)]), gSet = new Set(gk()), hSet = new Set(hk()), dirs = new Map();
         for (const k of allW) { const [a, b] = parseW(k); for (const [p1, p2] of [[a, b], [b, a]]) { const kk = p1 + ''; if (!dirs.has(kk)) dirs.set(kk, []); dirs.get(kk).push([p2[0] - p1[0], p2[1] - p1[1]]); } }
         const isCol = q => { const d = dirs.get(q + '') || []; return !(d.length === 2 && d[0][0] === -d[1][0] && d[0][1] === -d[1][1]); };
-        const dset = new Set(doors), seen = new Set();
+        const dset = new Set(doors), seen = new Set(), segMap = new Map(segsF.map(g => [g.k, g]));
         for (const k of [...doors]) { if (seen.has(k) || gSet.has(k)) continue; const [p0, q0] = parseW(k), st = [q0[0] - p0[0], q0[1] - p0[1]];
           let a = p0, b = q0; seen.add(k); const run = [k];
           while (dset.has(wk([a[0] - st[0], a[1] - st[1]], a))) { const na = [a[0] - st[0], a[1] - st[1]]; run.push(wk(na, a)); seen.add(wk(na, a)); a = na; }
           while (dset.has(wk(b, [b[0] + st[0], b[1] + st[1]]))) { const nb = [b[0] + st[0], b[1] + st[1]]; run.push(wk(b, nb)); seen.add(wk(b, nb)); b = nb; }
-          if (isCol(a) || isCol(b)) continue; // (a door already against a column is left alone)
+          // (a door against a column moves too, when its wall goes on beyond the door on the other side)
           let l = 0, c = a; while (!isCol(c) && l < 40) { c = [c[0] - st[0], c[1] - st[1]]; l++; } let r = 0; c = b; while (!isCol(c) && r < 40) { c = [c[0] + st[0], c[1] + st[1]]; r++; }
           const sh = Math.trunc((r - l) / 2); if (Math.abs(r - l) < 2 || !sh) continue;
           const na = [a[0] + sh * st[0], a[1] + sh * st[1]], w = run.length, nk = []; for (let i = 0; i < w; i++) nk.push(wk([na[0] + i * st[0], na[1] + i * st[1]], [na[0] + (i + 1) * st[0], na[1] + (i + 1) * st[1]]));
-          if (!nk.every(x => allW.has(x) && !gSet.has(x) && !hSet.has(x) && (dset.has(x) ? run.includes(x) : true))) continue;
+          const pair = g => g ? Math.min(g.a, g.b) + ',' + Math.max(g.a, g.b) : '', p0k = pair(segMap.get(run[0])); // (the same two spaces on both sides as before)
+          if (!p0k || !nk.every(x => allW.has(x) && !gSet.has(x) && !hSet.has(x) && (dset.has(x) ? run.includes(x) : true) && pair(segMap.get(x)) === p0k)) continue;
           for (const x of run) { const i = doors.indexOf(x); if (i >= 0) doors.splice(i, 1); dset.delete(x); } for (const x of nk) { doors.push(x); dset.add(x); } nRecentred++; } }
       nDivWall = dividers.filter(d => d.keep).length; const dvSegs = dividers.filter(d => d.keep).flatMap(d => d.segs); halfWalls.push(...dvSegs); nDivSegs = dvSegs.length;
       // every point of a middle wall is kept (not drawn): the rules know that wall is meant, standing free between its two columns
@@ -1128,7 +1137,7 @@ const Halls = (() => {
     }
     // ---- hard to find: the boss hall gets a single door, onto its deepest neighbour; the way down to the
     // next floor is drawn among the deepest spaces (counted in doors from the entrance), a dead end if possible ----
-    let forcedGoal = 0, bossDepth = -1, goalDepth = -1, maxDepth = 0, nWalled = 0, nShut = 0, nShutSegs = 0, wayDoors = 0, wayChoices = 0, wayDead = 0;
+    let forcedGoal = 0, bossDepth = -1, goalDepth = -1, maxDepth = 0, nWalled = 0, nShut = 0, nShutSegs = 0, nRescued = 0, wayDoors = 0, wayChoices = 0, wayDead = 0;
     if (!cave) {
       const C4 = W - 1, R4 = H - 1, n4 = C4 * R4 * 4, Qi = (x, y, k) => (y * C4 + x) * 4 + k;
       // the spaces only depend on the walls (doors are walls too), which do not change here: worked out once

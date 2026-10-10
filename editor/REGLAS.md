@@ -350,3 +350,11 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
 97. **Más huecos y paredes**: un pasillo recto de 4 de ancho que no es pasillo doble se rellena 2 contra una pared (sigue de
    2); la pared del medio va desde 5 de largo (recto). La compuerta reservada de un tramo se busca hasta 4 al lado.
    Medido (19×19): ~30 rellenos, 2–13 paredes al medio y ~10 obturadores por mapa; tramos 90, el mayor ~730.
+98. **Puertas siempre centradas**: una puerta nunca toca el primer ni el último punto de su pared (una esquina en L también
+   es columna aunque tenga solo 2 paredes); al final cada puerta se centra entre sus columnas reales, moviéndose solo
+   por la misma pared y con los mismos dos espacios a los lados. Medido: 100% centradas (±½).
+99. **Semicuartos**: el carril de una pared del medio cerrado por compuertas en sus dos puntas es un cuartito del pasillo;
+   si a su lado hay una sala, recibe una puerta a ella (en el medio, entre las columnas de sus compuertas): en cada punta
+   se elige seguir por un carril o entrar por el otro a la sala. Los obturadores pueden cerrar una de sus compuertas.
+100. **Nada queda encerrado**: al final, todo espacio al que no se llega desde la entrada recibe una puerta (centrada entre
+   columnas) a un vecino al que sí se llega.
