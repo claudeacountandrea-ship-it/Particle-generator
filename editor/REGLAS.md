@@ -259,3 +259,24 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
    vuelve a generar (hasta 3 veces). Medido: 35% (16×16), 33% (12×12).
 72. **Los pasillos diagonales de los barrios también llevan particiones**: compuerta en medio de cada tramo (85%),
    y todos sus puntos cuentan para cortar los tramos demasiado largos.
+73. **Rombos sueltos y cuadrados sueltos (no solo barrios)**: además de los barrios (hasta 3, de 3×3 celdas
+   giradas), hasta 12 rombos sueltos (16×16; 7 en 12×12) repartidos entre las salas cuadradas. Cada uno es un
+   «barrio» de una sola celda girada: su sitio queda fuera de la cuadrícula recta (los pasillos rectos lo rodean, nunca
+   lo cruzan) y lleva su propio pasillo diagonal por parte de su borde, que se une a los pasillos rectos, así que se
+   puede rodear y también lleva compuertas. La mitad es un rombo entero y la otra mitad dos rectángulos girados.
+   Dentro de cada barrio de 3×3 hay una sala cuadrada suelta. Así las diagonales no se notan como una comunidad.
+74. **Compuertas en los pasillos diagonales de los barrios**: se prueba desde el medio del tramo hacia afuera hasta
+   encontrar un punto donde cabe, y se permite que quede junto a la puerta de una sala (antes casi nunca cabía).
+   Medido: ~24 compuertas diagonales por mapa (antes ~8).
+75. **La sala del jefe siempre existe**: su lugar se elige antes que los barrios (por suerte, lejos de la entrada) y los
+   barrios, rombos sueltos y avenidas lo respetan. Antes, en ~8 de cada 10 mapas los barrios ocupaban todo el sitio
+   y no había jefe. Además, una sala sin puerta posible solo se funde con su vecina cuando ya no se puede poner
+   ninguna otra puerta en esa vuelta (un vecino alcanzado después puede darle su puerta), y la del jefe nunca se funde.
+76. **Nada corta los pasillos ni tapa la entrada**: los pasillos rectos nunca pasan por dentro de un barrio o rombo
+   suelto (solo por su borde). Antes un rombo suelto pintado encima de la cuadrícula cortaba pasillos: la parte
+   cortada se perdía entera como resto (a veces con la entrada y sus compuertas) y el mapa fallaba la entrada ~2 veces
+   antes de salir bien (cada fallo es un dibujo entero más); ahora casi nunca.
+77. **Rapidez**: la revisión de esquinas de más de 180° (la parte más lenta) se hizo ~2 veces más rápida dando el mismo
+   resultado; con eso y sin los fallos de entrada, un dibujo tarda ~4–5 s en vez de ~10–15 s. Si faltan salas en
+   diagonal se dibuja hasta 4 veces y se queda el mejor. Medido: salas en diagonal 16×16 entre 32% y 38%, 12×12
+   entre 30% y 41%; sin fallos de reglas, todos con entrada y con jefe.
