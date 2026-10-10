@@ -29,16 +29,20 @@ const Halls = (() => {
     // diagonal avenues: where they go is chosen first, so their casillas get one even pitch (a straight rectangle)
     const avLen = 3, avPlan = [];
     if (!cave && n === m && n >= 8) {
-      const cand = [];
-      for (const [sg, fromStart] of [[1, true], [1, false], [-1, true], [-1, false]]) {
-        for (let k = 1; k + avLen <= n / 2 - (n >= 14 ? 1.5 : 1); k++) {
-          const i0 = fromStart ? k : n - avLen - k, cells = []; for (let t = 0; t < avLen; t++) { const i = i0 + t; cells.push([i, sg > 0 ? i : n - 1 - i]); }
-          if (cells.every(([i, j]) => i >= 0 && j >= 0 && i < n && j < m && inShape(i, j))) { cand.push([i0, sg]); break; }
-        }
+      // avenues anywhere (not only on the great diagonals): each brings a rombo and a row of turned little rooms on
+      // both sides, so rooms in diagonal are as common as straight ones. Each sits wholly inside the outline,
+      // with a casilla of margin, and apart from the others.
+      const want = n >= 14 ? 5 : n >= 10 ? 3 : 1, used = new Set();
+      const footprint = (i0, j0, sg) => { const f = []; for (let t = 0; t < avLen; t++) f.push([i0 + t, j0 + sg * t]); for (let t = 0; t + 1 < avLen; t++) f.push([i0 + t + 1, j0 + sg * t], [i0 + t, j0 + sg * (t + 1)]); return f; };
+      for (let tries = 0; tries < 400 && avPlan.length < want; tries++) {
+        const sg = Math.random() < 0.5 ? 1 : -1, i0 = rnd(1, n - avLen - 1), j0 = sg > 0 ? rnd(1, m - avLen - 1) : rnd(avLen, m - 2);
+        const f = footprint(i0, j0, sg), ring = new Set(); for (const [i, j] of f) for (let b = -1; b <= 1; b++) for (let a2 = -1; a2 <= 1; a2++) ring.add((i + a2) + ',' + (j + b));
+        if ([...ring].some(k => { const [i, j] = k.split(',').map(Number); return i < 0 || j < 0 || i >= n || j >= m || !inShape(i, j) || used.has(k); })) continue;
+        avPlan.push([i0, j0, sg]); for (const [i, j] of f) for (let b = -1; b <= 1; b++) for (let a2 = -1; a2 <= 1; a2++) used.add((i + a2) + ',' + (j + b));
       }
-      avPlan.push(...cand.sort(() => Math.random() - 0.5).slice(0, n >= 10 ? 2 : 1)); // more than 2 left messy ends against the round outline
     }
-    const even = new Set(); for (const [i0] of avPlan) for (let t = 0; t < avLen; t++) { even.add(i0 + t); even.add(n - 1 - i0 - t); }
+    // the casillas of an avenue must be square: its columns and rows take one pitch
+    const even = new Set(); for (const [i0, j0, sg] of avPlan) for (let t = 0; t < avLen; t++) { even.add(i0 + t); even.add(j0 + sg * t); }
     const px = []; for (let i = 0; i < n; i++) px.push(i < (n + 1) >> 1 ? (even.has(i) && !cave ? mid : pitch()) : px[n - 1 - i]);
     for (const i of even) px[i] = mid;
     const py = []; for (let j = 0; j < m; j++) py.push(m === n ? px[j] : pitch());
@@ -63,8 +67,8 @@ const Halls = (() => {
     const avenues = [], avenueInner = new Set(), avenueCells = new Set(), avenueSide = new Set(), avenueEndBlock = new Map();
     {
       const len = avLen;
-      for (const [i0, sg] of avPlan) {
-        const cs = []; for (let t = 0; t < len; t++) { const i = i0 + t, j = sg > 0 ? i : n - 1 - i; cs.push([i, j]); }
+      for (const [i0, j0, sg] of avPlan) {
+        const cs = []; for (let t = 0; t < len; t++) cs.push([i0 + t, j0 + sg * t]);
         if (cs.some(([i, j]) => cell[cid(i, j)] || !square(i, j) || !cellIn(i, j))) continue;
         // the casillas on both sides become plain single rooms: the gallery's little rooms are cut from them
         const sides = []; for (let t = 0; t + 1 < len; t++) { const [a, b] = cs[t]; sides.push([a + 1, b], [a, b + sg]); }
@@ -102,7 +106,7 @@ const Halls = (() => {
     }
     for (let j = 0; j < m; j++) for (let i = 0; i < n; i++) {
       if (cell[cid(i, j)] || freeCell.has(cid(i, j)) || !cellIn(i, j)) continue;
-      if (square(i, j) && Math.random() < 0.55) { freeCell.add(cid(i, j)); continue; }
+      if (square(i, j) && Math.random() < 0.4) { freeCell.add(cid(i, j)); continue; }
       let w = 1, h = 1;
       const free = (a, b) => a < n && b < m && !cell[cid(a, b)] && !freeCell.has(cid(a, b)) && cellIn(a, b);
       const r = Math.random();
@@ -407,21 +411,11 @@ const Halls = (() => {
     for (const c of usedDiagCell) {
       const i = c % n, j = (c / n) | 0, [x0, y0] = N(i, j), G = cw(i);
       const owner = (a, b, side) => (a >= 0 && b >= 0 && a < n && b < m && cell[cid(a, b)] && cell[cid(a, b)].label && ext(a, b, side)) ? cell[cid(a, b)].label : 0;
+      const L1 = owner(i, j - 1, 3) || owner(i + 1, j, 0), L2 = owner(i, j + 1, 2) || owner(i - 1, j, 1);
       const diagDown = edges.has(ekey(nid(i, j), nid(i + 1, j + 1))); // "\" crossing
-      // each half goes to the room it touches along one of its legs; the half's two corners on the diagonal
-      // would make that room a 45° tip at the far end, so the tip is cut flat (2 long) and given to the corridor
-      const up = owner(i, j - 1, 3), rt = owner(i + 1, j, 0), dn = owner(i, j + 1, 2), lf = owner(i - 1, j, 1);
-      // [label, which leg it shares, cut test]
-      const H1 = diagDown ? (up ? [up, (x, y) => y > y0 + G - 2] : rt ? [rt, (x, y) => x < x0 + 2] : [0, () => false])  // upper-right half
-                          : (up ? [up, (x, y) => y > y0 + G - 2] : lf ? [lf, (x, y) => x > x0 + G - 2] : [0, () => false]); // upper-left half
-      const H2 = diagDown ? (dn ? [dn, (x, y) => y < y0 + 2] : lf ? [lf, (x, y) => x > x0 + G - 2] : [0, () => false])  // lower-left half
-                          : (dn ? [dn, (x, y) => y < y0 + 2] : rt ? [rt, (x, y) => x < x0 + 2] : [0, () => false]); // lower-right half
-      const in1 = (x, y) => x >= x0 && x <= x0 + G && y >= y0 && y <= y0 + G && (diagDown ? (x - x0) > (y - y0) : (x - x0) + (y - y0) < G);
-      const in2 = (x, y) => x >= x0 && x <= x0 + G && y >= y0 && y <= y0 + G && (diagDown ? (x - x0) < (y - y0) : (x - x0) + (y - y0) > G);
-      for (const [inH, [L, tip]] of [[in1, H1], [in2, H2]]) {
-        B.paint((x, y) => inH(x, y) && !tip(x, y), L, [0], [x0, y0, x0 + G, y0 + G]);
-        if (L) B.paint((x, y) => inH(x, y) && tip(x, y), corr, [0], [x0, y0, x0 + G, y0 + G]);
-      }
+      // upper-right / lower-left halves for "\", upper-left / lower-right for "/"
+      B.paint((x, y) => x >= x0 && x <= x0 + G && y >= y0 && y <= y0 + G && (diagDown ? (x - x0) > (y - y0) : (x - x0) + (y - y0) < G), L1, [0], [x0, y0, x0 + G, y0 + G]);
+      B.paint((x, y) => x >= x0 && x <= x0 + G && y >= y0 && y <= y0 + G && (diagDown ? (x - x0) < (y - y0) : (x - x0) + (y - y0) > G), L2, [0], [x0, y0, x0 + G, y0 + G]);
     }
     // diagonal galleries = the avenues: a long rectangle turned 45°, stamped whole over what is there.
     // A corridor of 2 runs down its middle (in at both ends); on each side a row of little rooms, each one
@@ -477,10 +471,6 @@ const Halls = (() => {
       const todo = rooms.filter(r => r.kind === 'sq' && r.label && !r.special).map(r => r.label);
       for (let guard = 0; todo.length && guard < 2000; guard++) {
         const l = todo.pop(), [a, b, c, d] = boxOf(l), w = c - a, h = d - b;
-        { // a room with a long slanted wall (3+ in a row, not a bevel) is not cut: cutting it leaves 45° tips
-          const by = new Map(); for (const g of B.segments()) if ((g.a === l || g.b === l) && (g.d === 'd1' || g.d === 'd2')) { const k = g.d + g.line; if (!by.has(k)) by.set(k, []); by.get(k).push(g.pos); }
-          let slant = false; for (const P of by.values()) { P.sort((u, v) => u - v); let run = 1; for (let i = 1; i < P.length; i++) { run = P[i] === P[i - 1] + 1 ? run + 1 : 1; if (run >= 3) slant = true; } }
-          if (slant) continue; }
         if (Math.max(w, h) <= pmax) continue;
         const vertical = w >= h, len = vertical ? w : h; if (len < 2 * pmin) continue;
         const cut = (vertical ? a : b) + rnd(pmin, len - pmin), n2 = B.label('room');
