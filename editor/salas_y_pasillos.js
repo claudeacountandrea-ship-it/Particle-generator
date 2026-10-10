@@ -674,7 +674,7 @@ const Halls = (() => {
       { const seen = new Uint8Array(N4); for (let c0 = 0; c0 < N4; c0++) { if (!wall2[c0] || seen[c0]) continue; const comp = [c0], st = [c0]; seen[c0] = 1;
           while (st.length) { const c = st.pop(), x = c % C4, y = (c / C4) | 0; for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const xx = x + a, yy = y + b, cc = yy * C4 + xx; if (xx >= 0 && yy >= 0 && xx < C4 && yy < R4 && wall2[cc] && !seen[cc]) { seen[cc] = 1; st.push(cc); comp.push(cc); } } }
           const xs = comp.map(c => c % C4), ys = comp.map(c => (c / C4) | 0), len = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) + 1;
-          if (comp.length < 36 || len < 10) continue; // only in a big open stretch: a wall to go round, never a crumb
+          if (comp.length < 36) continue; // only in a big open stretch: a hole or wall to go round, never a crumb
           const l = B.label('pillar'); for (const c of comp) for (let k = 0; k < 4; k++) q[c * 4 + k] = l; nDiv++; } }
       if (nIsl || nDiv) B.bevelCorners();
     }
