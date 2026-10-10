@@ -302,3 +302,16 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
    a juntarse con el vecino de más pared (como antes). Siguen ~6% codos y ~7% irregulares.
 83. **Rapidez**: el mapa de espacios para tapiar puertas y esconder al jefe se calcula una vez (no en cada prueba), y la
    limpieza de huecos finos cuenta sin ordenar; mismo resultado. En el navegador: ~5 s (16×16), ~14 s (19×19).
+84. **Columnas y puertas**: toda unión de paredes (L, T o X, en cualquier ángulo) o punta de pared es una columna.
+   Una puerta va en el medio de una pared entre dos columnas (la pared más larga del tramo compartido). Ninguna
+   compuerta termina en el borde de una puerta: la compuerta junto a la puerta de una sala va en la columna donde
+   termina la pared de esa puerta (sigue la pared de la sala a través del pasillo). Medido: 97% de las puertas de sala
+   centradas entre sus columnas (antes 90%).
+85. **Pasillos dobles con pared compartida**: ~25% de las líneas rectas del laberinto se pintan de 4 de ancho; donde un
+   tramo recto de 4–6 de ancho dura 10 o más, una pared delgada va por su medio, con una columna en cada punta: dos
+   pasillos lado a lado que se separan y se vuelven a juntar en las columnas; cada carril lleva compuertas junto a las
+   puntas (en cada punta se elige carril). Una pared que termina en columna no cuenta como pared suelta.
+86. **Corte de tramos que de verdad parte**: en cada tramo largo se prueban hasta 8 compuertas y se pone la que lo parte
+   en dos partes mayores (no la que deja el camino rodeando por otro lado).
+87. **Bloques sólidos no son "partes cerradas"**: el editor ya no castiga los mapas por sus bloques sólidos (antes
+   descartaba los mapas con huecos y siempre hacía 3 intentos); a 18×18 o más hace 2 intentos como mucho.

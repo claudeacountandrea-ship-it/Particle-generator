@@ -351,6 +351,7 @@ const Halls = (() => {
     }
     const linkCount = new Map(); for (const e of edges.values()) for (const p of [e.a, e.b]) linkCount.set(nid(...p), (linkCount.get(nid(...p)) || 0) + 1);
     const leaf = p => linkCount.get(nid(...p)) === 1 && nid(...p) !== nid(si, sj);
+    const wideLine = new Map();
     for (const e of edges.values()) {
       const [x1, y1] = N(...e.a), [x2, y2] = N(...e.b), dx = Math.sign(x2 - x1), dy = Math.sign(y2 - y1);
       if (e.diag) {
@@ -361,6 +362,11 @@ const Halls = (() => {
         const ea = leaf(e.a) ? 0 : 1, eb = leaf(e.b) ? 0 : 1, first = (x1 < x2 || y1 < y2);
         const lo = [Math.min(x1, x2) - (dx ? (first ? ea : eb) : 1), Math.min(y1, y2) - (dy ? (first ? ea : eb) : 1)];
         const hi = [Math.max(x1, x2) + (dx ? (first ? eb : ea) : 1), Math.max(y1, y2) + (dy ? (first ? eb : ea) : 1)];
+        // now and then a long stretch is a double corridor, 4 wide: later a wall down its middle makes it two
+        // corridors side by side, one wall shared (a choice of lane at each end)
+        const lk = (dx ? 'h' : 'v') + (dx ? y1 : x1); if (!wideLine.has(lk)) wideLine.set(lk, Math.random() < 0.25 ? (Math.random() < 0.5 ? -1 : 1) : 0); // the whole line alike
+        if (!cave && wideLine.get(lk)) { const sd = wideLine.get(lk);
+          if (dx) { if (sd < 0) lo[1] -= 2; else hi[1] += 2; } else { if (sd < 0) lo[0] -= 2; else hi[0] += 2; } }
         B.paint((x, y) => x >= lo[0] && x <= hi[0] && y >= lo[1] && y <= hi[1], corr, null, [lo[0], lo[1], hi[0], hi[1]]);
       }
     }
@@ -780,7 +786,7 @@ const Halls = (() => {
     const segsF = segs2;
     // ---- compuertas: beside a room's door, the corridor is closed by a gate (a wall of 2 across it,
     // all door), so at that door one chooses: go into the room, or open the gate and go on ----
-    const halfWalls = []; let nThrough = 0, maxPiece = 0, nGateAll = 0;
+    const halfWalls = [], divCols = []; let nThrough = 0, maxPiece = 0, nGateAll = 0, nDivWall = 0, nDivSegs = 0;
     if (!cave && opts.gates !== false) {
       const wallSet = new Set(segsF.map(g => g.k)), doorSet = new Set(doors), isCorrQ = (x, y) => B.Q(x, y, 0) === corr && B.Q(x, y, 2) === corr && B.Q(x, y, 1) === corr && B.Q(x, y, 3) === corr;
       const plain = k => wallSet.has(k) && !doorSet.has(k), degF = new Map();
@@ -816,13 +822,45 @@ const Halls = (() => {
       const tryDiag = (c, d) => {
         const p = [d[1], -d[0]], e1 = [c[0] - p[0], c[1] - p[1]], e2 = [c[0] + p[0], c[1] + p[1]];
         // the corridor walls must run straight past both ends (a room's door there is fine: door beside a gate)
-        const along = q => degF.get(q + '') === 2 && wallSet.has(wk([q[0] - d[0], q[1] - d[1]], q)) && wallSet.has(wk(q, [q[0] + d[0], q[1] + d[1]]));
+        const along = q => degF.get(q + '') === 2 && plain(wk([q[0] - d[0], q[1] - d[1]], q)) && plain(wk(q, [q[0] + d[0], q[1] + d[1]])); // never at a door's edge: a door stays between two columns
         if (!along(e1) || !along(e2) || degF.has(c + '')) return null;
         for (const [x, y] of [[c[0] - 1, c[1] - 1], [c[0], c[1] - 1], [c[0] - 1, c[1]], [c[0], c[1]]]) if (!isCorrQ(x, y)) return null;
         if (!spaced(...c)) return null;
         return { segs: [wk(e1, c), wk(c, e2)], c, ends: [e1, e2], ortho: false };
       };
       const put = g => { if (!g) return false; g.half = g.forced !== undefined ? g.forced : g.ortho && Math.random() < 0.35 ? (Math.random() < 0.5 ? 0 : 1) : -1; placed.push(g); return true; };
+      // 0) two corridors with one wall between them: where a straight corridor runs 4–6 wide for 10 squares or more,
+      //    a thin wall goes down its middle, and each lane gets a gate one square in from each end of that wall:
+      //    at each end one chooses a lane (the gates elsewhere then cut the lanes like any corridor)
+      const dividers = [], dvC = W - 1, dvR = H - 1;
+      for (const h of [true, false]) {
+        const P = (u, v) => h ? [u, v] : [v, u], dir = h ? [1, 0] : [0, 1], U = h ? dvC : dvR, V = h ? dvR : dvC;
+        const cc = (u, v) => { if (u < 0 || v < 0 || u >= U || v >= V) return false; const [x, y] = h ? [u, v] : [v, u]; return isCorrQ(x, y); };
+        const used = new Set();
+        for (let v = 2; v < V - 1; v++) {
+          const ok = u => { let up = 0, dn = 0; while (up < 7 && cc(u, v - 1 - up)) up++; while (dn < 7 && cc(u, v + dn)) dn++; return up >= 2 && dn >= 2 && up + dn <= 6 && Math.abs(up - dn) <= 1 ? [up, dn] : null; };
+          for (let u = 0; u < U; u++) {
+            const w0 = ok(u); if (!w0 || used.has(u + ',' + v)) continue;
+            let u1 = u; while (u1 + 1 < U && (() => { const w1 = ok(u1 + 1); return w1 && w1[0] === w0[0] && w1[1] === w0[1]; })()) u1++;
+            const a = u + 1, b = u1, [up, dn] = w0; // the wall runs from vertex a to vertex b
+            if (b - a < 10) { u = u1; continue; }
+            let clear = true; for (let t = a; t <= b && clear; t++) if (degF.has(P(t, v) + '')) clear = false;
+            // a lane gate at vertex t: from the middle wall out to the corridor wall, square to a straight plain wall there
+            const lane = (t, sd) => { const n2 = sd < 0 ? up : dn, e = P(t, v + sd * n2); if (!straightAt(e, dir)) return null; const pts = []; for (let i = 0; i <= n2; i++) pts.push(P(t, v + sd * i));
+              if (pts.slice(1, -1).some(q => degF.has(q + ''))) return null; return { segs: pts.slice(1).map((q, i) => wk(pts[i], q)), c: pts[n2 >> 1], ends: [pts[0], pts[n2]], ortho: false, half: -1 }; };
+            const find2 = (t0, step, sd) => { for (let k = 0; k < 3; k++) { const g = lane(t0 + step * k, sd); if (g) return g; } return null; };
+            // (the two lanes' gates never meet at the same point of the middle wall: one square apart)
+            const lanes = [-1, 1].map(sd => [find2(a + (sd < 0 ? 1 : 2), 2, sd), find2(b - (sd < 0 ? 1 : 2), -2, sd)]).filter(([g1, g2]) => g1 && g2);
+            if (!clear) { u = u1; continue; }
+            const segs = []; for (let t = a; t < b; t++) segs.push(wk(P(t, v), P(t + 1, v)));
+            dividers.push({ segs, lanes });
+            for (const k of segs) { wallSet.add(k); for (const q of parseW(k)) degF.set(q + '', (degF.get(q + '') || 0) + 1); }
+            for (const [g1, g2] of lanes) placed.push(g1, g2);
+            for (let t = u; t <= u1; t++) for (let dv = -3; dv <= 3; dv++) used.add(t + ',' + (v + dv));
+            u = u1;
+          }
+        }
+      }
       // 1) beside the doors of the rooms (one side, sometimes both)
       const byLine = new Map();
       for (const k of doors) { const [[x1, y1], [x2, y2]] = parseW(k); if (x1 !== x2 && y1 !== y2) continue; const h = y1 === y2, key = (h ? 'h' : 'v') + (h ? y1 : x1), pos = h ? Math.min(x1, x2) : Math.min(y1, y2); if (!byLine.has(key)) byLine.set(key, []); byLine.get(key).push(pos); }
@@ -830,7 +868,12 @@ const Halls = (() => {
       for (const [key, list] of byLine) { const h = key[0] === 'h', L = +key.slice(1); list.sort((a, b) => a - b); for (let t = 0; t < list.length;) { let e = t; while (e + 1 < list.length && list[e + 1] === list[e] + 1) e++; doorRuns.push([h, L, list[t], list[e] + 1]); t = e + 1; } }
       for (const [h, L, a, b] of doorRuns.sort(() => Math.random() - 0.5)) {
         if (Math.random() < 0.05) continue;
-        const sides = Math.random() < 0.25 ? [a - 1, b + 1] : [Math.random() < 0.5 ? a - 1 : b + 1];
+        // the gate goes at the column that ends the door's wall (where a room wall meets the corridor wall): it carries
+        // that wall on across the corridor, and the door stays in the middle of its wall between two columns
+        const pt = v => h ? [v, L] : [L, v], dir = h ? [1, 0] : [0, 1];
+        let cl = a - 1; while (cl > a - 30 && straightAt(pt(cl), dir)) cl--;
+        let cr = b + 2; while (cr < b + 30 && straightAt(pt(cr), dir)) cr++;
+        const sides = Math.random() < 0.25 ? [cl, cr] : [Math.random() < 0.5 ? cl : cr];
         for (const sd of [1, -1]) { const got = sides.map(gu => put(tryOrtho(h, L, gu, sd))); if (got.some(Boolean)) break; }
       }
       // 2) along the stretches, at the mouths of crossings, and just past every L turn (seen from the stretch
@@ -862,7 +905,7 @@ const Halls = (() => {
       // 3) no stretch of corridor longer than 40 squares: the longest is cut again and again
       const C4 = W - 1, R4 = H - 1, Qi = (x, y, k) => (y * C4 + x) * 4 + k;
       const pieces = () => {
-        const blk = new Set([...placed.flatMap(g => g.segs)]), par = new Map(), find = i => { while (par.get(i) !== i) { par.set(i, par.get(par.get(i))); i = par.get(i); } return i; };
+        const blk = new Set([...placed.flatMap(g => g.segs), ...dividers.flatMap(d => d.segs)]), par = new Map(), find = i => { while (par.get(i) !== i) { par.set(i, par.get(par.get(i))); i = par.get(i); } return i; };
         const join = (a, b) => { if (!par.has(a) || !par.has(b)) return; a = find(a); b = find(b); if (a !== b) par.set(a, b); };
         for (let i = 0; i < B.q.length; i++) if (B.q[i] === corr) par.set(i, i);
         for (let y = 0; y < R4; y++) for (let x = 0; x < C4; x++) {
@@ -887,7 +930,7 @@ const Halls = (() => {
       // a wider gate across a diagonal corridor (3 or 4 steps), from wall point q across in steps st
       const tryDiagW = (q, st, d, w) => {
         const pts = []; for (let i = 0; i <= w; i++) pts.push([q[0] + i * st[0], q[1] + i * st[1]]);
-        const along = r => degF.get(r + '') === 2 && wallSet.has(wk([r[0] - d[0], r[1] - d[1]], r)) && wallSet.has(wk(r, [r[0] + d[0], r[1] + d[1]]));
+        const along = r => degF.get(r + '') === 2 && plain(wk([r[0] - d[0], r[1] - d[1]], r)) && plain(wk(r, [r[0] + d[0], r[1] + d[1]]));
         if (!along(pts[0]) || !along(pts[w])) return null;
         for (const r of pts.slice(1, -1)) { if (degF.has(r + '')) return null; for (const [x, y] of [[r[0] - 1, r[1] - 1], [r[0], r[1] - 1], [r[0] - 1, r[1]], [r[0], r[1]]]) if (!isCorrQ(x, y)) return null; }
         const c = pts[w >> 1]; if (!spaced(...c)) return null;
@@ -901,7 +944,7 @@ const Halls = (() => {
       const wdMemo = new Map(), wallDirs = q => { const key = q[0] + ',' + q[1]; let out = wdMemo.get(key); if (!out) { out = []; for (const st of STEPS) if (wallSet.has(wk(q, [q[0] + st[0], q[1] + st[1]]))) out.push(st); wdMemo.set(key, out); } return out; };
       // the wall runs straight through q, square to the gate (no corner at the door's end: no sharp tip, no door against a wall)
       // (a wall coming from behind, away from the corridor, is fine: the gate carries it on across)
-      const squareEnd = (q, st) => { const ds = wallDirs(q).filter(d => !(d[0] === -st[0] && d[1] === -st[1])); return ds.length === 2 && ds[0][0] === -ds[1][0] && ds[0][1] === -ds[1][1] && ds[0][0] * st[0] + ds[0][1] * st[1] === 0; };
+      const squareEnd = (q, st) => { const ds = wallDirs(q).filter(d => !(d[0] === -st[0] && d[1] === -st[1])); return ds.length === 2 && ds[0][0] === -ds[1][0] && ds[0][1] === -ds[1][1] && ds[0][0] * st[0] + ds[0][1] * st[1] === 0 && ds.every(d => plain(wk(q, [q[0] + d[0], q[1] + d[1]]))); };
       // steps: the gate's path; across a diagonal corridor of odd width it takes one straight step in the middle
       const tryPath = (e1, steps) => {
         const w = steps.length, pts = [e1]; for (const st of steps) { const r = pts[pts.length - 1]; pts.push([r[0] + st[0], r[1] + st[1]]); }
@@ -916,18 +959,39 @@ const Halls = (() => {
       const nearBig = (inBig, [cx, cy]) => inBig(cx, cy) || inBig(cx - 1, cy) || inBig(cx, cy - 1) || inBig(cx - 1, cy - 1);
       minGap = 4;
       // each round, one more gate in every stretch still too long (they are apart, so they do not get in each other's way)
+      // how well a gate cuts its stretch: the smaller of the two parts it leaves (0 if the way still goes round it,
+      // or if a part would be under 4×4)
+      const splitScore = (g, pcSize) => {
+        const blk = new Set([...placed.flatMap(p => p.segs), ...dividers.flatMap(d => d.segs), ...g.segs]);
+        const sideQ = k => { const [[x1, y1], [x2, y2]] = parseW(k), x = Math.min(x1, x2), y = Math.min(y1, y2);
+          if (y1 === y2) return [Qi(x, y - 1, 2), Qi(x, y, 0)]; if (x1 === x2) return [Qi(x - 1, y, 1), Qi(x, y, 3)];
+          return (x2 - x1) * (y2 - y1) > 0 ? [Qi(x, y, 0), Qi(x, y, 2)] : [Qi(x, y, 0), Qi(x, y, 1)]; };
+        const [sa, sb] = sideQ(g.segs[0]); if (B.q[sa] !== corr || B.q[sb] !== corr) return 0;
+        const seen = new Set([sa]), st = [sa]; let n = 0;
+        while (st.length) { const i = st.pop(); n++; if (i === sb) return 0; const c = i >> 2, k = i & 3, x = c % C4, y = (c / C4) | 0, nb = [];
+          const d1 = blk.has(wk([x, y], [x + 1, y + 1])), d2 = blk.has(wk([x + 1, y], [x, y + 1]));
+          if (k === 0) { if (!d2) nb.push(c * 4 + 1); if (!d1) nb.push(c * 4 + 3); if (y > 0 && !blk.has(wk([x, y], [x + 1, y]))) nb.push(Qi(x, y - 1, 2)); }
+          if (k === 1) { if (!d2) nb.push(c * 4); if (!d1) nb.push(c * 4 + 2); if (x < C4 - 1 && !blk.has(wk([x + 1, y], [x + 1, y + 1]))) nb.push(Qi(x + 1, y, 3)); }
+          if (k === 2) { if (!d2) nb.push(c * 4 + 3); if (!d1) nb.push(c * 4 + 1); if (y < R4 - 1 && !blk.has(wk([x, y + 1], [x + 1, y + 1]))) nb.push(Qi(x, y + 1, 0)); }
+          if (k === 3) { if (!d2) nb.push(c * 4 + 2); if (!d1) nb.push(c * 4); if (x > 0 && !blk.has(wk([x, y], [x, y + 1]))) nb.push(Qi(x - 1, y, 1)); }
+          for (const j of nb) if (!seen.has(j) && B.q[j] === corr) { seen.add(j); st.push(j); } }
+        const small = Math.min(n, pcSize - n); return small >= 64 ? small : 0; };
+      // each round, in every stretch still too long, a few possible gates are weighed and the one that best cuts it goes in
       const tryIn = (pc, big) => {
-          const inBig = (x, y) => pc.has(Qi(x, y, 0)) && pc.find(Qi(x, y, 0)) === big;
+          const inBig = (x, y) => pc.has(Qi(x, y, 0)) && pc.find(Qi(x, y, 0)) === big, cands = [], MAX = 8;
+          const add = g => { if (g && cands.length < MAX && !cands.some(o => o.segs.some(k => g.segs.includes(k)))) cands.push(g); return cands.length >= MAX; };
           const opts = [...orthoAt.map(o => ['o', o]), ...diagAt.map(o => ['d', o])].filter(([t, o]) => t === 'o' ? (o[0] ? inBig(o[2], o[1]) : inBig(o[1], o[2])) : inBig(o[0][0], o[0][1])).sort(() => Math.random() - 0.5);
-          let done = false; for (const [t, o] of opts) { if (put(t === 'o' ? tryOrtho(o[0], o[1], o[2], 1) : tryDiag(o[0], o[1]))) { done = true; break; } }
-          if (!done) { const wc = wallCand.filter(w => nearBig(inBig, w[2])).sort(() => Math.random() - 0.5);
-            for (const w of [2, 3, 4]) { for (const [t, o, , q, st] of wc) { if (put(t === 'o' ? tryOrthoW(o[0], o[1], o[2], o[3], w) : w === 2 ? tryDiag(o[0], o[1]) : tryDiagW(q, st, o[1], w))) { done = true; break; } } if (done) break; } }
-          if (!done) { const wp = wallPts.filter(q => nearBig(inBig, q)).sort(() => Math.random() - 0.5);
-            const paths = st => { const out = []; for (const w of [2, 3, 4]) out.push(Array(w).fill(st));
+          for (const [t, o] of opts) if (add(t === 'o' ? tryOrtho(o[0], o[1], o[2], 1) : tryDiag(o[0], o[1]))) break;
+          if (cands.length < MAX) { const wc = wallCand.filter(w => nearBig(inBig, w[2])).sort(() => Math.random() - 0.5);
+            out: for (const w of [2, 3, 4]) for (const [t, o, , q, st] of wc) if (add(t === 'o' ? tryOrthoW(o[0], o[1], o[2], o[3], w) : w === 2 ? tryDiag(o[0], o[1]) : tryDiagW(q, st, o[1], w))) break out; }
+          if (cands.length < MAX) { const wp = wallPts.filter(q => nearBig(inBig, q)).sort(() => Math.random() - 0.5);
+            const paths = st => { const out = []; for (const w of [2, 3, 4, 5]) out.push(Array(w).fill(st));
               if (st[0] && st[1]) for (const w of [1, 2, 3]) for (const o of [[st[0], 0], [0, st[1]]]) { const a = Array(w).fill(st); a.splice(w >> 1, 0, o); out.push(a); }
               return out.sort((a, b) => a.length - b.length); };
-            for (const q of wp) { for (const st of STEPS) { for (const path of paths(st)) if (put(tryPath(q, path))) { done = true; break; } if (done) break; } if (done) break; } }
-        return done;
+            out2: for (const q of wp) for (const st of STEPS) for (const path of paths(st)) if (add(tryPath(q, path))) break out2; }
+          if (!cands.length) return false;
+          const size = pc.size.get(big); let best = cands[0], bs = -1; for (const g of cands) { const sc = splitScore(g, size); if (sc > bs) { bs = sc; best = g; } }
+          return put(best);
       };
       for (let guard = 0; guard < 60; guard++) {
         const pc = pieces(), bigs = [...pc.size].filter(([, z]) => sq(z) > 40).sort((p, q) => q[1] - p[1]);
@@ -938,7 +1002,7 @@ const Halls = (() => {
       // 4) a gate that leaves a bit of corridor smaller than 4×4 is taken away again
       const gk = () => placed.flatMap(g => g.half < 0 ? g.segs : [g.segs[g.half]]), hk = () => placed.flatMap(g => g.half < 0 ? [] : [g.segs[1 - g.half]]);
       for (let pass = 0; pass < 12 && placed.length; pass++) {
-        const r = checkRules(W, H, new Set([...segsF.map(g => g.k), ...gk(), ...hk()]), new Set([...doors, ...gk()]));
+        const r = checkRules(W, H, new Set([...segsF.map(g => g.k), ...gk(), ...hk(), ...dividers.flatMap(d => d.segs)]), new Set([...doors, ...gk()]), new Set(dividers.flatMap(d => [parseW(d.segs[0])[0] + '', parseW(d.segs[d.segs.length - 1])[1] + ''])));
         // a gate that breaks the rules itself (a door against another wall, a sharp tip at its end) goes
         const badK = new Set(r.badDoors), sharpP = new Set(r.sharp.map(([x, y]) => x + ',' + y)); let gone = 0;
         for (let i = placed.length - 1; i >= 0; i--) if (placed[i].segs.some(k => badK.has(k)) || placed[i].segs.some(k => parseW(k).some(q => sharpP.has(q + '')))) { placed.splice(i, 1); gone++; }
@@ -952,7 +1016,12 @@ const Halls = (() => {
           const bit = new Set(hits), st = [...hits]; while (st.length) { const [x, y] = st.pop().split(',').map(Number); for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const k = (x + a) + ',' + (y + b); if (tiny.has(k) && !bit.has(k)) { bit.add(k); st.push(k); } } }
           for (const k of bit) explained.add(k); placed.splice(i, 1); }
       }
+      // the middle wall stands free between two columns (its tips): the two lanes part there and meet again.
+      // Its lane gates are a choice, not needed: one that went (a rule broken) leaves the rest
+      for (const d of dividers) d.keep = true;
       gates.push(...gk()); halfWalls.push(...hk()); nGateAll = placed.length;
+      nDivWall = dividers.filter(d => d.keep).length; const dvSegs = dividers.filter(d => d.keep).flatMap(d => d.segs); halfWalls.push(...dvSegs); nDivSegs = dvSegs.length;
+      for (const d of dividers) if (d.keep) { const pts = d.segs.flatMap(parseW); const cnt = new Map(); for (const q of pts) cnt.set(q + '', (cnt.get(q + '') || 0) + 1); for (const [k, c] of cnt) if (c === 1) divCols.push(k); }
       // 5) disguised ways through: a room touching two different stretches of corridor gets a door to each,
       //    so what looks like one more room is in fact the way on
       { const pc = pieces(), degA = new Map(degF); for (const k of [...gates, ...halfWalls]) for (const q of parseW(k)) degA.set(q + '', (degA.get(q + '') || 0) + 1);
