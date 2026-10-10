@@ -358,3 +358,10 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
    se elige seguir por un carril o entrar por el otro a la sala. Los obturadores pueden cerrar una de sus compuertas.
 100. **Nada queda encerrado**: al final, todo espacio al que no se llega desde la entrada recibe una puerta (centrada entre
    columnas) a un vecino al que sí se llega.
+101. **Pared del medio unida a una pared**: en 7 de cada 10 paredes del medio, una punta se alarga hasta tocar la pared del
+   pasillo (solo si llega derecho a una pared recta): ese carril queda como callejón y en esa punta se elige un solo lado.
+   La pared del medio cruza aberturas laterales de hasta 2 puntos sin cortarse.
+102. **Semicuarto en el carril que se pueda cerrar**: se prueba un carril y, si no admite compuertas en sus dos puntas (o
+   pared + compuerta si está unido), se prueba el otro. Un carril diagonal cuenta el doble de área por paso; un carril de
+   menos de 14 casillas no se cierra (rompería el mínimo de 4×4). Medido (19×19): 10–21 paredes al medio, 1–5 unidas,
+   1–2 semicuartos por mapa; reglas 0.4 fallas por mapa, puertas 100% centradas.

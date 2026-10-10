@@ -830,7 +830,7 @@ const Halls = (() => {
     const segsF = segs2;
     // ---- compuertas: beside a room's door, the corridor is closed by a gate (a wall of 2 across it,
     // all door), so at that door one chooses: go into the room, or open the gate and go on ----
-    const halfWalls = [], divCols = []; let nSemi = 0, nResv = 0, nRecentred = 0, nThrough = 0, maxPiece = 0, nGateAll = 0, nDivWall = 0, nDivSegs = 0;
+    const halfWalls = [], divCols = []; let nJoined = 0, nSemi = 0, nResv = 0, nRecentred = 0, nThrough = 0, maxPiece = 0, nGateAll = 0, nDivWall = 0, nDivSegs = 0;
     if (!cave && opts.gates !== false) {
       const wallSet = new Set(segsF.map(g => g.k)), doorSet = new Set(doors), isCorrQ = (x, y) => B.Q(x, y, 0) === corr && B.Q(x, y, 2) === corr && B.Q(x, y, 1) === corr && B.Q(x, y, 3) === corr;
       const plain = k => wallSet.has(k) && !doorSet.has(k), degF = new Map();
@@ -891,33 +891,44 @@ const Halls = (() => {
             const m0 = meas(v0); if (!m0) continue;
             const pv = add(v0, a, -1); if (meas(pv) && open(pv, v0)) continue; // only from where the run starts
             const pts = [v0]; let v = v0;
-            while (pts.length < 60) { const n = add(v, a); if (!open(v, n) || !meas(n)) break; pts.push(n); v = n; } // the width may vary within 3–6
+            // the width may vary within 3–6; a side opening (up to 2 points where the width cannot be read) is crossed: a
+            // corridor coming in from the side joins one of the two lanes
+            while (pts.length < 60) { const n = add(v, a); if (!open(v, n) || degF.has(n + '')) break; if (meas(n)) { pts.push(n); v = n; continue; }
+              const n2 = add(n, a), n3 = add(n2, a); if (open(n, n2) && !degF.has(n2 + '') && meas(n2)) { pts.push(n, n2); v = n2; continue; }
+              if (open(n, n2) && open(n2, n3) && !degF.has(n2 + '') && !degF.has(n3 + '') && meas(n3)) { pts.push(n, n2, n3); v = n3; continue; } break; }
             if (pts.length - 1 < (diag ? 4 : 5) || pts.some(q => used.has(q + ''))) continue; // (a diagonal stretch between crossings is at most 7 steps)
-            const wpts = pts.slice(1, -1), segs = []; for (let i = 0; i + 1 < wpts.length; i++) segs.push(wk(wpts[i], wpts[i + 1]));
+            let wpts = pts.slice(1, -1), att = 0; // att: -1 joined at the start, 1 at the end
+            // joined to a wall: where a wall stands across the corridor within 4 of a tip, the middle wall runs on to it,
+            // so one lane is shut there (a dead end, a little room of the corridor) and the way goes on by the other
+            { const reachWall = (from, dir) => { const out = []; let q = from; for (let i = 0; i < 4; i++) { const n = add(q, dir); if (!open(q, n)) return null; out.push(n); if (degF.has(n + '')) return wallStraight(n, p) ? out : null; q = n; } return null; };
+              const opts = [[-1, reachWall(wpts[0], [-a[0], -a[1]])], [1, reachWall(wpts[wpts.length - 1], a)]].filter(o => o[1]);
+              if (opts.length && Math.random() < 0.7) { const [side, ext] = opts[Math.floor(Math.random() * opts.length)]; att = side; wpts = side < 0 ? [...ext.reverse(), ...wpts] : [...wpts, ...ext]; } }
+            const segs = []; for (let i = 0; i + 1 < wpts.length; i++) segs.push(wk(wpts[i], wpts[i + 1]));
             for (const k of segs) { wallSet.add(k); for (const q of parseW(k)) degF.set(q + '', (degF.get(q + '') || 0) + 1); }
-            const lanes = [];
-            for (const sd of [-1, 1]) {
+            const lanes = []; let semiDone = false;
+            for (const sd of Math.random() < 0.5 ? [-1, 1] : [1, -1]) { // the first lane that can be shut becomes the little room
               const pp = [p[0] * sd, p[1] * sd];
-              if (Math.min(...wpts.map(q => reach(q, pp) || 9)) * (wpts.length - 4) < 14) continue; // a lane closed at both ends must not be a crumb
+              if (Math.min(...wpts.map(q => reach(q, pp) || 9)) * (wpts.length - 3) * (diag ? 2 : 1) < 14) continue; // a lane closed at both ends must not be a crumb (a diagonal step is 2 squares of floor)
               const gate = t => { if (t < 1 || t > wpts.length - 2) return null; const n2 = reach(wpts[t], pp); if (!n2) return null; const pts2 = [wpts[t]]; for (let i = 0; i < n2; i++) pts2.push(add(pts2[i], pp)); const e = pts2[n2];
                 if (pts2.slice(1, -1).some(q => degF.has(q + '')) || !wallStraight(e, a)) return null;
                 return { segs: pts2.slice(1).map((q, i) => wk(pts2[i], q)), c: pts2[n2 >> 1], ends: [wpts[t], e], ortho: false, half: -1 }; };
               const L2 = wpts.length - 1;
-              if (sd < 0) { const g1 = gate(1) || gate(3), g2 = gate(L2 - 1) || gate(L2 - 3); if (g1 && g2) { lanes.push([g1, g2]); placed.push(g1, g2);
+              const g1 = semiDone ? null : att < 0 ? 'wall' : gate(1) || gate(3), g2 = semiDone ? null : att > 0 ? 'wall' : gate(L2 - 1) || gate(L2 - 3);
+              if (g1 && g2) { semiDone = true; { const gs = [g1, g2].filter(g => g !== 'wall'); lanes.push(gs); placed.push(...gs);
                   // this lane, shut at both ends, is a little room of the corridor: it gets a door into the room beside it
                   // (in the middle of that wall, between the two gates' columns): one lane goes on, the other leads in
-                  const t1 = wpts.findIndex(q => q + '' === g1.ends[0] + ''), t2 = wpts.findIndex(q => q + '' === g2.ends[0] + ''), outer = [];
+                  const t1 = g1 === 'wall' ? 0 : wpts.findIndex(q => q + '' === g1.ends[0] + ''), t2 = g2 === 'wall' ? L2 : wpts.findIndex(q => q + '' === g2.ends[0] + ''), outer = [];
                   for (let t = t1; t < t2; t++) { const n2 = reach(wpts[t], pp), n3 = reach(wpts[t + 1], pp); if (!n2 || n2 !== n3) { outer.push(null); continue; }
                     const e1 = add(wpts[t], pp, n2), e2 = add(wpts[t + 1], pp, n2), k = wk(e1, e2), sg = segsF.find(g => g.k === k);
                     outer.push(sg && !doorSet.has(k) && [sg.a, sg.b].some(l => l && B.kinds[l] === 'room') ? sg : null); }
                   let best = [], cur = []; for (const sg of [...outer, null]) { if (sg) cur.push(sg); else { if (cur.length > best.length) best = cur; cur = []; } }
-                  if (best.length >= 4) { const dg = new Map(degF); for (const g of [g1, g2]) dg.set(g.ends[1] + '', 3); const d = B.safeDoor(best, dg); if (d) { doors.push(...d); for (const k of d) doorSet.add(k); nSemi++; } } } }
+                  if (best.length >= 4) { const dg = new Map(degF); for (const g of gs) dg.set(g.ends[1] + '', 3); const d = B.safeDoor(best, dg); if (d) { doors.push(...d); for (const k of d) doorSet.add(k); nSemi++; } } } }
               else { // the other lane, the same length, is gone through differently: a narrow pass halfway (half wall from the
                 // corridor wall, a door of 1 against the middle wall)
                 for (const t of [L2 >> 1, (L2 >> 1) + 1, (L2 >> 1) - 1]) { const g = gate(t); if (!g) continue;
                   const np2 = g.segs.length > 1 ? { ...g, segs: [g.segs[0]], walls: g.segs.slice(1), c: parseW(g.segs[0])[1] } : g; placed.push(np2); lanes.push([np2, np2]); break; } }
             }
-            dividers.push({ segs, lanes });
+            dividers.push({ segs, lanes, att }); if (att) nJoined++;
             for (const q of pts) for (let k = -4; k <= 4; k++) for (let j = -1; j <= 1; j++) used.add(add(add(q, p, k), a, j) + '');
           }
         } }
