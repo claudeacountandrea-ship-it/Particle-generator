@@ -236,3 +236,6 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
    una cuarta parte de las conexiones sobrantes (las que solo cierran una vuelta), sin aislar nada.
    Sin límite de puertas por sala: más decisiones es mejor. Medido: vueltas 54 → 37, profundidad máx
    14 → 18, jefe y bajada a ~18 puertas de la entrada (antes ~15).
+66. **Bisel proporcional**: el bisel de la esquina de una sala junto a una vuelta de pasillo es de 2 solo
+   si esa sala mide 8 o más de ancho; si no, 1. (Salas rectas 46% → 58%, octágonos ~0.)
+67. Meta siguiente: ninguna sala con esquinas de más de 180° (cóncavas); los pasillos sí pueden tenerlas.

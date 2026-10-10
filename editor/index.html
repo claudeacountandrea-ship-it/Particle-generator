@@ -1895,7 +1895,11 @@ const Halls = (() => {
       const has = (a, b) => L.some(d => d[0] === a && d[1] === b);
       for (const [sx, sy] of [[1, 1], [-1, 1], [-1, -1], [1, -1]]) {
         if (has(sx, sy)) continue; // a diagonal corridor leaves the node this way
-        const legs = 3 + (Math.random() < 0.5 ? 1 : 0); // bevel 1 or 2
+        // bevel in proportion to the room in that corner: 2 only when that room is 8 or more across
+        // (a bevel of 2 on a room of 4–6 eats a third of its wall and it stops reading as a square)
+        const ci2 = sx > 0 ? i : i - 1, cj2 = sy > 0 ? j : j - 1, rc = ci2 >= 0 && cj2 >= 0 && ci2 < n && cj2 < m ? cell[cid(ci2, cj2)] : null;
+        const across = rc ? Math.min(X[rc.i + rc.w] - X[rc.i], Y[rc.j + rc.h] - Y[rc.j]) - 2 : (ci2 >= 0 && cj2 >= 0 && ci2 < n && cj2 < m ? Math.min(cw(ci2), ch(cj2)) - 2 : 0);
+        const legs = 3 + (across >= 8 && Math.random() < 0.5 ? 1 : 0); // bevel 1, or 2 on big rooms
         if (has(sx, 0) && has(0, sy)) B.paint((x, y) => sx * (x - cx) >= 1 && sy * (y - cy) >= 1 && sx * (x - cx) + sy * (y - cy) <= legs, corr, [0], nb);
         else if (!has(sx, 0) && !has(0, sy) && L.length >= 2) cuts.push([nb, (x, y) => Math.abs(x - cx) <= 1 && Math.abs(y - cy) <= 1 && sx * (x - cx) + sy * (y - cy) > 0]);
       }
