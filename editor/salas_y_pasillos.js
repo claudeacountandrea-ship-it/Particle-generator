@@ -351,7 +351,7 @@ const Halls = (() => {
     }
     const linkCount = new Map(); for (const e of edges.values()) for (const p of [e.a, e.b]) linkCount.set(nid(...p), (linkCount.get(nid(...p)) || 0) + 1);
     const leaf = p => linkCount.get(nid(...p)) === 1 && nid(...p) !== nid(si, sj);
-    const wideLine = new Map();
+    const wideLine = new Map(), wideCells = new Set();
     for (const e of edges.values()) {
       const [x1, y1] = N(...e.a), [x2, y2] = N(...e.b), dx = Math.sign(x2 - x1), dy = Math.sign(y2 - y1);
       if (e.diag) {
@@ -366,7 +366,8 @@ const Halls = (() => {
         // corridors side by side, one wall shared (a choice of lane at each end)
         const lk = (dx ? 'h' : 'v') + (dx ? y1 : x1); if (!wideLine.has(lk)) wideLine.set(lk, Math.random() < 0.25 ? (Math.random() < 0.5 ? -1 : 1) : 0); // the whole line alike
         if (!cave && wideLine.get(lk)) { const sd = wideLine.get(lk);
-          if (dx) { if (sd < 0) lo[1] -= 2; else hi[1] += 2; } else { if (sd < 0) lo[0] -= 2; else hi[0] += 2; } }
+          if (dx) { if (sd < 0) lo[1] -= 2; else hi[1] += 2; } else { if (sd < 0) lo[0] -= 2; else hi[0] += 2; }
+          for (let y = lo[1]; y < hi[1]; y++) for (let x = lo[0]; x < hi[0]; x++) wideCells.add(x + ',' + y); }
         B.paint((x, y) => x >= lo[0] && x <= hi[0] && y >= lo[1] && y <= hi[1], corr, null, [lo[0], lo[1], hi[0], hi[1]]);
       }
     }
@@ -689,6 +690,21 @@ const Halls = (() => {
             if (ok && tot < bs) { bs = tot; best = fill; } }
           if (!best) continue;
           const l = B.label('pillar'); for (const c of best) for (let k = 0; k < 4; k++) q[c * 4 + k] = l; nFill++; } }
+      // a straight corridor 4 wide that is not a double corridor (those get a wall down the middle): 2 of its width are
+      // filled against one wall, so it goes on 2 wide
+      { const isCorrC = c => { for (let k = 0; k < 4; k++) { const v = q[c * 4 + k]; if (!v || B.kinds[v] !== 'corr') return false; } return true; };
+        const run = (x, y, a, b) => { let n = 1; for (const sg of [1, -1]) { let xx = x + a * sg, yy = y + b * sg; while (xx >= 0 && yy >= 0 && xx < C4 && yy < R4 && isCorrC(yy * C4 + xx) && n < 20) { n++; xx += a * sg; yy += b * sg; } } return n; };
+        const fillC = new Set(), side = new Map();
+        for (let y = 1; y < R4 - 1; y++) for (let x = 1; x < C4 - 1; x++) { const c = y * C4 + x; if (!isCorrC(c) || wideCells.has(x + ',' + y)) continue;
+          const h = run(x, y, 1, 0), v = run(x, y, 0, 1), across = h < v ? [1, 0] : [0, 1], w = Math.min(h, v); if (w !== 4 || Math.max(h, v) < 8) continue;
+          // the 4 cells across: this one and its run; fill the two on the side chosen for that line
+          let x0 = x, y0 = y; while (isCorrC((y0 - across[1]) * C4 + x0 - across[0])) { x0 -= across[0]; y0 -= across[1]; }
+          const key = (across[0] ? 'v' : 'h') + (across[0] ? x0 : y0); if (!side.has(key)) side.set(key, Math.random() < 0.5 ? 0 : 2);
+          const sd = side.get(key); for (let i = sd; i < sd + 2; i++) fillC.add((y0 + across[1] * i) * C4 + x0 + across[0] * i); }
+        // whole stretches only (8 long or more), never a crumb
+        const seen = new Uint8Array(N4); for (const c0 of fillC) { if (seen[c0]) continue; const comp = [c0], st = [c0]; seen[c0] = 1;
+          while (st.length) { const c = st.pop(), x = c % C4, y = (c / C4) | 0; for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const cc = (y + b) * C4 + x + a; if (fillC.has(cc) && !seen[cc]) { seen[cc] = 1; st.push(cc); comp.push(cc); } } }
+          if (comp.length < 16) continue; const l = B.label('pillar'); for (const c of comp) for (let k = 0; k < 4; k++) q[c * 4 + k] = l; nFill++; } }
       if (nIsl || nDiv || nFill) B.bevelCorners();
     }
     // last pass: rooms with no corner of more than 180° (after triangles and partitions moved things)
@@ -876,7 +892,7 @@ const Halls = (() => {
             const pv = add(v0, a, -1); if (meas(pv) && open(pv, v0)) continue; // only from where the run starts
             const pts = [v0]; let v = v0;
             while (pts.length < 60) { const n = add(v, a); if (!open(v, n) || !meas(n)) break; pts.push(n); v = n; } // the width may vary within 3–6
-            if (pts.length - 1 < (diag ? 4 : 6) || pts.some(q => used.has(q + ''))) continue; // (a diagonal stretch between crossings is at most 7 steps)
+            if (pts.length - 1 < (diag ? 4 : 5) || pts.some(q => used.has(q + ''))) continue; // (a diagonal stretch between crossings is at most 7 steps)
             const wpts = pts.slice(1, -1), segs = []; for (let i = 0; i + 1 < wpts.length; i++) segs.push(wk(wpts[i], wpts[i + 1]));
             for (const k of segs) { wallSet.add(k); for (const q of parseW(k)) degF.set(q + '', (degF.get(q + '') || 0) + 1); }
             const lanes = [];
@@ -998,7 +1014,7 @@ const Halls = (() => {
       minGap = 3; nResv = 0;
       for (const r of resv) {
         let ok = false;
-        for (const sh of [0, 1, -1, 2, -2]) { const c = [r.c[0] + sh * r.d[0], r.c[1] + sh * r.d[1]]; if (degF.has(c + '')) continue;
+        for (const sh of [0, 1, -1, 2, -2, 3, -3, 4, -4]) { const c = [r.c[0] + sh * r.d[0], r.c[1] + sh * r.d[1]]; if (degF.has(c + '')) continue;
           const reachW = sd => { let q = c; for (let i = 1; i <= 6; i++) { const n = [q[0] + sd * r.p[0], q[1] + sd * r.p[1]]; if (!cellsOfSeg(q, n).every(([x, y]) => isCorrQ(x, y))) return 0; q = n; if (degF.has(q + '')) return i; } return 0; };
           const a1 = reachW(-1), a2 = reachW(1); if (!a1 || !a2) continue;
           const e1 = [c[0] - a1 * r.p[0], c[1] - a1 * r.p[1]], g = tryPath(e1, Array(a1 + a2).fill(r.p)); if (!g) continue;
@@ -1112,7 +1128,7 @@ const Halls = (() => {
     }
     // ---- hard to find: the boss hall gets a single door, onto its deepest neighbour; the way down to the
     // next floor is drawn among the deepest spaces (counted in doors from the entrance), a dead end if possible ----
-    let forcedGoal = 0, bossDepth = -1, goalDepth = -1, maxDepth = 0, nWalled = 0, wayDoors = 0, wayChoices = 0, wayDead = 0;
+    let forcedGoal = 0, bossDepth = -1, goalDepth = -1, maxDepth = 0, nWalled = 0, nShut = 0, nShutSegs = 0, wayDoors = 0, wayChoices = 0, wayDead = 0;
     if (!cave) {
       const C4 = W - 1, R4 = H - 1, n4 = C4 * R4 * 4, Qi = (x, y, k) => (y * C4 + x) * 4 + k;
       // the spaces only depend on the walls (doors are walls too), which do not change here: worked out once

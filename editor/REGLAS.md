@@ -345,3 +345,8 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
    de 1 contra la pared del medio).
 95. **Lectura del camino**: la descripción dice cuántas puertas o compuertas hay de la entrada a la bajada, cuántas
    decisiones (lugares con 3 salidas o más) hay en ese camino, y cuántos pasillos sin salida tiene el piso.
+96. **Obturadores**: todas las particiones se ponen primero; después, leyendo los caminos, un tercio de las que solo
+   cierran un circuito se vuelven pared (sin cortar nada): el camino da más vuelta y aparecen pasillos sin salida.
+97. **Más huecos y paredes**: un pasillo recto de 4 de ancho que no es pasillo doble se rellena 2 contra una pared (sigue de
+   2); la pared del medio va desde 5 de largo (recto). La compuerta reservada de un tramo se busca hasta 4 al lado.
+   Medido (19×19): ~30 rellenos, 2–13 paredes al medio y ~10 obturadores por mapa; tramos 90, el mayor ~730.
