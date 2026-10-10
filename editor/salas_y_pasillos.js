@@ -477,7 +477,10 @@ const Halls = (() => {
       const todo = rooms.filter(r => r.kind === 'sq' && r.label && !r.special).map(r => r.label);
       for (let guard = 0; todo.length && guard < 2000; guard++) {
         const l = todo.pop(), [a, b, c, d] = boxOf(l), w = c - a, h = d - b;
-        { let slant = false; for (const g of B.segments()) if ((g.a === l || g.b === l) && (g.d === 'd1' || g.d === 'd2')) { slant = true; break; } if (slant) continue; } // cutting a room with a slanted wall leaves 45° tips
+        { // a room with a long slanted wall (3+ in a row, not a bevel) is not cut: cutting it leaves 45° tips
+          const by = new Map(); for (const g of B.segments()) if ((g.a === l || g.b === l) && (g.d === 'd1' || g.d === 'd2')) { const k = g.d + g.line; if (!by.has(k)) by.set(k, []); by.get(k).push(g.pos); }
+          let slant = false; for (const P of by.values()) { P.sort((u, v) => u - v); let run = 1; for (let i = 1; i < P.length; i++) { run = P[i] === P[i - 1] + 1 ? run + 1 : 1; if (run >= 3) slant = true; } }
+          if (slant) continue; }
         if (Math.max(w, h) <= pmax) continue;
         const vertical = w >= h, len = vertical ? w : h; if (len < 2 * pmin) continue;
         const cut = (vertical ? a : b) + rnd(pmin, len - pmin), n2 = B.label('room');
