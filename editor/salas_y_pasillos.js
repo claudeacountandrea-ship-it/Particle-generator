@@ -483,13 +483,14 @@ const Halls = (() => {
       for (let l = 1; l < B.next; l++) {
         const a = area[l]; if (!a || a >= 16) continue;
         const sh = new Map(); for (const g of sg) { const o = g.a === l ? g.b : g.b === l ? g.a : -1; if (o > 0) sh.set(o, (sh.get(o) || 0) + 1); }
-        const best = [...sh].sort((p, q) => q[1] - p[1])[0]; if (best) { B.paint(() => true, best[0], [l]); merged++; }
+        const best = [...sh].sort((p, q) => q[1] - p[1])[0];
+        if (best) { B.paint(() => true, best[0], [l]); merged++; }
       }
       B.snap(); if (!merged) break;
     } };
     for (let round = 0; round < 4; round++) {
       B.thin(); B.snap(); B.spikes(); B.bevelCorners(); tidy();
-      let fixed = 0; for (let t = 0; t < 4; t++) { const k = B.cornerFix(); fixed += k; if (!k) break; }
+      let fixed = 0; for (let t = 0; t < 4; t++) { const k = B.cornerFix() + B.reflexFix(l => B.kinds[l] === 'room'); fixed += k; if (!k) break; }
       if (!fixed) break;
     }
     // ---- no rooms that are nearly triangles: such a room joins the neighbouring room it shares most wall
@@ -532,6 +533,9 @@ const Halls = (() => {
         const pl = B.label('pillar'), i = ((y * C4) + x) * 4; for (let k = 0; k < 4; k++) B.q[i + k] = pl; nPillars++;
       }
     }
+    // last pass: rooms with no corner of more than 180° (after triangles and partitions moved things)
+    for (let t = 0; t < 4; t++) { const k = B.reflexFix(l => B.kinds[l] === 'room') + B.cornerFix(); if (!k) break; }
+    B.thin(); B.snap(); B.spikes(); tidy(); for (let t = 0; t < 2 && B.cornerFix(); t++);
     // ---- 6. doors ----
     const segs = B.segments(), runs = B.runs(segs), deg = new Map();
     for (const s of segs) for (const p of parseW(s.k)) { const v = vk(...p); deg.set(v, (deg.get(v) || 0) + 1); }

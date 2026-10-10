@@ -239,3 +239,7 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
 66. **Bisel proporcional**: el bisel de la esquina de una sala junto a una vuelta de pasillo es de 2 solo
    si esa sala mide 8 o más de ancho; si no, 1. (Salas rectas 46% → 58%, octágonos ~0.)
 67. Meta siguiente: ninguna sala con esquinas de más de 180° (cóncavas); los pasillos sí pueden tenerlas.
+68. **Salas sin esquinas de más de 180°**: casi todas eran escalones de 1 casilla (una sala se mete en el
+   hueco de la esquina de su vecina junto al pasillo). Corrección: en cada esquina así se prueba quitar el
+   escalón (1–4 casillas) o rellenar el hueco, y se queda lo que deje menos esquinas malas sin crear huecos
+   finos. Se aplica en la limpieza y otra vez al final. Salas sin esquinas así: 67% → ~74%.

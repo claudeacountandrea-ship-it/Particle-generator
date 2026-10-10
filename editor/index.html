@@ -1203,6 +1203,46 @@ const Build = (W, H) => {
       return n;
     },
     // a region cut into separate pieces: every piece but the biggest gets its own label
+    // a room must not turn more than 180° at any point: where it holds 225° (5 of the 8 wedges) against one
+    // neighbour holding 135°, the half cell between them goes to the neighbour, so the wall runs straight.
+    // Kept only when the four corners of that cell end up with fewer bad corners than before.
+    reflexFix(isRoom) { let n = 0;
+      const AT = (x, y) => [[x, y - 1, 3], [x, y - 1, 2], [x, y, 0], [x, y, 3], [x - 1, y, 1], [x - 1, y, 0], [x - 1, y - 1, 2], [x - 1, y - 1, 1]];
+      const bad = (x, y) => { if (x <= 0 || y <= 0 || x >= C || y >= R) return 0; const r = AT(x, y).map(([a, b, k]) => q[(b * C + a) * 4 + k]), cnt = new Map();
+        for (const v of r) cnt.set(v, (cnt.get(v) || 0) + 1); let b = 0;
+        for (const [l, c] of cnt) { if (c === 1) b += 2; if (c >= 5 && c <= 7 && isRoom(l)) b += 2;
+          if (c === 2) { const i = r.indexOf(l); if (r[(i + 1) & 7] === l && (i & 1) === 0) b++; } } // a whole cell alone at a point: a bare 90° corner
+        return b; };
+      const cellOf = (x, y) => (x < 0 || y < 0 || x >= C || y >= R) ? -1 : (y * C + x) * 4;
+      // cells (round a change) that are not part of any 2×2 block of their own space: something only 1 wide
+      const own = (x, y) => { const i = cellOf(x, y); if (i < 0) return -1; const c = new Map(); for (let k = 0; k < 4; k++) c.set(q[i + k], (c.get(q[i + k]) || 0) + 1); let b = -1, bc = 0; for (const [l, v] of c) if (v > bc) { bc = v; b = l; } return bc >= 2 ? b : -1; };
+      const thinAround = cd => { const seen = new Set(); let t = 0; for (const [cx, cy] of cd) for (let v = -2; v <= 2; v++) for (let u = -2; u <= 2; u++) { const a = cx + u, b = cy + v, key = a + ',' + b; if (seen.has(key)) continue; seen.add(key);
+          const L = own(a, b); if (L <= 0) continue; let fat = false; for (const [p2, q2] of [[0, 0], [-1, 0], [0, -1], [-1, -1]]) if ([[0, 0], [1, 0], [0, 1], [1, 1]].every(([e, f]) => own(a + p2 + e, b + q2 + f) === L)) { fat = true; break; } if (!fat) t++; } return t; };
+      for (let y = 1; y < R; y++) for (let x = 1; x < C; x++) {
+        const at = AT(x, y), r = at.map(([a, b, k]) => q[(b * C + a) * 4 + k]), cnt = new Map(); for (const v of r) cnt.set(v, (cnt.get(v) || 0) + 1);
+        let A = null; for (const [l, c] of cnt) if (c >= 5 && c <= 7 && isRoom(l)) A = l; if (A === null) continue;
+        const others = [...cnt.keys()].filter(l => l !== A); if (others.length !== 1) continue; const X = others[0];
+        // candidate changes: a strip of 1–4 cells starting at one of the 4 cells round the point, going any of the
+        // 4 ways, handed whole to X (the room loses its step) or to A (the notch is filled)
+        const cells = [[x, y - 1], [x, y], [x - 1, y], [x - 1, y - 1]], cands = [];
+        for (const [cx, cy] of cells) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) for (const to of [X, A]) {
+          const from = to === X ? A : X, list = [];
+          for (let k = 0; k < 4; k++) { const i = cellOf(cx + dx * k, cy + dy * k); if (i < 0) break; const v = [q[i], q[i + 1], q[i + 2], q[i + 3]];
+            if (!v.every(u => u === A || u === X) || !v.includes(from)) break; list.push([cx + dx * k, cy + dy * k]); cands.push(list.slice()); }
+          cands.forEach(cd => cd.to = cd.to ?? to); }
+        let best = null, bestGain = 0;
+        for (const cd of cands) {
+          const pts = new Set(); for (const [cx, cy] of cd) for (const [u, v] of [[cx, cy], [cx + 1, cy], [cx, cy + 1], [cx + 1, cy + 1]]) pts.add(u + ',' + v);
+          const P = [...pts].map(s2 => s2.split(',').map(Number)), before = P.reduce((s2, [u, v]) => s2 + bad(u, v), 0), thin0 = thinAround(cd) * 3;
+          const keep = cd.map(([cx, cy]) => { const i = cellOf(cx, cy); return [i, q[i], q[i + 1], q[i + 2], q[i + 3]]; });
+          for (const [i] of keep) for (let k = 0; k < 4; k++) q[i + k] = cd.to;
+          const after = P.reduce((s2, [u, v]) => s2 + bad(u, v), 0) + thinAround(cd) * 3, gain = before + thin0 - after - cd.length * 0.01; // smallest change wins a tie
+          for (const [i, a0, a1, a2, a3] of keep) { q[i] = a0; q[i + 1] = a1; q[i + 2] = a2; q[i + 3] = a3; }
+          if (gain > bestGain) { bestGain = gain; best = cd; }
+        }
+        if (best) { for (const [cx, cy] of best) { const i = cellOf(cx, cy); for (let k = 0; k < 4; k++) q[i + k] = best.to; } n++; }
+      }
+      return n; },
     // every bare 90° corner left (two walls meeting square, straight or diagonal) gets cut:
     // a straight corner is bevelled by half a cell, a "V" of two diagonals gets a flat tip of 2
     cornerFix() { let n = 0;
@@ -2066,13 +2106,14 @@ const Halls = (() => {
       for (let l = 1; l < B.next; l++) {
         const a = area[l]; if (!a || a >= 16) continue;
         const sh = new Map(); for (const g of sg) { const o = g.a === l ? g.b : g.b === l ? g.a : -1; if (o > 0) sh.set(o, (sh.get(o) || 0) + 1); }
-        const best = [...sh].sort((p, q) => q[1] - p[1])[0]; if (best) { B.paint(() => true, best[0], [l]); merged++; }
+        const best = [...sh].sort((p, q) => q[1] - p[1])[0];
+        if (best) { B.paint(() => true, best[0], [l]); merged++; }
       }
       B.snap(); if (!merged) break;
     } };
     for (let round = 0; round < 4; round++) {
       B.thin(); B.snap(); B.spikes(); B.bevelCorners(); tidy();
-      let fixed = 0; for (let t = 0; t < 4; t++) { const k = B.cornerFix(); fixed += k; if (!k) break; }
+      let fixed = 0; for (let t = 0; t < 4; t++) { const k = B.cornerFix() + B.reflexFix(l => B.kinds[l] === 'room'); fixed += k; if (!k) break; }
       if (!fixed) break;
     }
     // ---- no rooms that are nearly triangles: such a room joins the neighbouring room it shares most wall
@@ -2115,6 +2156,9 @@ const Halls = (() => {
         const pl = B.label('pillar'), i = ((y * C4) + x) * 4; for (let k = 0; k < 4; k++) B.q[i + k] = pl; nPillars++;
       }
     }
+    // last pass: rooms with no corner of more than 180° (after triangles and partitions moved things)
+    for (let t = 0; t < 4; t++) { const k = B.reflexFix(l => B.kinds[l] === 'room') + B.cornerFix(); if (!k) break; }
+    B.thin(); B.snap(); B.spikes(); tidy(); for (let t = 0; t < 2 && B.cornerFix(); t++);
     // ---- 6. doors ----
     const segs = B.segments(), runs = B.runs(segs), deg = new Map();
     for (const s of segs) for (const p of parseW(s.k)) { const v = vk(...p); deg.set(v, (deg.get(v) || 0) + 1); }
