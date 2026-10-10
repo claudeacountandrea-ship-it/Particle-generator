@@ -323,3 +323,10 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
 89. **Huecos solo grandes**: un bloque sólido (pared a rodear o pozo de caída) solo va en una zona grande de pasillo:
    nunca menor de 6×6 (36); la pared del medio sólida, 36 o más y 10 de largo. Las puntas de las paredes del medio
    son columnas que el editor guarda (`ends`) pero no dibuja como hueco.
+90. **Dos rutas a lo largo**: en cualquier pasillo de 3–6 de ancho (recto, 6 o más de largo) o de 3–5 pasos (diagonal,
+   4 o más) va una pared delgada por su medio, suelta entre dos columnas: dos carriles de 1 o 2 que se separan y se
+   juntan. Un carril de 1 solo se acepta junto a una pared del medio. Cada carril con espacio lleva una compuerta junto
+   a cada punta.
+91. **Tabiques en las plazas**: donde el pasillo es más ancho que 5, la partición es un tabique: pared de lado a lado
+   (hasta 10) con una puerta de 2 en su medio. Un tabique o compuerta que deja una pared suelta, un hueco fino o un
+   trocito se quita. Medido (19×19): tramos 83, mediana 43; el mayor ~850 (antes 2550).
