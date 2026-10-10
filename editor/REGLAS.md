@@ -253,3 +253,9 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
    también por el borde del barrio (60% de los tramos del borde abiertos) para poder rodearlo. Se colocan al azar
    dentro del contorno; las avenidas que chocan con un barrio se quitan; el jefe y la entrada no lo cruzan.
    Medido: salas en diagonal 31% (16×16: ~58 de ~187; 12×12: ~32 de ~105).
+71. **Barrios repartidos y separados**: en vez de 1–2 grandes, hasta 5 barrios más chicos (3×3 celdas giradas, o
+   2×2 si no cabe), cada uno puesto lo más lejos posible de los otros y con un pasillo o más de separación.
+   Casi todas sus celdas se parten en dos salas. Si al final hay menos de 30% de salas en diagonal, el mapa se
+   vuelve a generar (hasta 3 veces). Medido: 35% (16×16), 33% (12×12).
+72. **Los pasillos diagonales de los barrios también llevan particiones**: compuerta en medio de cada tramo (85%),
+   y todos sus puntos cuentan para cortar los tramos demasiado largos.
