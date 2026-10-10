@@ -102,7 +102,7 @@ const Halls = (() => {
     }
     for (let j = 0; j < m; j++) for (let i = 0; i < n; i++) {
       if (cell[cid(i, j)] || freeCell.has(cid(i, j)) || !cellIn(i, j)) continue;
-      if (square(i, j) && Math.random() < 0.4) { freeCell.add(cid(i, j)); continue; }
+      if (square(i, j) && Math.random() < 0.55) { freeCell.add(cid(i, j)); continue; }
       let w = 1, h = 1;
       const free = (a, b) => a < n && b < m && !cell[cid(a, b)] && !freeCell.has(cid(a, b)) && cellIn(a, b);
       const r = Math.random();
@@ -407,11 +407,21 @@ const Halls = (() => {
     for (const c of usedDiagCell) {
       const i = c % n, j = (c / n) | 0, [x0, y0] = N(i, j), G = cw(i);
       const owner = (a, b, side) => (a >= 0 && b >= 0 && a < n && b < m && cell[cid(a, b)] && cell[cid(a, b)].label && ext(a, b, side)) ? cell[cid(a, b)].label : 0;
-      const L1 = owner(i, j - 1, 3) || owner(i + 1, j, 0), L2 = owner(i, j + 1, 2) || owner(i - 1, j, 1);
       const diagDown = edges.has(ekey(nid(i, j), nid(i + 1, j + 1))); // "\" crossing
-      // upper-right / lower-left halves for "\", upper-left / lower-right for "/"
-      B.paint((x, y) => x >= x0 && x <= x0 + G && y >= y0 && y <= y0 + G && (diagDown ? (x - x0) > (y - y0) : (x - x0) + (y - y0) < G), L1, [0], [x0, y0, x0 + G, y0 + G]);
-      B.paint((x, y) => x >= x0 && x <= x0 + G && y >= y0 && y <= y0 + G && (diagDown ? (x - x0) < (y - y0) : (x - x0) + (y - y0) > G), L2, [0], [x0, y0, x0 + G, y0 + G]);
+      // each half goes to the room it touches along one of its legs; the half's two corners on the diagonal
+      // would make that room a 45° tip at the far end, so the tip is cut flat (2 long) and given to the corridor
+      const up = owner(i, j - 1, 3), rt = owner(i + 1, j, 0), dn = owner(i, j + 1, 2), lf = owner(i - 1, j, 1);
+      // [label, which leg it shares, cut test]
+      const H1 = diagDown ? (up ? [up, (x, y) => y > y0 + G - 2] : rt ? [rt, (x, y) => x < x0 + 2] : [0, () => false])  // upper-right half
+                          : (up ? [up, (x, y) => y > y0 + G - 2] : lf ? [lf, (x, y) => x > x0 + G - 2] : [0, () => false]); // upper-left half
+      const H2 = diagDown ? (dn ? [dn, (x, y) => y < y0 + 2] : lf ? [lf, (x, y) => x > x0 + G - 2] : [0, () => false])  // lower-left half
+                          : (dn ? [dn, (x, y) => y < y0 + 2] : rt ? [rt, (x, y) => x < x0 + 2] : [0, () => false]); // lower-right half
+      const in1 = (x, y) => x >= x0 && x <= x0 + G && y >= y0 && y <= y0 + G && (diagDown ? (x - x0) > (y - y0) : (x - x0) + (y - y0) < G);
+      const in2 = (x, y) => x >= x0 && x <= x0 + G && y >= y0 && y <= y0 + G && (diagDown ? (x - x0) < (y - y0) : (x - x0) + (y - y0) > G);
+      for (const [inH, [L, tip]] of [[in1, H1], [in2, H2]]) {
+        B.paint((x, y) => inH(x, y) && !tip(x, y), L, [0], [x0, y0, x0 + G, y0 + G]);
+        if (L) B.paint((x, y) => inH(x, y) && tip(x, y), corr, [0], [x0, y0, x0 + G, y0 + G]);
+      }
     }
     // diagonal galleries = the avenues: a long rectangle turned 45°, stamped whole over what is there.
     // A corridor of 2 runs down its middle (in at both ends); on each side a row of little rooms, each one
@@ -467,6 +477,7 @@ const Halls = (() => {
       const todo = rooms.filter(r => r.kind === 'sq' && r.label && !r.special).map(r => r.label);
       for (let guard = 0; todo.length && guard < 2000; guard++) {
         const l = todo.pop(), [a, b, c, d] = boxOf(l), w = c - a, h = d - b;
+        { let slant = false; for (const g of B.segments()) if ((g.a === l || g.b === l) && (g.d === 'd1' || g.d === 'd2')) { slant = true; break; } if (slant) continue; } // cutting a room with a slanted wall leaves 45° tips
         if (Math.max(w, h) <= pmax) continue;
         const vertical = w >= h, len = vertical ? w : h; if (len < 2 * pmin) continue;
         const cut = (vertical ? a : b) + rnd(pmin, len - pmin), n2 = B.label('room');

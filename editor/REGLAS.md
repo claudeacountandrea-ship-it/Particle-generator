@@ -243,3 +243,9 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
    hueco de la esquina de su vecina junto al pasillo). Corrección: en cada esquina así se prueba quitar el
    escalón (1–4 casillas) o rellenar el hueco, y se queda lo que deje menos esquinas malas sin crear huecos
    finos. Se aplica en la limpieza y otra vez al final. Salas sin esquinas así: 67% → ~74%.
+69. **Las diagonales no se las come la limpieza**: una punta de 45° sobre una pared diagonal larga (3+ casillas
+   rectas) no se recorta media casilla a la vez (eso iba "cerrando la cremallera" hasta borrar el pasillo
+   diagonal entero); se le hace una punta plana de 2, como mucho dos veces por línea (una por extremo).
+   Los triángulos a los lados de un pasillo diagonal se pintan ya con la punta plana, las particiones no
+   cortan salas con pared diagonal, y hay más casillas libres para pasillos diagonales (55%).
+   Medido (16×16): largo de paredes diagonales largas de pasillo 81 → ~220 por mapa; puntas de 45° ~4 por mapa.
