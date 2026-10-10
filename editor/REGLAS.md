@@ -280,3 +280,25 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
    resultado; con eso y sin los fallos de entrada, un dibujo tarda ~4–5 s en vez de ~10–15 s. Si faltan salas en
    diagonal se dibuja hasta 4 veces y se queda el mejor. Medido: salas en diagonal 16×16 entre 32% y 38%, 12×12
    entre 30% y 41%; sin fallos de reglas, todos con entrada y con jefe.
+78. **Pasillos de 2, no más anchos**: donde el pasillo se abre más (manchas de pasillo más anchas que una sala), su
+   centro se saca dejando un anillo de 2 de ancho: si cabe 4×4 o más, es una **sala isla** que el camino rodea como
+   una dona (si no le cabe puerta queda como bloque sólido); si el pasillo mide 6 o más pero no cabe una isla, va una
+   **pared al medio** (bloque sólido de 2 de grueso y 8 o más de largo) que parte el camino en dos y vuelve a juntarse:
+   otra decisión. Un bloque sólido que queda menor de 4×4 se junta con lo que lo rodea.
+79. **Compuertas en todo el pasillo real**: además de los puntos de la cuadrícula, se prueban compuertas en cualquier
+   punto de las paredes del pasillo tal como quedó dibujado, de 2, 3 o 4 de ancho, rectas o diagonales (en un pasillo
+   diagonal de ancho impar, la compuerta da un paso recto en el medio). Siempre cruzan en ángulo recto a una pared que
+   sigue derecha en los dos extremos (o donde llega la pared de una sala desde atrás, que así cruza el pasillo).
+   Cada vuelta pone una compuerta en cada tramo que sigue siendo demasiado largo. Si una compuerta deja un trocito
+   menor de 4×4, se quita solo una de las que lo rodean (antes se quitaban todas); una compuerta que deja una
+   puerta contra otra pared o un filo también se quita. Medido: tramos de pasillo entre compuertas 33 → 64 por mapa
+   (16×16) y 48 → 81 (19×19); el tramo más grande 3453 → 934 (16×16). Pasillo de 5 o más de ancho: 8% → 5%.
+80. **Callejones sin salida y más ramas**: el laberinto de pasillos se ramifica más (70% sigue el camino nuevo, antes
+   85%) y ~35% de las puntas que no llevan a ninguna sala quedan como callejón sin salida (1 o 2 tramos); solo 40%
+   de las puntas con salas se vuelve antesala (antes 75%).
+81. **Mapa 20% más grande**: el tamaño por defecto es 19×19 (antes 16×16), con más rombos sueltos (hasta 17).
+82. **Salas raras (codos, V)**: se probó partirlas con una pared recta en dos partes regulares, pero casi siempre deja
+   filos de 45° o paredes sueltas, así que no se usa. Lo que sí las bajó: los trocitos de sala menores de 4×4 vuelven
+   a juntarse con el vecino de más pared (como antes). Siguen ~6% codos y ~7% irregulares.
+83. **Rapidez**: el mapa de espacios para tapiar puertas y esconder al jefe se calcula una vez (no en cada prueba), y la
+   limpieza de huecos finos cuenta sin ordenar; mismo resultado. En el navegador: ~5 s (16×16), ~14 s (19×19).

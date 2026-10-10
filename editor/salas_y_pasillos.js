@@ -99,7 +99,7 @@ const Halls = (() => {
     // can go round it
     const nLoose = { n: 0 };
     if (!cave && opts.districts !== false && n >= 8) {
-      const wantL = n >= 14 ? 12 : n >= 10 ? 7 : 3, Dl = DP / 2;
+      const wantL = n >= 18 ? 17 : n >= 14 ? 12 : n >= 10 ? 7 : 3, Dl = DP / 2;
       for (let round = 0; round < wantL; round++) {
         let best = null, bestD = -1;
         for (let tries = 0; tries < 150; tries++) {
@@ -255,7 +255,7 @@ const Halls = (() => {
     const seen = new Set([nid(si, sj)]), stack = [[si, sj, null]];
     while (stack.length) {
       // growing tree: mostly the newest node (long winding ways), sometimes an older one (branches)
-      const k = Math.random() < 0.85 ? stack.length - 1 : rnd(0, stack.length - 1);
+      const k = Math.random() < 0.7 ? stack.length - 1 : rnd(0, stack.length - 1); // more often an older node: more branches
       const [i, j, last] = stack[k];
       const opts = neighbours(i, j).filter(([a, b]) => !seen.has(nid(a, b)));
       if (!opts.length) { stack.splice(k, 1); continue; }
@@ -294,8 +294,12 @@ const Halls = (() => {
       }
     }
     // ---- 4. cut back corridor ends that lead to no room ----
-    const needed = new Set([...roomDoors.map(([, s]) => ekey(nid(...s[0]), nid(...s[1]))), ...avenueKeys]);
+    let nDead = 0; const needed = new Set([...roomDoors.map(([, s]) => ekey(nid(...s[0]), nid(...s[1]))), ...avenueKeys]);
     const startKey = nid(si, sj);
+    // some ends that lead nowhere stay as true dead ends (one or two stretches long): a way that only ends
+    { const deg = new Map(); for (const e of edges.values()) for (const p of [e.a, e.b]) deg.set(nid(...p), (deg.get(nid(...p)) || 0) + 1);
+      for (const [k, e] of edges) { if (e.diag || Math.random() >= 0.35) continue; const lf = [e.a, e.b].find(p => deg.get(nid(...p)) === 1 && nid(...p) !== startKey); if (!lf) continue;
+        needed.add(k); nDead++; if (Math.random() < 0.5) { const o = lf === e.a ? e.b : e.a; for (const [k2, e2] of edges) if (k2 !== k && !e2.diag && (nid(...e2.a) === nid(...o) || nid(...e2.b) === nid(...o)) && deg.get(nid(...o)) === 2) { needed.add(k2); break; } } } }
     for (let changed = true; changed;) {
       changed = false;
       const deg = new Map(); for (const e of edges.values()) for (const p of [e.a, e.b]) deg.set(nid(...p), (deg.get(nid(...p)) || 0) + 1);
@@ -395,7 +399,7 @@ const Halls = (() => {
     // (a room of its own, its mouth one door across the corridor); those rooms then open onto it
     const anteDoors = [];
     for (const e of edges.values()) {
-      if (e.diag || leaf(e.a) === leaf(e.b) || Math.random() < 0.25) continue;
+      if (e.diag || leaf(e.a) === leaf(e.b) || Math.random() < 0.6) continue; // the rest stay dead ends
       const [x1, y1] = N(...(leaf(e.a) ? e.b : e.a)), [x2, y2] = N(...(leaf(e.a) ? e.a : e.b));
       const dx = Math.sign(x2 - x1), dy = Math.sign(y2 - y1), L = Math.abs(x2 - x1) + Math.abs(y2 - y1);
       if (L < 10) continue; // under 2×8 it would be smaller than a square
@@ -585,7 +589,7 @@ const Halls = (() => {
       const sg = B.segments(), area = new Float64Array(B.next); let merged = 0;
       for (const v of B.q) area[v] += 0.25;
       for (let l = 1; l < B.next; l++) {
-        const a = area[l]; if (!a || a >= 16) continue;
+        const a = area[l]; if (!a || a >= 16 || B.kinds[l] === 'pillar') continue;
         const sh = new Map(); for (const g of sg) { const o = g.a === l ? g.b : g.b === l ? g.a : -1; if (o > 0) sh.set(o, (sh.get(o) || 0) + 1); }
         const best = [...sh].sort((p, q) => q[1] - p[1])[0];
         if (best) { B.paint(() => true, best[0], [l]); merged++; }
@@ -637,9 +641,43 @@ const Halls = (() => {
         const pl = B.label('pillar'), i = ((y * C4) + x) * 4; for (let k = 0; k < 4; k++) B.q[i + k] = pl; nPillars++;
       }
     }
+    // ---- corridors no wider than 2: where the corridor opens wider, its middle is taken out — a room of its own when
+    // there is room for one (4×4 or more: the way goes round it like a donut), leaving a ring of 2 ----
+    let nIsl = 0, nDiv = 0;
+    if (!cave) { const C4 = W - 1, R4 = H - 1, q = B.q, N4 = C4 * R4, dist = new Int16Array(N4);
+      const full = c => { for (let k = 0; k < 4; k++) { const v = q[c * 4 + k]; if (!v || B.kinds[v] !== 'corr') return false; } return true; };
+      for (let c = 0; c < N4; c++) dist[c] = full(c) ? 999 : 0;
+      for (let y = 0; y < R4; y++) for (let x = 0; x < C4; x++) { const c = y * C4 + x; if (!dist[c]) continue; let d = 999; // forward pass (Chebyshev)
+        if (x === 0 || y === 0 || x === C4 - 1 || y === R4 - 1) d = 1;
+        else for (const [a, b] of [[-1, 0], [-1, -1], [0, -1], [1, -1]]) d = Math.min(d, dist[(y + b) * C4 + x + a] + 1); dist[c] = d; }
+      for (let y = R4 - 1; y >= 0; y--) for (let x = C4 - 1; x >= 0; x--) { const c = y * C4 + x; if (!dist[c] || x === 0 || y === 0 || x === C4 - 1 || y === R4 - 1) continue;
+        for (const [a, b] of [[1, 0], [1, 1], [0, 1], [-1, 1]]) dist[c] = Math.min(dist[c], dist[(y + b) * C4 + x + a] + 1); }
+      const core = new Uint8Array(N4); for (let c = 0; c < N4; c++) if (dist[c] >= 3) core[c] = 1;
+      // what holds a 4×4 block of core becomes a room; the rest of the core, where it holds a 2×2 block, a pillar
+      const blockCover = (src, K) => { const mk = new Uint8Array(N4); for (let y = 0; y + K <= R4; y++) for (let x = 0; x + K <= C4; x++) { let ok = true;
+        for (let v = 0; v < K && ok; v++) for (let u = 0; u < K && ok; u++) if (!src[(y + v) * C4 + x + u]) ok = false; if (ok) for (let v = 0; v < K; v++) for (let u = 0; u < K; u++) mk[(y + v) * C4 + x + u] = 1; } return mk; };
+      const isl = blockCover(core, 4), rest = core.map((v, c) => v && !isl[c] ? 1 : 0), wall2 = blockCover(rest, 2);
+      const flood = (mk, make) => { const seen = new Uint8Array(N4); for (let c0 = 0; c0 < N4; c0++) { if (!mk[c0] || seen[c0]) continue; const l = make(), st = [c0]; seen[c0] = 1;
+        while (st.length) { const c = st.pop(); for (let k = 0; k < 4; k++) q[c * 4 + k] = l; const x = c % C4, y = (c / C4) | 0;
+          for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const xx = x + a, yy = y + b, cc = yy * C4 + xx; if (xx >= 0 && yy >= 0 && xx < C4 && yy < R4 && mk[cc] && !seen[cc]) { seen[cc] = 1; st.push(cc); } } } } };
+      flood(isl, () => { const l = B.label('room'); rooms.push({ kind: 'isl', label: l, labels: [l] }); nIsl++; return l; });
+      // where the corridor is 6 or more across but has no room for an island, a solid wall goes down its middle,
+      // 2 thick and at least 8 long: the way splits in two lanes of 2 and joins again (a choice)
+      { const seen = new Uint8Array(N4); for (let c0 = 0; c0 < N4; c0++) { if (!wall2[c0] || seen[c0]) continue; const comp = [c0], st = [c0]; seen[c0] = 1;
+          while (st.length) { const c = st.pop(), x = c % C4, y = (c / C4) | 0; for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const xx = x + a, yy = y + b, cc = yy * C4 + xx; if (xx >= 0 && yy >= 0 && xx < C4 && yy < R4 && wall2[cc] && !seen[cc]) { seen[cc] = 1; st.push(cc); comp.push(cc); } } }
+          const xs = comp.map(c => c % C4), ys = comp.map(c => (c / C4) | 0), len = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) + 1;
+          if (comp.length < 20 || len < 8) continue; // (its bevelled tips still leave it over 4×4)
+          const l = B.label('pillar'); for (const c of comp) for (let k = 0; k < 4; k++) q[c * 4 + k] = l; nDiv++; } }
+      if (nIsl || nDiv) B.bevelCorners();
+    }
     // last pass: rooms with no corner of more than 180° (after triangles and partitions moved things)
     for (let t = 0; t < 4; t++) { const k = B.reflexFix(l => B.kinds[l] === 'room') + B.cornerFix(); if (!k) break; }
     B.thin(); B.snap(); B.spikes(); tidy(); for (let t = 0; t < 2 && B.cornerFix(); t++);
+    // a solid block that came out under 4×4 (bevels and clean-up shave it) joins what lies round it
+    { const sg = B.segments(), area = new Float64Array(B.next); for (const v of B.q) area[v] += 0.25;
+      for (let l = 1; l < B.next; l++) { if (B.kinds[l] !== 'pillar' || !area[l] || area[l] >= 16) continue;
+        const sh = new Map(); for (const g of sg) { const o = g.a === l ? g.b : g.b === l ? g.a : -1; if (o > 0) sh.set(o, (sh.get(o) || 0) + 1); }
+        const best = [...sh].sort((p, q) => q[1] - p[1])[0]; if (best) B.paint(() => true, best[0], [l]); } }
     // ---- 6. doors ----
     const segs = B.segments(), runs = B.runs(segs), deg = new Map();
     for (const s of segs) for (const p of parseW(s.k)) { const v = vk(...p); deg.set(v, (deg.get(v) || 0) + 1); }
@@ -701,7 +739,7 @@ const Halls = (() => {
       if (out.length) { doors.push(...out.map(g => g.k)); entranceOK = true; }
     }
     // any space nobody can reach yet gets a door to a reached neighbour (repeat until all are in)
-    let segs2 = segs, merges = 0;
+    let segs2 = segs, merges = 0, nIslSolid = 0, nSolid = 0; const islL = new Set(rooms.filter(r => r.kind === 'isl').map(r => r.label));
     for (let pass = 0; pass < 12; pass++) {
       const segs = segs2;
       const allD = new Set([...doors, ...gates]), adjL = new Map();
@@ -722,7 +760,11 @@ const Halls = (() => {
       }
       // no door fits without touching a wall: the space joins its reached neighbour — only once no other door could be
       // placed this pass (a neighbour reached later may still give it a proper door; the boss hall is never merged)
-      if (!added) for (const [l, g] of pend) { if (bossL === l) continue; const to = g.a === l ? g.b : g.a; B.paint(() => true, to, [l]); added++; merges++; }
+      if (!added) for (const [l, g] of pend) { if (bossL === l) continue;
+        if (islL.has(l) && B.area(l) >= 16) { B.paint(() => true, B.label('pillar'), [l]); islL.delete(l); nIslSolid++; added++; merges++; continue; } // an island with no room for a door stays a solid block: the hole is kept
+        const to = g.a === l ? g.b : g.a;
+        if (B.kinds[to] === 'corr' && B.area(l) >= 16) { B.paint(() => true, B.label('pillar'), [l]); nSolid++; added++; merges++; continue; } // not a wider corridor: a solid block
+        B.paint(() => true, to, [l]); added++; merges++; }
       if (!added) break;
       if (merges) { merges = 0; for (let t = 0; t < 4 && B.cornerFix(); t++); tidy(); segs2 = B.segments(); const ws = new Set(segs2.map(g => g.k)); for (let i = doors.length - 1; i >= 0; i--) if (!ws.has(doors[i])) doors.splice(i, 1);
         deg.clear(); for (const s of segs2) for (const p of parseW(s.k)) { const v = vk(...p); deg.set(v, (deg.get(v) || 0) + 1); } }
@@ -738,7 +780,7 @@ const Halls = (() => {
     const segsF = segs2;
     // ---- compuertas: beside a room's door, the corridor is closed by a gate (a wall of 2 across it,
     // all door), so at that door one chooses: go into the room, or open the gate and go on ----
-    const halfWalls = []; let nThrough = 0, maxPiece = 0;
+    const halfWalls = []; let nThrough = 0, maxPiece = 0, nGateAll = 0;
     if (!cave && opts.gates !== false) {
       const wallSet = new Set(segsF.map(g => g.k)), doorSet = new Set(doors), isCorrQ = (x, y) => B.Q(x, y, 0) === corr && B.Q(x, y, 2) === corr && B.Q(x, y, 1) === corr && B.Q(x, y, 3) === corr;
       const plain = k => wallSet.has(k) && !doorSet.has(k), degF = new Map();
@@ -759,6 +801,16 @@ const Halls = (() => {
         for (const u of [gu - 1, gu]) for (const v of sd > 0 ? [L, L + 1] : [L - 1, L - 2]) { const [x, y] = P(u, v); if (!isCorrQ(x, y)) return null; }
         if (!spaced(...c)) return null;
         return { segs: [wk(e1, c), wk(c, e2)], c, ends: [e1, e2], ortho: true, forced };
+      };
+      // a wider gate (3 or 4 across, all door) where the corridor is that wide: both walls run straight past it
+      const tryOrthoW = (h, L, gu, sd, w) => {
+        if (w === 2) return tryOrtho(h, L, gu, sd);
+        const P = (u, v) => h ? [u, v] : [v, u], dir = h ? [1, 0] : [0, 1], pts = []; for (let i = 0; i <= w; i++) pts.push(P(gu, L + i * sd));
+        if (pts.slice(1, -1).some(q => degF.has(q + ''))) return null;
+        if (!straightAt(pts[0], dir) || !straightAt(pts[w], dir)) return null;
+        for (const u of [gu - 1, gu]) for (let i = 0; i < w; i++) { const v = sd > 0 ? L + i : L - 1 - i, [x, y] = P(u, v); if (!isCorrQ(x, y)) return null; }
+        const c = pts[w >> 1]; if (!spaced(...c)) return null;
+        return { segs: pts.slice(1).map((q, i) => wk(pts[i], q)), c, ends: [pts[0], pts[w]], ortho: false };
       };
       // a gate across a diagonal corridor, at the centre point c of a casilla it crosses (direction d)
       const tryDiag = (c, d) => {
@@ -824,25 +876,83 @@ const Halls = (() => {
         return { find, size, has: i => par.has(i) };
       };
       const sq = q => q / 8; // quarters → squares of corridor length (2 wide)
+      // besides the lattice places, any point along a real corridor wall (the corridor as finally drawn): straight
+      // walls give a gate across from that wall, diagonal walls a gate across the diagonal corridor
+      const wallCand = [];
+      for (const g of segsF) { if (doorSet.has(g.k)) continue; const cs = g.a === corr ? -1 : g.b === corr ? 1 : 0; if (!cs) continue;
+        if (g.d === 'h') for (const x of [g.pos, g.pos + 1]) wallCand.push(['o', [true, g.line, x, cs], [x, g.line + cs]]);
+        else if (g.d === 'v') for (const y of [g.pos, g.pos + 1]) wallCand.push(['o', [false, g.line, y, cs], [g.line + cs, y]]);
+        else { const x = g.pos, y = g.d === 'd1' ? x - g.line : g.line - x, d = g.d === 'd1' ? [1, 1] : [1, -1], pp = [d[1], -d[0]], sgn = g.d === 'd1' ? -cs : -cs;
+          for (const q of g.d === 'd1' ? [[x, y], [x + 1, y + 1]] : [[x + 1, y], [x, y + 1]]) wallCand.push(['d', [[q[0] + sgn * pp[0], q[1] + sgn * pp[1]], d], [q[0] + sgn * pp[0], q[1] + sgn * pp[1]], q, [sgn * pp[0], sgn * pp[1]]]); } }
+      // a wider gate across a diagonal corridor (3 or 4 steps), from wall point q across in steps st
+      const tryDiagW = (q, st, d, w) => {
+        const pts = []; for (let i = 0; i <= w; i++) pts.push([q[0] + i * st[0], q[1] + i * st[1]]);
+        const along = r => degF.get(r + '') === 2 && wallSet.has(wk([r[0] - d[0], r[1] - d[1]], r)) && wallSet.has(wk(r, [r[0] + d[0], r[1] + d[1]]));
+        if (!along(pts[0]) || !along(pts[w])) return null;
+        for (const r of pts.slice(1, -1)) { if (degF.has(r + '')) return null; for (const [x, y] of [[r[0] - 1, r[1] - 1], [r[0], r[1] - 1], [r[0] - 1, r[1]], [r[0], r[1]]]) if (!isCorrQ(x, y)) return null; }
+        const c = pts[w >> 1]; if (!spaced(...c)) return null;
+        return { segs: pts.slice(1).map((r, i) => wk(pts[i], r)), c, ends: [pts[0], pts[w]], ortho: false };
+      };
+      // the most general gate: a straight line (across, or diagonal) of 2–4 steps from one wall point to another,
+      // crossing only corridor, its ends on a plain stretch of wall (not where walls meet)
+      const wallPts = [...new Set(segsF.filter(g => (g.a === corr || g.b === corr) && !doorSet.has(g.k)).flatMap(g => parseW(g.k).map(q => q + '')))].map(t => t.split(',').map(Number));
+      const cellsOfSeg = (a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], x = Math.min(a[0], b[0]), y = Math.min(a[1], b[1]); return dx && dy ? [[x, y]] : dx ? [[x, y - 1], [x, y]] : [[x - 1, y], [x, y]]; };
+      const STEPS = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+      const wdMemo = new Map(), wallDirs = q => { const key = q[0] + ',' + q[1]; let out = wdMemo.get(key); if (!out) { out = []; for (const st of STEPS) if (wallSet.has(wk(q, [q[0] + st[0], q[1] + st[1]]))) out.push(st); wdMemo.set(key, out); } return out; };
+      // the wall runs straight through q, square to the gate (no corner at the door's end: no sharp tip, no door against a wall)
+      // (a wall coming from behind, away from the corridor, is fine: the gate carries it on across)
+      const squareEnd = (q, st) => { const ds = wallDirs(q).filter(d => !(d[0] === -st[0] && d[1] === -st[1])); return ds.length === 2 && ds[0][0] === -ds[1][0] && ds[0][1] === -ds[1][1] && ds[0][0] * st[0] + ds[0][1] * st[1] === 0; };
+      // steps: the gate's path; across a diagonal corridor of odd width it takes one straight step in the middle
+      const tryPath = (e1, steps) => {
+        const w = steps.length, pts = [e1]; for (const st of steps) { const r = pts[pts.length - 1]; pts.push([r[0] + st[0], r[1] + st[1]]); }
+        const st = steps[0], st2 = steps[w - 1];
+        if (!squareEnd(pts[0], st) || !squareEnd(pts[w], [-st2[0], -st2[1]])) return null;
+        for (const r of pts.slice(1, -1)) if (degF.has(r + '')) return null;
+        for (let i = 0; i < w; i++) for (const [x, y] of cellsOfSeg(pts[i], pts[i + 1])) if (!isCorrQ(x, y)) return null;
+        const segs = pts.slice(1).map((r, i) => wk(pts[i], r)); if (segs.some(k => wallSet.has(k))) return null;
+        const c = pts[w >> 1]; if (!spaced(...c)) return null;
+        return { segs, c, ends: [pts[0], pts[w]], ortho: false };
+      };
+      const nearBig = (inBig, [cx, cy]) => inBig(cx, cy) || inBig(cx - 1, cy) || inBig(cx, cy - 1) || inBig(cx - 1, cy - 1);
       minGap = 4;
-      for (let guard = 0; guard < 80; guard++) {
-        const pc = pieces(); let big = -1, bs = 0; for (const [r, z] of pc.size) if (z > bs) { bs = z; big = r; }
-        maxPiece = sq(bs); if (sq(bs) <= 40) break;
-        const inBig = (x, y) => pc.has(Qi(x, y, 0)) && pc.find(Qi(x, y, 0)) === big;
-        const opts = [...orthoAt.map(o => ['o', o]), ...diagAt.map(o => ['d', o])].filter(([t, o]) => t === 'o' ? (o[0] ? inBig(o[2], o[1]) : inBig(o[1], o[2])) : inBig(o[0][0], o[0][1])).sort(() => Math.random() - 0.5);
-        let done = false; for (const [t, o] of opts) { if (put(t === 'o' ? tryOrtho(o[0], o[1], o[2], 1) : tryDiag(o[0], o[1]))) { done = true; break; } }
-        if (!done) break;
+      // each round, one more gate in every stretch still too long (they are apart, so they do not get in each other's way)
+      const tryIn = (pc, big) => {
+          const inBig = (x, y) => pc.has(Qi(x, y, 0)) && pc.find(Qi(x, y, 0)) === big;
+          const opts = [...orthoAt.map(o => ['o', o]), ...diagAt.map(o => ['d', o])].filter(([t, o]) => t === 'o' ? (o[0] ? inBig(o[2], o[1]) : inBig(o[1], o[2])) : inBig(o[0][0], o[0][1])).sort(() => Math.random() - 0.5);
+          let done = false; for (const [t, o] of opts) { if (put(t === 'o' ? tryOrtho(o[0], o[1], o[2], 1) : tryDiag(o[0], o[1]))) { done = true; break; } }
+          if (!done) { const wc = wallCand.filter(w => nearBig(inBig, w[2])).sort(() => Math.random() - 0.5);
+            for (const w of [2, 3, 4]) { for (const [t, o, , q, st] of wc) { if (put(t === 'o' ? tryOrthoW(o[0], o[1], o[2], o[3], w) : w === 2 ? tryDiag(o[0], o[1]) : tryDiagW(q, st, o[1], w))) { done = true; break; } } if (done) break; } }
+          if (!done) { const wp = wallPts.filter(q => nearBig(inBig, q)).sort(() => Math.random() - 0.5);
+            const paths = st => { const out = []; for (const w of [2, 3, 4]) out.push(Array(w).fill(st));
+              if (st[0] && st[1]) for (const w of [1, 2, 3]) for (const o of [[st[0], 0], [0, st[1]]]) { const a = Array(w).fill(st); a.splice(w >> 1, 0, o); out.push(a); }
+              return out.sort((a, b) => a.length - b.length); };
+            for (const q of wp) { for (const st of STEPS) { for (const path of paths(st)) if (put(tryPath(q, path))) { done = true; break; } if (done) break; } if (done) break; } }
+        return done;
+      };
+      for (let guard = 0; guard < 60; guard++) {
+        const pc = pieces(), bigs = [...pc.size].filter(([, z]) => sq(z) > 40).sort((p, q) => q[1] - p[1]);
+        maxPiece = sq(Math.max(0, ...pc.size.values())); if (!bigs.length) break;
+        let any = false; for (const [big] of bigs.slice(0, 8)) if (tryIn(pc, big)) any = true;
+        if (!any) break;
       }
       // 4) a gate that leaves a bit of corridor smaller than 4×4 is taken away again
       const gk = () => placed.flatMap(g => g.half < 0 ? g.segs : [g.segs[g.half]]), hk = () => placed.flatMap(g => g.half < 0 ? [] : [g.segs[1 - g.half]]);
-      for (let pass = 0; pass < 6 && placed.length; pass++) {
+      for (let pass = 0; pass < 12 && placed.length; pass++) {
         const r = checkRules(W, H, new Set([...segsF.map(g => g.k), ...gk(), ...hk()]), new Set([...doors, ...gk()]));
+        // a gate that breaks the rules itself (a door against another wall, a sharp tip at its end) goes
+        const badK = new Set(r.badDoors), sharpP = new Set(r.sharp.map(([x, y]) => x + ',' + y)); let gone = 0;
+        for (let i = placed.length - 1; i >= 0; i--) if (placed[i].segs.some(k => badK.has(k)) || placed[i].segs.some(k => parseW(k).some(q => sharpP.has(q + '')))) { placed.splice(i, 1); gone++; }
+        if (gone) continue;
         const tiny = new Set(r.tiny.map(([x, y]) => x + ',' + y)); if (!tiny.size) break;
-        for (let i = placed.length - 1; i >= 0; i--) { const [p1, p2] = placed[i].ends; let hit = false;
-          for (let x = Math.min(p1[0], p2[0]) - 1; x <= Math.max(p1[0], p2[0]) && !hit; x++) for (let y = Math.min(p1[1], p2[1]) - 1; y <= Math.max(p1[1], p2[1]); y++) if (tiny.has(x + ',' + y)) { hit = true; break; }
-          if (hit) placed.splice(i, 1); }
+        // one gate per tiny bit is enough to undo it (the gates round it that are not needed stay)
+        const explained = new Set();
+        for (let i = placed.length - 1; i >= 0; i--) { const [p1, p2] = placed[i].ends, hits = [];
+          for (let x = Math.min(p1[0], p2[0]) - 1; x <= Math.max(p1[0], p2[0]); x++) for (let y = Math.min(p1[1], p2[1]) - 1; y <= Math.max(p1[1], p2[1]); y++) if (tiny.has(x + ',' + y)) hits.push(x + ',' + y);
+          if (!hits.length || hits.every(h => explained.has(h))) continue;
+          const bit = new Set(hits), st = [...hits]; while (st.length) { const [x, y] = st.pop().split(',').map(Number); for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const k = (x + a) + ',' + (y + b); if (tiny.has(k) && !bit.has(k)) { bit.add(k); st.push(k); } } }
+          for (const k of bit) explained.add(k); placed.splice(i, 1); }
       }
-      gates.push(...gk()); halfWalls.push(...hk());
+      gates.push(...gk()); halfWalls.push(...hk()); nGateAll = placed.length;
       // 5) disguised ways through: a room touching two different stretches of corridor gets a door to each,
       //    so what looks like one more room is in fact the way on
       { const pc = pieces(), degA = new Map(degF); for (const k of [...gates, ...halfWalls]) for (const q of parseW(k)) degA.set(q + '', (degA.get(q + '') || 0) + 1);
@@ -869,8 +979,9 @@ const Halls = (() => {
     let forcedGoal = 0, bossDepth = -1, goalDepth = -1, maxDepth = 0, nWalled = 0;
     if (!cave) {
       const C4 = W - 1, R4 = H - 1, n4 = C4 * R4 * 4, Qi = (x, y, k) => (y * C4 + x) * 4 + k;
-      const graph = () => {
-        const ws = new Set([...segsF.map(g => g.k), ...gates, ...halfWalls]), ds = new Set([...doors, ...gates]);
+      // the spaces only depend on the walls (doors are walls too), which do not change here: worked out once
+      const part = (() => {
+        const ws = new Set([...segsF.map(g => g.k), ...gates, ...halfWalls]);
         const par = new Int32Array(n4).map((_, i) => i), find = i => { while (par[i] !== i) { par[i] = par[par[i]]; i = par[i]; } return i; }, join = (a, b) => { a = find(a); b = find(b); if (a !== b) par[a] = b; };
         for (let y = 0; y < R4; y++) for (let x = 0; x < C4; x++) {
           const d1 = ws.has(wk([x, y], [x + 1, y + 1])), d2 = ws.has(wk([x + 1, y], [x, y + 1]));
@@ -883,101 +994,6 @@ const Halls = (() => {
           if (ay === by) { const x = Math.min(ax, bx); return [ay > 0 ? find(Qi(x, ay - 1, 2)) : -1, ay < R4 ? find(Qi(x, ay, 0)) : -1]; }
           if (ax === bx) { const y = Math.min(ay, by); return [ax > 0 ? find(Qi(ax - 1, y, 1)) : -1, ax < C4 ? find(Qi(ax, y, 3)) : -1]; }
           const x = Math.min(ax, bx), y = Math.min(ay, by); return [find(Qi(x, y, 0)), find(Qi(x, y, 2))]; };
-        const floorS = v => v >= 0 && B.q[v] !== 0, adj = new Map(); let entry = -1;
-        for (const k of ds) { const [a, b] = sideOf(k); if (floorS(a) && floorS(b)) { if (a === b) continue; if (!adj.has(a)) adj.set(a, new Set()); if (!adj.has(b)) adj.set(b, new Set()); adj.get(a).add(b); adj.get(b).add(a); } else if (floorS(a) || floorS(b)) entry = floorS(a) ? a : b; }
-        const depth = new Map(); if (entry >= 0) { depth.set(entry, 0); const q = [entry]; for (let i = 0; i < q.length; i++) for (const v of adj.get(q[i]) || []) if (!depth.has(v)) { depth.set(v, depth.get(q[i]) + 1); q.push(v); } }
-        return { find, sideOf, adj, depth, floorS };
-      };
-      // a few less doors: a quarter of the spare connections (the ones that only close a loop) are walled up
-      // again, never cutting anything off — the dungeon stays full of choices but goes a little deeper
-      { const g0 = graph(), total = g0.depth.size, pairs = new Map();
-        for (const k of doors) { const [a, b] = g0.sideOf(k); if (!g0.floorS(a) || !g0.floorS(b) || a === b) continue; const key = Math.min(a, b) + '-' + Math.max(a, b); if (!pairs.has(key)) pairs.set(key, []); pairs.get(key).push(k); }
-        const allP = new Set(); for (const k of [...doors, ...gates]) { const [a, b] = g0.sideOf(k); if (g0.floorS(a) && g0.floorS(b) && a !== b) allP.add(Math.min(a, b) + '-' + Math.max(a, b)); }
-        const loops = allP.size - total + 1; let target = Math.round(loops / 4), cut = 0;
-        for (const [, ks] of [...pairs].sort(() => Math.random() - 0.5)) {
-          if (cut >= target) break;
-          const idx = ks.map(k => doors.indexOf(k)); for (const k of ks) doors.splice(doors.indexOf(k), 1);
-          if (graph().depth.size < total) doors.push(...ks); else cut++;
-        }
-        nWalled = cut; }
-      const degA = new Map(); for (const k of [...segsF.map(g => g.k), ...gates, ...halfWalls]) for (const q of parseW(k)) degA.set(vk(...q), (degA.get(vk(...q)) || 0) + 1);
-      const boss = rooms.find(r => r.special === 'central');
-      if (boss && boss.label) {
-        const bl = boss.label; let bi = -1; for (let i = 0; i < n4; i++) if (B.q[i] === bl) { bi = i; break; }
-        if (bi >= 0) {
-          let g = graph(); const bs = g.find(bi), saved = [...doors], before = g.depth.size;
-          // its doors go, except those that are the only way into a space behind it
-          const bdoors = doors.filter(k => g.sideOf(k).includes(bs));
-          for (const k of bdoors) doors.splice(doors.indexOf(k), 1);
-          g = graph();
-          for (const k of bdoors) { const o = g.sideOf(k).find(v => v !== bs); if (o !== undefined && g.floorS(o) && !g.depth.has(o)) doors.push(k); }
-          g = graph();
-          // the walls of the boss hall, grouped by the space on their other side, in straight runs
-          const groups = new Map();
-          for (const sg of segsF) { if (sg.a !== bl && sg.b !== bl) continue; const o = g.sideOf(sg.k).find(v => v !== g.find(bi)); if (o === undefined || !g.depth.has(o)) continue;
-            const key = o + ':' + sg.d + ':' + sg.line; if (!groups.has(key)) groups.set(key, { d: g.depth.get(o), list: [] }); groups.get(key).list.push(sg); }
-          const runs2 = []; for (const { d, list } of groups.values()) { list.sort((p, q) => p.pos - q.pos); let r = [list[0]]; for (let i = 1; i <= list.length; i++) { if (i < list.length && list[i].pos === list[i - 1].pos + 1) { r.push(list[i]); continue; } runs2.push({ d, r }); if (i < list.length) r = [list[i]]; } }
-          runs2.sort((p, q) => q.d - p.d || q.r.length - p.r.length);
-          let ok = false; for (const { r } of runs2) { const d = r.length >= 2 ? B.safeDoor(r, degA) : null; if (d) { doors.push(...d); ok = true; break; } }
-          if (!ok || graph().depth.size < before) { doors.length = 0; doors.push(...saved); }
-        }
-      }
-      const g = graph(); for (const v of g.depth.values()) maxDepth = Math.max(maxDepth, v);
-      if (boss && boss.label) { for (let i = 0; i < n4; i++) if (B.q[i] === boss.label) { bossDepth = g.depth.get(g.find(i)) ?? -1; break; } }
-      // the way down: any room deep in the dungeon (75% of the deepest or more), a dead end when there is one
-      const seenL = new Set(), cand = [];
-      for (let i = 0; i < n4; i += 4) { const l = B.q[i]; if (!l || seenL.has(l) || B.kinds[l] !== 'room' || (boss && l === boss.label)) continue; seenL.add(l);
-        const sp = g.find(i), d = g.depth.get(sp); if (d === undefined || d < 0.75 * maxDepth || B.area(l) < 24) continue; cand.push([l, d, (g.adj.get(sp) || new Set()).size]); }
-      const dead = cand.filter(c => c[2] <= 1), pool = dead.length ? dead : cand;
-      if (pool.length) { const c = pick(pool); forcedGoal = c[0]; goalDepth = c[1]; }
-    }
-    // ---- the way: start, the deepest room (goal), the central form, and the route between them ----
-    const marks = {}; let routeLen = 0, goalLabel = 0;
-    { const allW = new Set([...segsF.map(g => g.k), ...gates, ...halfWalls]), allD = new Set([...doors, ...gates]);
-      const blocks = k => allW.has(k) && !allD.has(k), C4 = W - 1, R4 = H - 1, Qn = C4 * R4 * 4, Qi = (x, y, k) => (y * C4 + x) * 4 + k;
-      const nbrs = i => { const c = i >> 2, k = i & 3, x = c % C4, y = (c / C4) | 0, out = [];
-        const d1 = blocks(wk([x, y], [x + 1, y + 1])), d2 = blocks(wk([x + 1, y], [x, y + 1]));
-        if (k === 0) { if (!d2) out.push(Qi(x, y, 1)); if (!d1) out.push(Qi(x, y, 3)); if (y > 0 && !blocks(wk([x, y], [x + 1, y]))) out.push(Qi(x, y - 1, 2)); }
-        if (k === 1) { if (!d2) out.push(Qi(x, y, 0)); if (!d1) out.push(Qi(x, y, 2)); if (x < C4 - 1 && !blocks(wk([x + 1, y], [x + 1, y + 1]))) out.push(Qi(x + 1, y, 3)); }
-        if (k === 2) { if (!d2) out.push(Qi(x, y, 3)); if (!d1) out.push(Qi(x, y, 1)); if (y < R4 - 1 && !blocks(wk([x, y + 1], [x + 1, y + 1]))) out.push(Qi(x, y + 1, 0)); }
-        if (k === 3) { if (!d2) out.push(Qi(x, y, 2)); if (!d1) out.push(Qi(x, y, 0)); if (x > 0 && !blocks(wk([x, y], [x, y + 1]))) out.push(Qi(x - 1, y, 1)); }
-        return out; };
-      const [sx, sy] = N(si, sj); let s0 = -1;
-      for (let r2 = 0; r2 < 4 && s0 < 0; r2++) for (let y = Math.max(0, sy - 1 - r2); y <= Math.min(R4 - 1, sy + r2) && s0 < 0; y++) for (let x = Math.max(0, sx - 1 - r2); x <= Math.min(C4 - 1, sx + r2); x++) if (B.q[Qi(x, y, 0)] === corr) { s0 = Qi(x, y, 0); break; }
-      if (s0 < 0) for (let i = 0; i < Qn; i++) if (B.q[i] === corr) { s0 = i; break; }
-      const dist = new Int32Array(Qn).fill(-1), prev = new Int32Array(Qn).fill(-1), qq = [s0]; dist[s0] = 0;
-      for (let h = 0; h < qq.length; h++) for (const j of nbrs(qq[h])) if (dist[j] < 0 && B.q[j]) { dist[j] = dist[qq[h]] + 1; prev[j] = qq[h]; qq.push(j); }
-      // the start room: the first room reached; the goal: the room whose nearest point is farthest
-      const near = new Map(); for (let i = 0; i < Qn; i++) if (dist[i] >= 0 && B.kinds[B.q[i]] === 'room') { const l = B.q[i]; if (!near.has(l) || dist[i] < dist[near.get(l)]) near.set(l, i); }
-      let startRoom = 0, sd = 1e9, gd = -1, gq = -1, maxD = 0;
-      const central = rooms.find(r => r.special === 'central');
-      for (const [l, i] of near) { if (dist[i] < sd) { sd = dist[i]; startRoom = l; } maxD = Math.max(maxD, dist[i]); }
-      // the way down to the next floor: a room drawn by luck among those at least 40% of the deepest distance
-      // away (it may be halfway or at the very bottom: nothing tells where it is)
-      const far = [...near].filter(([l, i]) => l !== startRoom && (!central || l !== central.label) && B.area(l) >= 30 && dist[i] >= 0.4 * maxD);
-      if (forcedGoal && near.has(forcedGoal)) { goalLabel = forcedGoal; gq = near.get(forcedGoal); gd = dist[gq]; }
-      else if (far.length) { const [l, i] = pick(far); goalLabel = l; gq = i; gd = dist[i]; }
-      for (let i = 0; i < Qn; i += 4) { const l = B.q[i], k = vk((i >> 2) % C4, ((i >> 2) / C4) | 0);
-        if (central && l === central.label) marks[k] = 4; else if (l === goalLabel) marks[k] = 1; else if (l === startRoom) marks[k] = 2; }
-      for (let i = gq; i >= 0; i = prev[i]) { const k = vk((i >> 2) % C4, ((i >> 2) / C4) | 0); if (marks[k] === undefined) marks[k] = 5; }
-      routeLen = gd; }
-    // at least 30% of the rooms in diagonal (rombos and turned rectangles): otherwise the dungeon is drawn again
-    let diagShare = 0;
-    if (!cave && opts.districts !== false) { const dl = new Set([...distRooms.map(r => r.label), ...diagCubes.map(([c]) => c), ...avenueRombos]), L = new Set(); for (const v of B.q) if (v && B.kinds[v] === 'room') L.add(v);
-      let d = 0; for (const l of L) if (dl.has(l)) d++; diagShare = L.size ? d / L.size : 0;
-      if (diagShare < 0.3 && entranceOK && (opts._dtry || 0) < 3) { const alt = halls(n, m, cave, { ...opts, _dtry: (opts._dtry || 0) + 1 }); if (alt._ent && (alt._share || 0) >= diagShare) return alt; } } // the best of up to 4 draws
-    // no way in from outside (rare): draw the dungeon again
-    if (!entranceOK && (opts._try || 0) < 5) return halls(n, m, cave, { ...opts, _try: (opts._try || 0) + 1 });
-    let floor = 0; for (const v of B.q) if (v) floor++;
-    const nDiag = [...edges.values()].filter(e => e.diag).length;
-    return {
-      _share: diagShare, _ent: entranceOK,
-      size: W, rows: H, walls: [...segsF.map(s => s.k), ...gates, ...halfWalls], doors: [...new Set([...doors, ...gates])], columns: [], marks,
-      title: cave ? 'Masmorra construida sobre tu cueva' : `Masmorra de salas y pasillos ${n}×${m}`,
-      desc: `Escala: 1 cuadrado = 2 personas; pasillos de 2, salas de ${rmin} a ${rmax} cuadrados (lo más grande se parte en minicuartos con puerta). ${rooms.length} salas (cuadradas con bisel 1 o 2 y rombos con puntas de 2). Sala del jefe en el centro${nPillars ? ` con ${nPillars} columnas` : ''}. ` +
-        `Pasillos de 2 que serpentean entre ellas: crecen como un laberinto que prefiere girar (vueltas y espirales), se ramifican y a veces cortan en diagonal (${nDiag} tramos diagonales). ${distRooms.length} salas en ${districts.length - nLoose.n} barrios en diagonal, repartidos y separados, y ${nLoose.n} rombos sueltos entre las salas cuadradas (con su pasillo diagonal alrededor); salas en diagonal en total: ${Math.round(100 * diagShare)}% (rombos y rectángulos girados, con pasillos en diagonal también por su borde). ${avenueRombos.length} salas rombo (cuadrados girados en medio de las avenidas, vacías y grandes, sin triángulos alrededor). ${diagCubes.length} cuartitos en fila a los lados de los pasillos diagonales (galerías en diagonal)${rooms.some(r => r.kind === 'dgal') ? `, y ${rooms.filter(r => r.kind === 'dgal').length} salón diagonal en bloque` : ''}. ` +
-        `Cada sala abre a un pasillo vecino; los pasillos que no llevan a ninguna sala se cortan. ${loops} atajos. ` +
-        `${splitPairs.length} particiones nuevas (paredes dentro de salas, partes entre ${pmin} y ${pmax < 1e9 ? pmax : '∞'}). Sin huecos de 1, sin esquinas de 90° (biselado automático) y sin puertas pegadas a otra pared. ${nPart} puertas entre salas vecinas (salas en fila). ${rooms.filter(r => r.kind === 'gal').length} galerías (pasadizo con cuartitos a los lados, hasta 5 salidas). ${(gates.length - halfWalls.length) / 2} compuertas y ${halfWalls.length} pasos estrechos (media pared y puerta de 1) que parten los pasillos: junto a las puertas de las salas, a lo largo de los tramos (también en diagonal), en las bocas de los cruces y justo pasada cada vuelta en L (desde antes de la vuelta parece la puerta de un cuarto). Ningún tramo de pasillo pasa de ${maxPiece} cuadrados. ${nThrough} salas de paso disfrazadas (parecen un cuarto más, pero unen dos tramos de pasillo).${round ? ' Contorno circular irregular.' : ''}\n• Piso usado: ${Math.round(100 * floor / B.q.length)}%. Ruta de la entrada a la meta: ${Math.round(routeLen / 2)} pasos.\n• Entrada desde afuera por ${entDir[1] > 0 ? 'abajo' : entDir[1] < 0 ? 'arriba' : entDir[0] > 0 ? 'la derecha' : 'la izquierda'}. El jefe y la bajada al piso siguiente están donde tocó (suerte), pero escondidos: la sala del jefe tiene una sola puerta, hacia su vecino más hondo (a ${bossDepth} puertas de la entrada); la bajada está entre lo más hondo del mapa (a ${goalDepth} de ${maxDepth} puertas), en un callejón sin salida cuando lo hay. ${nWalled} puertas sobrantes tapiadas (una cuarta parte de las vueltas) para que el camino sea algo más largo sin perder decisiones.\n• Colores: verde = sala inicial, dorado = bajada al piso siguiente, morado = sala del jefe (opcional), azul = ruta a la bajada.\n\nMarca con 🖍 los errores y explica abajo.`,
-    };
-  };
-})();
+        const memo = new Map(), side = k => { let r = memo.get(k); if (!r) { r = sideOf(k); memo.set(k, r); } return r; };
+        return { find, sideOf: side };
+      })();
