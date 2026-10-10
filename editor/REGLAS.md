@@ -315,3 +315,11 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
    en dos partes mayores (no la que deja el camino rodeando por otro lado).
 87. **Bloques sólidos no son "partes cerradas"**: el editor ya no castiga los mapas por sus bloques sólidos (antes
    descartaba los mapas con huecos y siempre hacía 3 intentos); a 18×18 o más hace 2 intentos como mucho.
+88. **Sin mar de pasillos**: el gran tramo abierto del centro era la red de pasillos alrededor de los rombos (86% pasillo
+   pintado, no restos): los barrios abrían 60% de sus bordes y cada rombo suelto llevaba casi un anillo de pasillo
+   pegado a los pasillos rectos, con circuitos por todos lados que ninguna compuerta podía cortar. Ahora los barrios
+   abren 25% de sus bordes y cada rombo suelto lleva pasillo en uno o dos lados. Medido: el tramo más grande pasó de
+   ~2500 a ~900 (19×19) y de ~1800 a ~750 (16×16); el pasillo total bajó ~15%.
+89. **Huecos solo grandes**: un bloque sólido (pared a rodear o pozo de caída) solo va en una zona grande de pasillo:
+   nunca menor de 6×6 (36); la pared del medio sólida, 36 o más y 10 de largo. Las puntas de las paredes del medio
+   son columnas que el editor guarda (`ends`) pero no dibuja como hueco.

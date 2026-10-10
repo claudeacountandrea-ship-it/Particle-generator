@@ -539,8 +539,10 @@ const Halls = (() => {
       while (st.length) { const k = Math.random() < 0.8 ? st.length - 1 : rnd(0, st.length - 1), [a, b] = st[k];
         const nb = [[a + 1, b], [a - 1, b], [a, b + 1], [a, b - 1]].filter(([p, q]) => p >= 0 && q >= 0 && p <= K && q <= K && !seenD.has(nidd(p, q)));
         if (!nb.length) { st.splice(k, 1); continue; } const [p, q] = pick(nb); seenD.add(nidd(p, q)); ed.push([a, b, p, q]); st.push([p, q]); }
-      for (let a = 0; a < K; a++) for (const b of [0, K]) if (Math.random() < 0.6) ed.push([a, b, a + 1, b]);
-      for (let b = 0; b < K; b++) for (const a of [0, K]) if (Math.random() < 0.6) ed.push([a, b, a, b + 1]);
+      // (few loops: a mesh of corridors round the rombos made one wide open sea with no way to partition it)
+      if (dq.loose) ed.splice(Math.random() < 0.5 ? 1 : 2); // a loose rombo: corridor on one or two sides only
+      else { for (let a = 0; a < K; a++) for (const b of [0, K]) if (Math.random() < 0.25) ed.push([a, b, a + 1, b]);
+        for (let b = 0; b < K; b++) for (const a of [0, K]) if (Math.random() < 0.25) ed.push([a, b, a, b + 1]); }
       for (const [a, b, p, q] of ed) {
         const ua = U0 + Math.min(a, p) * DP, ub = U0 + Math.max(a, p) * DP, va = V0 + Math.min(b, q) * DP, vb2 = V0 + Math.max(b, q) * DP;
         distEdges.push(a === p ? { u: ua, v0: va, v1: vb2 } : { v: va, u0: ua, u1: ub });
@@ -672,16 +674,16 @@ const Halls = (() => {
       { const seen = new Uint8Array(N4); for (let c0 = 0; c0 < N4; c0++) { if (!wall2[c0] || seen[c0]) continue; const comp = [c0], st = [c0]; seen[c0] = 1;
           while (st.length) { const c = st.pop(), x = c % C4, y = (c / C4) | 0; for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const xx = x + a, yy = y + b, cc = yy * C4 + xx; if (xx >= 0 && yy >= 0 && xx < C4 && yy < R4 && wall2[cc] && !seen[cc]) { seen[cc] = 1; st.push(cc); comp.push(cc); } } }
           const xs = comp.map(c => c % C4), ys = comp.map(c => (c / C4) | 0), len = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) + 1;
-          if (comp.length < 20 || len < 8) continue; // (its bevelled tips still leave it over 4×4)
+          if (comp.length < 36 || len < 10) continue; // only in a big open stretch: a wall to go round, never a crumb
           const l = B.label('pillar'); for (const c of comp) for (let k = 0; k < 4; k++) q[c * 4 + k] = l; nDiv++; } }
       if (nIsl || nDiv) B.bevelCorners();
     }
     // last pass: rooms with no corner of more than 180° (after triangles and partitions moved things)
     for (let t = 0; t < 4; t++) { const k = B.reflexFix(l => B.kinds[l] === 'room') + B.cornerFix(); if (!k) break; }
     B.thin(); B.snap(); B.spikes(); tidy(); for (let t = 0; t < 2 && B.cornerFix(); t++);
-    // a solid block that came out under 4×4 (bevels and clean-up shave it) joins what lies round it
+    // a solid block (a hole to go round, or a pit) only in a big open stretch: one under 6×6 joins what lies round it
     { const sg = B.segments(), area = new Float64Array(B.next); for (const v of B.q) area[v] += 0.25;
-      for (let l = 1; l < B.next; l++) { if (B.kinds[l] !== 'pillar' || !area[l] || area[l] >= 16) continue;
+      for (let l = 1; l < B.next; l++) { if (B.kinds[l] !== 'pillar' || !area[l] || area[l] >= 36) continue;
         const sh = new Map(); for (const g of sg) { const o = g.a === l ? g.b : g.b === l ? g.a : -1; if (o > 0) sh.set(o, (sh.get(o) || 0) + 1); }
         const best = [...sh].sort((p, q) => q[1] - p[1])[0]; if (best) B.paint(() => true, best[0], [l]); } }
     // ---- 6. doors ----
@@ -767,9 +769,9 @@ const Halls = (() => {
       // no door fits without touching a wall: the space joins its reached neighbour — only once no other door could be
       // placed this pass (a neighbour reached later may still give it a proper door; the boss hall is never merged)
       if (!added) for (const [l, g] of pend) { if (bossL === l) continue;
-        if (islL.has(l) && B.area(l) >= 16) { B.paint(() => true, B.label('pillar'), [l]); islL.delete(l); nIslSolid++; added++; merges++; continue; } // an island with no room for a door stays a solid block: the hole is kept
+        if (islL.has(l) && B.area(l) >= 36) { B.paint(() => true, B.label('pillar'), [l]); islL.delete(l); nIslSolid++; added++; merges++; continue; } // an island with no room for a door stays a solid block: the hole is kept
         const to = g.a === l ? g.b : g.a;
-        if (B.kinds[to] === 'corr' && B.area(l) >= 16) { B.paint(() => true, B.label('pillar'), [l]); nSolid++; added++; merges++; continue; } // not a wider corridor: a solid block
+        if (B.kinds[to] === 'corr' && B.area(l) >= 36) { B.paint(() => true, B.label('pillar'), [l]); nSolid++; added++; merges++; continue; } // not a wider corridor: a solid block
         B.paint(() => true, to, [l]); added++; merges++; }
       if (!added) break;
       if (merges) { merges = 0; for (let t = 0; t < 4 && B.cornerFix(); t++); tidy(); segs2 = B.segments(); const ws = new Set(segs2.map(g => g.k)); for (let i = doors.length - 1; i >= 0; i--) if (!ws.has(doors[i])) doors.splice(i, 1);
@@ -1021,7 +1023,8 @@ const Halls = (() => {
       for (const d of dividers) d.keep = true;
       gates.push(...gk()); halfWalls.push(...hk()); nGateAll = placed.length;
       nDivWall = dividers.filter(d => d.keep).length; const dvSegs = dividers.filter(d => d.keep).flatMap(d => d.segs); halfWalls.push(...dvSegs); nDivSegs = dvSegs.length;
-      for (const d of dividers) if (d.keep) { const pts = d.segs.flatMap(parseW); const cnt = new Map(); for (const q of pts) cnt.set(q + '', (cnt.get(q + '') || 0) + 1); for (const [k, c] of cnt) if (c === 1) divCols.push(k); }
+      // every point of a middle wall is kept (not drawn): the rules know that wall is meant, standing free between its two columns
+      for (const d of dividers) if (d.keep) for (const k of new Set(d.segs.flatMap(parseW).map(q => q + ''))) divCols.push(k);
       // 5) disguised ways through: a room touching two different stretches of corridor gets a door to each,
       //    so what looks like one more room is in fact the way on
       { const pc = pieces(), degA = new Map(degF); for (const k of [...gates, ...halfWalls]) for (const q of parseW(k)) degA.set(q + '', (degA.get(q + '') || 0) + 1);
