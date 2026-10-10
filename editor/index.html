@@ -2291,7 +2291,7 @@ const Halls = (() => {
     }
     // ---- corridors no wider than 2: where the corridor opens wider, its middle is taken out — a room of its own when
     // there is room for one (4×4 or more: the way goes round it like a donut), leaving a ring of 2 ----
-    let nIsl = 0, nDiv = 0;
+    let nIsl = 0, nDiv = 0, nFill = 0;
     if (!cave) { const C4 = W - 1, R4 = H - 1, q = B.q, N4 = C4 * R4, dist = new Int16Array(N4);
       const full = c => { for (let k = 0; k < 4; k++) { const v = q[c * 4 + k]; if (!v || B.kinds[v] !== 'corr') return false; } return true; };
       for (let c = 0; c < N4; c++) dist[c] = full(c) ? 999 : 0;
@@ -2316,14 +2316,28 @@ const Halls = (() => {
           const xs = comp.map(c => c % C4), ys = comp.map(c => (c / C4) | 0), len = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) + 1;
           if (comp.length < 36) continue; // only in a big open stretch: a hole or wall to go round, never a crumb
           const l = B.label('pillar'); for (const c of comp) for (let k = 0; k < 4; k++) q[c * 4 + k] = l; nDiv++; } }
-      if (nIsl || nDiv) B.bevelCorners();
+      // the rest of the extra width is filled from the nearest wall: a solid that hugs the wall (no hole floating in the
+      // middle), so the corridor goes on with an even width of 2 beside it
+      { const isCorrC = c => { for (let k = 0; k < 4; k++) { const v = q[c * 4 + k]; if (!v || B.kinds[v] !== 'corr') return false; } return true; };
+        const left = core.map((v, c) => v && isCorrC(c) ? 1 : 0), seen = new Uint8Array(N4);
+        const D8 = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+        for (let c0 = 0; c0 < N4; c0++) { if (!left[c0] || seen[c0]) continue; const comp = [c0], st = [c0]; seen[c0] = 1;
+          while (st.length) { const c = st.pop(), x = c % C4, y = (c / C4) | 0; for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const xx = x + a, yy = y + b, cc = yy * C4 + xx; if (xx >= 0 && yy >= 0 && xx < C4 && yy < R4 && left[cc] && !seen[cc]) { seen[cc] = 1; st.push(cc); comp.push(cc); } } }
+          // the side where the wall is nearest for the whole bit
+          let best = null, bs = 1e9; for (const [a, b] of D8) { let tot = 0, ok = true, fill = new Set(comp);
+            for (const c of comp) { let x = c % C4, y = (c / C4) | 0, n = 0; while (n < 6) { x += a; y += b; if (x < 0 || y < 0 || x >= C4 || y >= R4) { ok = false; break; } const cc = y * C4 + x; if (!isCorrC(cc)) break; fill.add(cc); n++; } if (n >= 6) ok = false; tot += n; }
+            if (ok && tot < bs) { bs = tot; best = fill; } }
+          if (!best) continue;
+          const l = B.label('pillar'); for (const c of best) for (let k = 0; k < 4; k++) q[c * 4 + k] = l; nFill++; } }
+      if (nIsl || nDiv || nFill) B.bevelCorners();
     }
     // last pass: rooms with no corner of more than 180° (after triangles and partitions moved things)
     for (let t = 0; t < 4; t++) { const k = B.reflexFix(l => B.kinds[l] === 'room') + B.cornerFix(); if (!k) break; }
     B.thin(); B.snap(); B.spikes(); tidy(); for (let t = 0; t < 2 && B.cornerFix(); t++);
     // a solid block (a hole to go round, or a pit) only in a big open stretch: one under 6×6 joins what lies round it
     { const sg = B.segments(), area = new Float64Array(B.next); for (const v of B.q) area[v] += 0.25;
-      for (let l = 1; l < B.next; l++) { if (B.kinds[l] !== 'pillar' || !area[l] || area[l] >= 36) continue;
+      const hugs = new Set(); for (const g of sg) for (const [a, b] of [[g.a, g.b], [g.b, g.a]]) if (B.kinds[a] === 'pillar' && b && B.kinds[b] !== 'corr' && B.kinds[b] !== 'pillar') hugs.add(a); // a solid against a wall is that wall made thicker
+      for (let l = 1; l < B.next; l++) { if (B.kinds[l] !== 'pillar' || !area[l] || area[l] >= 36 || hugs.has(l)) continue;
         const sh = new Map(); for (const g of sg) { const o = g.a === l ? g.b : g.b === l ? g.a : -1; if (o > 0) sh.set(o, (sh.get(o) || 0) + 1); }
         const best = [...sh].sort((p, q) => q[1] - p[1])[0]; if (best) B.paint(() => true, best[0], [l]); } }
     // ---- 6. doors ----
@@ -2512,8 +2526,12 @@ const Halls = (() => {
               const gate = t => { if (t < 1 || t > wpts.length - 2) return null; const n2 = reach(wpts[t], pp); if (!n2) return null; const pts2 = [wpts[t]]; for (let i = 0; i < n2; i++) pts2.push(add(pts2[i], pp)); const e = pts2[n2];
                 if (pts2.slice(1, -1).some(q => degF.has(q + '')) || !wallStraight(e, a)) return null;
                 return { segs: pts2.slice(1).map((q, i) => wk(pts2[i], q)), c: pts2[n2 >> 1], ends: [wpts[t], e], ortho: false, half: -1 }; };
-              const off = sd < 0 ? 1 : 2, L2 = wpts.length - 1, g1 = gate(off) || gate(off + 2), g2 = gate(L2 - off) || gate(L2 - off - 2);
-              if (g1 && g2) { lanes.push([g1, g2]); placed.push(g1, g2); }
+              const L2 = wpts.length - 1;
+              if (sd < 0) { const g1 = gate(1) || gate(3), g2 = gate(L2 - 1) || gate(L2 - 3); if (g1 && g2) { lanes.push([g1, g2]); placed.push(g1, g2); } }
+              else { // the other lane, the same length, is gone through differently: a narrow pass halfway (half wall from the
+                // corridor wall, a door of 1 against the middle wall)
+                for (const t of [L2 >> 1, (L2 >> 1) + 1, (L2 >> 1) - 1]) { const g = gate(t); if (!g) continue;
+                  const np2 = g.segs.length > 1 ? { ...g, segs: [g.segs[0]], walls: g.segs.slice(1), c: parseW(g.segs[0])[1] } : g; placed.push(np2); lanes.push([np2, np2]); break; } }
             }
             dividers.push({ segs, lanes });
             for (const q of pts) for (let k = -4; k <= 4; k++) for (let j = -1; j <= 1; j++) used.add(add(add(q, p, k), a, j) + '');
@@ -2734,7 +2752,7 @@ const Halls = (() => {
     }
     // ---- hard to find: the boss hall gets a single door, onto its deepest neighbour; the way down to the
     // next floor is drawn among the deepest spaces (counted in doors from the entrance), a dead end if possible ----
-    let forcedGoal = 0, bossDepth = -1, goalDepth = -1, maxDepth = 0, nWalled = 0;
+    let forcedGoal = 0, bossDepth = -1, goalDepth = -1, maxDepth = 0, nWalled = 0, wayDoors = 0, wayChoices = 0, wayDead = 0;
     if (!cave) {
       const C4 = W - 1, R4 = H - 1, n4 = C4 * R4 * 4, Qi = (x, y, k) => (y * C4 + x) * 4 + k;
       // the spaces only depend on the walls (doors are walls too), which do not change here: worked out once
@@ -2804,6 +2822,14 @@ const Halls = (() => {
         const sp = g.find(i), d = g.depth.get(sp); if (d === undefined || d < 0.75 * maxDepth || B.area(l) < 24) continue; cand.push([l, d, (g.adj.get(sp) || new Set()).size]); }
       const dead = cand.filter(c => c[2] <= 1), pool = dead.length ? dead : cand;
       if (pool.length) { const c = pick(pool); forcedGoal = c[0]; goalDepth = c[1]; }
+      // quick reading of the way: from the entrance to the way down, how many doors and gates, how many choices on it
+      // (spaces with 3 ways or more), and how many dead ends the dungeon has
+      { let entry = -1; for (const [v, d] of g.depth) if (d === 0) entry = v;
+        let goalS = -1; if (forcedGoal) for (let i = 0; i < n4; i++) if (B.q[i] === forcedGoal) { goalS = g.find(i); break; }
+        if (entry >= 0 && goalS >= 0) { const par = new Map([[entry, -1]]), qq = [entry]; for (let i = 0; i < qq.length; i++) for (const v of g.adj.get(qq[i]) || []) if (!par.has(v)) { par.set(v, qq[i]); qq.push(v); }
+          const path = []; for (let v = goalS; v !== -1 && v !== undefined; v = par.get(v)) path.push(v);
+          wayDoors = path.length - 1; wayChoices = path.filter(v => (g.adj.get(v) || new Set()).size >= 3).length; }
+        for (const [v, nb] of g.adj) if (nb.size === 1 && v !== entry && B.kinds[B.q[v]] === 'corr') wayDead++; }
     }
     // ---- the way: start, the deepest room (goal), the central form, and the route between them ----
     const marks = {}; let routeLen = 0, goalLabel = 0;
@@ -2851,7 +2877,7 @@ const Halls = (() => {
       desc: `Escala: 1 cuadrado = 2 personas; pasillos de 2, salas de ${rmin} a ${rmax} cuadrados (lo más grande se parte en minicuartos con puerta). ${rooms.length} salas (cuadradas con bisel 1 o 2 y rombos con puntas de 2). Sala del jefe en el centro${nPillars ? ` con ${nPillars} columnas` : ''}. ` +
         `Pasillos de 2 que serpentean entre ellas: crecen como un laberinto que prefiere girar (vueltas y espirales), se ramifican y a veces cortan en diagonal (${nDiag} tramos diagonales). ${distRooms.length} salas en ${districts.length - nLoose.n} barrios en diagonal, repartidos y separados, y ${nLoose.n} rombos sueltos entre las salas cuadradas (con su pasillo diagonal alrededor); salas en diagonal en total: ${Math.round(100 * diagShare)}% (rombos y rectángulos girados, con pasillos en diagonal también por su borde). ${avenueRombos.length} salas rombo (cuadrados girados en medio de las avenidas, vacías y grandes, sin triángulos alrededor). ${diagCubes.length} cuartitos en fila a los lados de los pasillos diagonales (galerías en diagonal)${rooms.some(r => r.kind === 'dgal') ? `, y ${rooms.filter(r => r.kind === 'dgal').length} salón diagonal en bloque` : ''}. ` +
         `Cada sala abre a un pasillo vecino; de los pasillos que no llevan a ninguna sala, unos se cortan y ${nDead} quedan como callejón sin salida. ${loops} atajos. ` +
-        `${splitPairs.length} particiones nuevas (paredes dentro de salas, partes entre ${pmin} y ${pmax < 1e9 ? pmax : '∞'}). Sin huecos de 1, sin esquinas de 90° (biselado automático) y sin puertas pegadas a otra pared. ${nPart} puertas entre salas vecinas (salas en fila). ${rooms.filter(r => r.kind === 'gal').length} galerías (pasadizo con cuartitos a los lados, hasta 5 salidas). ${nGateAll - (halfWalls.length - nDivSegs)} compuertas y ${halfWalls.length - nDivSegs} pasos estrechos (media pared y puerta de 1) que parten los pasillos: junto a las puertas de las salas, a lo largo de los tramos (también en diagonal), en las bocas de los cruces y justo pasada cada vuelta en L (desde antes de la vuelta parece la puerta de un cuarto). Ningún tramo de pasillo pasa de ${maxPiece} cuadrados. ${nThrough} salas de paso disfrazadas (parecen un cuarto más, pero unen dos tramos de pasillo).${round ? ' Contorno circular irregular.' : ''} Pasillos anchos: ${nIsl} salas isla en medio (el camino las rodea como una dona, ${nIslSolid} quedaron como bloque sólido), ${nSolid} salas sin puerta posible dejadas como bloque sólido en vez de ensanchar el pasillo, y ${nDiv} paredes al medio que parten el camino en dos. ${nDivWall} pasillos anchos partidos en dos pasillos con una pared compartida en medio (con una columna en cada punta: los carriles se separan y se juntan ahí; las compuertas de los carriles son las decisiones).\n• Piso usado: ${Math.round(100 * floor / B.q.length)}%. Ruta de la entrada a la meta: ${Math.round(routeLen / 2)} pasos.\n• Entrada desde afuera por ${entDir[1] > 0 ? 'abajo' : entDir[1] < 0 ? 'arriba' : entDir[0] > 0 ? 'la derecha' : 'la izquierda'}. El jefe y la bajada al piso siguiente están donde tocó (suerte), pero escondidos: la sala del jefe tiene una sola puerta, hacia su vecino más hondo (a ${bossDepth} puertas de la entrada); la bajada está entre lo más hondo del mapa (a ${goalDepth} de ${maxDepth} puertas), en un callejón sin salida cuando lo hay. ${nWalled} puertas sobrantes tapiadas (una cuarta parte de las vueltas) para que el camino sea algo más largo sin perder decisiones.\n• Colores: verde = sala inicial, dorado = bajada al piso siguiente, morado = sala del jefe (opcional), azul = ruta a la bajada.\n\nMarca con 🖍 los errores y explica abajo.`,
+        `${splitPairs.length} particiones nuevas (paredes dentro de salas, partes entre ${pmin} y ${pmax < 1e9 ? pmax : '∞'}). Sin huecos de 1, sin esquinas de 90° (biselado automático) y sin puertas pegadas a otra pared. ${nPart} puertas entre salas vecinas (salas en fila). ${rooms.filter(r => r.kind === 'gal').length} galerías (pasadizo con cuartitos a los lados, hasta 5 salidas). ${nGateAll - (halfWalls.length - nDivSegs)} compuertas y ${halfWalls.length - nDivSegs} pasos estrechos (media pared y puerta de 1) que parten los pasillos: junto a las puertas de las salas, a lo largo de los tramos (también en diagonal), en las bocas de los cruces y justo pasada cada vuelta en L (desde antes de la vuelta parece la puerta de un cuarto). Ningún tramo de pasillo pasa de ${maxPiece} cuadrados. ${nThrough} salas de paso disfrazadas (parecen un cuarto más, pero unen dos tramos de pasillo).${round ? ' Contorno circular irregular.' : ''} Pasillos anchos: ${nIsl} salas isla en medio (el camino las rodea como una dona, ${nIslSolid} quedaron como bloque sólido), ${nSolid} salas sin puerta posible dejadas como bloque sólido en vez de ensanchar el pasillo, y ${nDiv} paredes al medio que parten el camino en dos, y ${nFill} rellenos pegados a la pared que dejan el pasillo de ancho parejo. ${nDivWall} pasillos anchos partidos en dos pasillos con una pared compartida en medio (con una columna en cada punta: los carriles se separan y se juntan ahí; las compuertas de los carriles son las decisiones).\n• Piso usado: ${Math.round(100 * floor / B.q.length)}%. Ruta de la entrada a la meta: ${Math.round(routeLen / 2)} pasos. Camino a la bajada: ${wayDoors} puertas o compuertas que cruzar, ${wayChoices} decisiones en el camino (lugares con 3 salidas o más); ${wayDead} pasillos sin salida (tramos con una sola salida) en todo el piso.\n• Entrada desde afuera por ${entDir[1] > 0 ? 'abajo' : entDir[1] < 0 ? 'arriba' : entDir[0] > 0 ? 'la derecha' : 'la izquierda'}. El jefe y la bajada al piso siguiente están donde tocó (suerte), pero escondidos: la sala del jefe tiene una sola puerta, hacia su vecino más hondo (a ${bossDepth} puertas de la entrada); la bajada está entre lo más hondo del mapa (a ${goalDepth} de ${maxDepth} puertas), en un callejón sin salida cuando lo hay. ${nWalled} puertas sobrantes tapiadas (una cuarta parte de las vueltas) para que el camino sea algo más largo sin perder decisiones.\n• Colores: verde = sala inicial, dorado = bajada al piso siguiente, morado = sala del jefe (opcional), azul = ruta a la bajada.\n\nMarca con 🖍 los errores y explica abajo.`,
     };
   };
 })();
@@ -3092,6 +3118,7 @@ function checkRules(w, h, ws, ds, cols) { // cols: columns ('x,y'): a wall endin
   for (let i = 0; i < n; i++) if (fv.cls[i] !== 0) { const r = reg(i); size.set(r, (size.get(r) || 0) + 1); }
   // a closed space of at most 2×2 is a column (a pillar made of walls): not an error, and its corners don't count
   const pillar = new Set(), pv = new Set();
+  for (let i = 0; i < n; i++) if (fv.cls[i] === 2) pillar.add(reg(i)); // a closed space has no door: it is solid, not a room
   for (let i = 0; i < n; i++) if (fv.cls[i] === 2 && size.get(reg(i)) <= 16) { pillar.add(reg(i)); const c = i >> 2, x = c % C, y = (c / C) | 0; for (const [u, v] of [[0, 0], [1, 0], [0, 1], [1, 1]]) pv.add(vk(x + u, y + v)); }
   const own = (x, y) => { if (x < 0 || y < 0 || x >= C || y >= R) return -1; const i = Qi(x, y, 0); if (fv.cls[i] === 0) return -1; const c = new Map(); for (let k = 0; k < 4; k++) { const r = reg(i + k); c.set(r, (c.get(r) || 0) + 1); } let b = -1, bc = 0; for (const [r, v] of c) if (v > bc) { bc = v; b = r; } return bc >= 2 ? b : -1; };
   const thin = [], tiny = [];

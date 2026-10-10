@@ -651,7 +651,7 @@ const Halls = (() => {
     }
     // ---- corridors no wider than 2: where the corridor opens wider, its middle is taken out — a room of its own when
     // there is room for one (4×4 or more: the way goes round it like a donut), leaving a ring of 2 ----
-    let nIsl = 0, nDiv = 0;
+    let nIsl = 0, nDiv = 0, nFill = 0;
     if (!cave) { const C4 = W - 1, R4 = H - 1, q = B.q, N4 = C4 * R4, dist = new Int16Array(N4);
       const full = c => { for (let k = 0; k < 4; k++) { const v = q[c * 4 + k]; if (!v || B.kinds[v] !== 'corr') return false; } return true; };
       for (let c = 0; c < N4; c++) dist[c] = full(c) ? 999 : 0;
@@ -676,14 +676,28 @@ const Halls = (() => {
           const xs = comp.map(c => c % C4), ys = comp.map(c => (c / C4) | 0), len = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) + 1;
           if (comp.length < 36) continue; // only in a big open stretch: a hole or wall to go round, never a crumb
           const l = B.label('pillar'); for (const c of comp) for (let k = 0; k < 4; k++) q[c * 4 + k] = l; nDiv++; } }
-      if (nIsl || nDiv) B.bevelCorners();
+      // the rest of the extra width is filled from the nearest wall: a solid that hugs the wall (no hole floating in the
+      // middle), so the corridor goes on with an even width of 2 beside it
+      { const isCorrC = c => { for (let k = 0; k < 4; k++) { const v = q[c * 4 + k]; if (!v || B.kinds[v] !== 'corr') return false; } return true; };
+        const left = core.map((v, c) => v && isCorrC(c) ? 1 : 0), seen = new Uint8Array(N4);
+        const D8 = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+        for (let c0 = 0; c0 < N4; c0++) { if (!left[c0] || seen[c0]) continue; const comp = [c0], st = [c0]; seen[c0] = 1;
+          while (st.length) { const c = st.pop(), x = c % C4, y = (c / C4) | 0; for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const xx = x + a, yy = y + b, cc = yy * C4 + xx; if (xx >= 0 && yy >= 0 && xx < C4 && yy < R4 && left[cc] && !seen[cc]) { seen[cc] = 1; st.push(cc); comp.push(cc); } } }
+          // the side where the wall is nearest for the whole bit
+          let best = null, bs = 1e9; for (const [a, b] of D8) { let tot = 0, ok = true, fill = new Set(comp);
+            for (const c of comp) { let x = c % C4, y = (c / C4) | 0, n = 0; while (n < 6) { x += a; y += b; if (x < 0 || y < 0 || x >= C4 || y >= R4) { ok = false; break; } const cc = y * C4 + x; if (!isCorrC(cc)) break; fill.add(cc); n++; } if (n >= 6) ok = false; tot += n; }
+            if (ok && tot < bs) { bs = tot; best = fill; } }
+          if (!best) continue;
+          const l = B.label('pillar'); for (const c of best) for (let k = 0; k < 4; k++) q[c * 4 + k] = l; nFill++; } }
+      if (nIsl || nDiv || nFill) B.bevelCorners();
     }
     // last pass: rooms with no corner of more than 180° (after triangles and partitions moved things)
     for (let t = 0; t < 4; t++) { const k = B.reflexFix(l => B.kinds[l] === 'room') + B.cornerFix(); if (!k) break; }
     B.thin(); B.snap(); B.spikes(); tidy(); for (let t = 0; t < 2 && B.cornerFix(); t++);
     // a solid block (a hole to go round, or a pit) only in a big open stretch: one under 6×6 joins what lies round it
     { const sg = B.segments(), area = new Float64Array(B.next); for (const v of B.q) area[v] += 0.25;
-      for (let l = 1; l < B.next; l++) { if (B.kinds[l] !== 'pillar' || !area[l] || area[l] >= 36) continue;
+      const hugs = new Set(); for (const g of sg) for (const [a, b] of [[g.a, g.b], [g.b, g.a]]) if (B.kinds[a] === 'pillar' && b && B.kinds[b] !== 'corr' && B.kinds[b] !== 'pillar') hugs.add(a); // a solid against a wall is that wall made thicker
+      for (let l = 1; l < B.next; l++) { if (B.kinds[l] !== 'pillar' || !area[l] || area[l] >= 36 || hugs.has(l)) continue;
         const sh = new Map(); for (const g of sg) { const o = g.a === l ? g.b : g.b === l ? g.a : -1; if (o > 0) sh.set(o, (sh.get(o) || 0) + 1); }
         const best = [...sh].sort((p, q) => q[1] - p[1])[0]; if (best) B.paint(() => true, best[0], [l]); } }
     // ---- 6. doors ----
@@ -872,8 +886,12 @@ const Halls = (() => {
               const gate = t => { if (t < 1 || t > wpts.length - 2) return null; const n2 = reach(wpts[t], pp); if (!n2) return null; const pts2 = [wpts[t]]; for (let i = 0; i < n2; i++) pts2.push(add(pts2[i], pp)); const e = pts2[n2];
                 if (pts2.slice(1, -1).some(q => degF.has(q + '')) || !wallStraight(e, a)) return null;
                 return { segs: pts2.slice(1).map((q, i) => wk(pts2[i], q)), c: pts2[n2 >> 1], ends: [wpts[t], e], ortho: false, half: -1 }; };
-              const off = sd < 0 ? 1 : 2, L2 = wpts.length - 1, g1 = gate(off) || gate(off + 2), g2 = gate(L2 - off) || gate(L2 - off - 2);
-              if (g1 && g2) { lanes.push([g1, g2]); placed.push(g1, g2); }
+              const L2 = wpts.length - 1;
+              if (sd < 0) { const g1 = gate(1) || gate(3), g2 = gate(L2 - 1) || gate(L2 - 3); if (g1 && g2) { lanes.push([g1, g2]); placed.push(g1, g2); } }
+              else { // the other lane, the same length, is gone through differently: a narrow pass halfway (half wall from the
+                // corridor wall, a door of 1 against the middle wall)
+                for (const t of [L2 >> 1, (L2 >> 1) + 1, (L2 >> 1) - 1]) { const g = gate(t); if (!g) continue;
+                  const np2 = g.segs.length > 1 ? { ...g, segs: [g.segs[0]], walls: g.segs.slice(1), c: parseW(g.segs[0])[1] } : g; placed.push(np2); lanes.push([np2, np2]); break; } }
             }
             dividers.push({ segs, lanes });
             for (const q of pts) for (let k = -4; k <= 4; k++) for (let j = -1; j <= 1; j++) used.add(add(add(q, p, k), a, j) + '');
@@ -1094,7 +1112,7 @@ const Halls = (() => {
     }
     // ---- hard to find: the boss hall gets a single door, onto its deepest neighbour; the way down to the
     // next floor is drawn among the deepest spaces (counted in doors from the entrance), a dead end if possible ----
-    let forcedGoal = 0, bossDepth = -1, goalDepth = -1, maxDepth = 0, nWalled = 0;
+    let forcedGoal = 0, bossDepth = -1, goalDepth = -1, maxDepth = 0, nWalled = 0, wayDoors = 0, wayChoices = 0, wayDead = 0;
     if (!cave) {
       const C4 = W - 1, R4 = H - 1, n4 = C4 * R4 * 4, Qi = (x, y, k) => (y * C4 + x) * 4 + k;
       // the spaces only depend on the walls (doors are walls too), which do not change here: worked out once

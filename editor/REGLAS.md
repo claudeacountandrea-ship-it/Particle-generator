@@ -336,3 +336,12 @@ rombo, 1–2 puertas centradas, pasillos del ancho de la puerta que pueden girar
    lado; tabique con puerta si es ancho). Al final cada puerta de sala se vuelve a centrar entre sus columnas reales.
    Medido: tramos con compuerta 76 → 99 de 244 (19×19); tramos de pasillo 63 → 84 (19×19), 52 → 67 (16×16);
    puertas centradas 98%.
+93. **Rellenos pegados a la pared (ancho parejo)**: lo que sobra de ancho en un pasillo (más de 2 lejos de toda pared) y no
+   es isla ni pared del medio se rellena desde la pared más cercana: un sólido que engrosa esa pared, nunca un hueco
+   suelto en el medio; el pasillo sigue con ancho parejo al lado. Un espacio cerrado (sin puerta) es sólido: no cuenta
+   como espacio chico ni hueco fino. Medido (19×19): pasillo de 5+ de ancho 5% → 1%; de 3+ 27% → 17%.
+94. **Dos carriles iguales, recorrido distinto**: la pared del medio deja dos carriles del mismo largo; uno lleva una
+   compuerta junto a cada punta, el otro un paso estrecho a mitad (media pared desde la pared del pasillo y una puerta
+   de 1 contra la pared del medio).
+95. **Lectura del camino**: la descripción dice cuántas puertas o compuertas hay de la entrada a la bajada, cuántas
+   decisiones (lugares con 3 salidas o más) hay en ese camino, y cuántos pasillos sin salida tiene el piso.
