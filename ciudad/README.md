@@ -14,6 +14,16 @@ Está separado del generador de mazmorras (`editor/`), que no se tocó. Tiene tr
   - **Calles con jerarquía**: calzada para autos (calles de 6 → 4 de calzada + veredas; avenidas desde el borde hasta la
     plaza, más anchas y con **mediana**), **veredas** pegadas a cada manzana (con bordillo), y las calles de menos de 3 de
     ancho son **pasajes peatonales** (personas y bicis).
+  - **Borde**: el anillo de asfalto y las autopistas llevan **vereda a ambos lados**. Una **avenida-autopista** de 12
+    (veredas + calzada con mediana) cruza la ciudad pasando junto a la plaza.
+  - **Calzada para vehículos**: ningún tramo de calzada queda con menos de 3 de ancho (lo más angosto pasa a vereda).
+  - **Pasajes**: callejones peatonales sin salida (2 de ancho) que entran hasta el medio de algunas manzanas, con
+    **tachos de basura**.
+  - **Edificios especiales con plantilla** (casi iguales cada vez, mismas reglas; se repiten según el tamaño):
+    **hospital** (urgencias y quirófano en las puntas, pasillo, habitaciones), **comisaría** (recepción, oficinas, celdas,
+    patio de presos), **bomberos** (cochera con portones de 4 para los camiones, dormitorio, cocina, oficina),
+    **base militar** y **cárcel** en las afueras (recinto con **muro alto**, una sola entrada, edificios adentro),
+    **parque con lago** (estilo inglés) y **juegos para niños** en los parques chicos (tobogán, columpio, arenero).
   - **Rejas en las calles**: cruzan la calle de vereda a vereda y casi siempre dejan un paso de 2; algunas la cierran
     (solo si igual se llega a todo por otro lado: hay que rodear).
   - **Estacionamientos** (P): algunos lotes del centro y del anillo medio se sacrifican para estacionar.
@@ -90,6 +100,9 @@ Los pisos y techos de las salas en diagonal se arman con rectángulos y dejan si
 | `Alfeizar` | La pared bajo una ventana |
 | `VentanaCerrada` | Vidrio que no se abre; las ventanas rotas no tienen vidrio y se pueden trepar |
 | `Reja` | Metal, de 2 m de alto |
+| `Muro` | Muro alto de base militar y cárcel |
+| `TachoBasura`, `Tobogan`, `Columpio`, `Arenero` | Objetos de pasajes y juegos |
+| `Agua`, `Juegos`, `Estacionamiento` | Suelos especiales |
 | `Techo` | Uno por bloque de casa. Si no quieres techos, sáltalos por nombre |
 | `Auto`, `AutoCabina` | Autos abandonados y choques |
 | `Tronco`, `Copa`, `Fuente`, `FuenteAgua` | Árboles y fuentes |
@@ -113,7 +126,7 @@ Con estas medidas se cumple lo de TruWorlds: puertas de 8 studs o más, techos d
 
 ## Regenerar
 ```
-node ciudad/exportar.js --semilla=7 --n=14                          # ciudad (n: 12, 14 o 16)
+node ciudad/exportar.js --semilla=7 --n=14                          # ciudad (n: 12, 14, 16 o 18 = enorme)
 node ciudad/exportar.js --semilla=7 --modo=diagonal --n=19          # mazmorra pintada
 node ciudad/exportar.js --semilla=7 --modo=cuadricula --tamano=150x110
 ```
