@@ -1,0 +1,297 @@
+{
+ "formato": "TruWorlds piezas v1: {name, shape, pos, size, rot (grados, orden Y,X,Z), color 0-1, material}; studs; Y arriba; el norte del mapa mira a -Z; el mapa está centrado en el origen",
+ "semilla": 7,
+ "tamanoCeldas": [
+  150,
+  110
+ ],
+ "medidas": {
+  "studsPorMetro": 4,
+  "personaje": 3,
+  "celda": 2,
+  "pared": 4,
+  "puerta": 3,
+  "alfeizar": 1,
+  "reja": 2,
+  "grosor": 0.5
+ },
+ "escala": {
+  "studsPorCelda": 8,
+  "alturaPared": 16,
+  "alturaPuerta": 12,
+  "mapaStuds": [
+   1200,
+   880
+  ],
+  "mapaMetros": [
+   300,
+   220
+  ]
+ },
+ "totalPiezas": 2413,
+ "chunks": [
+  {
+   "archivo": "chunk_00.json",
+   "nombre": "Ciudad_0_0",
+   "centro": [
+    -472,
+    0,
+    -312
+   ],
+   "piezas": 165
+  },
+  {
+   "archivo": "chunk_01.json",
+   "nombre": "Ciudad_0_1",
+   "centro": [
+    -472,
+    0,
+    -56
+   ],
+   "piezas": 168
+  },
+  {
+   "archivo": "chunk_02.json",
+   "nombre": "Ciudad_0_2",
+   "centro": [
+    -472,
+    0,
+    200
+   ],
+   "piezas": 131
+  },
+  {
+   "archivo": "chunk_03.json",
+   "nombre": "Ciudad_0_3",
+   "centro": [
+    -472,
+    0,
+    456
+   ],
+   "piezas": 47
+  },
+  {
+   "archivo": "chunk_04.json",
+   "nombre": "Ciudad_1_0",
+   "centro": [
+    -216,
+    0,
+    -312
+   ],
+   "piezas": 40
+  },
+  {
+   "archivo": "chunk_05.json",
+   "nombre": "Ciudad_1_1",
+   "centro": [
+    -216,
+    0,
+    -56
+   ],
+   "piezas": 158
+  },
+  {
+   "archivo": "chunk_06.json",
+   "nombre": "Ciudad_1_2",
+   "centro": [
+    -216,
+    0,
+    200
+   ],
+   "piezas": 3
+  },
+  {
+   "archivo": "chunk_07.json",
+   "nombre": "Ciudad_1_3",
+   "centro": [
+    -216,
+    0,
+    456
+   ],
+   "piezas": 7
+  },
+  {
+   "archivo": "chunk_08.json",
+   "nombre": "Ciudad_2_0",
+   "centro": [
+    40,
+    0,
+    -312
+   ],
+   "piezas": 206
+  },
+  {
+   "archivo": "chunk_09.json",
+   "nombre": "Ciudad_2_1",
+   "centro": [
+    40,
+    0,
+    -56
+   ],
+   "piezas": 228
+  },
+  {
+   "archivo": "chunk_10.json",
+   "nombre": "Ciudad_2_2",
+   "centro": [
+    40,
+    0,
+    200
+   ],
+   "piezas": 184
+  },
+  {
+   "archivo": "chunk_11.json",
+   "nombre": "Ciudad_2_3",
+   "centro": [
+    40,
+    0,
+    456
+   ],
+   "piezas": 73
+  },
+  {
+   "archivo": "chunk_12.json",
+   "nombre": "Ciudad_3_0",
+   "centro": [
+    296,
+    0,
+    -312
+   ],
+   "piezas": 199
+  },
+  {
+   "archivo": "chunk_13.json",
+   "nombre": "Ciudad_3_1",
+   "centro": [
+    296,
+    0,
+    -56
+   ],
+   "piezas": 191
+  },
+  {
+   "archivo": "chunk_14.json",
+   "nombre": "Ciudad_3_2",
+   "centro": [
+    296,
+    0,
+    200
+   ],
+   "piezas": 151
+  },
+  {
+   "archivo": "chunk_15.json",
+   "nombre": "Ciudad_3_3",
+   "centro": [
+    296,
+    0,
+    456
+   ],
+   "piezas": 72
+  },
+  {
+   "archivo": "chunk_16.json",
+   "nombre": "Ciudad_4_0",
+   "centro": [
+    552,
+    0,
+    -312
+   ],
+   "piezas": 111
+  },
+  {
+   "archivo": "chunk_17.json",
+   "nombre": "Ciudad_4_1",
+   "centro": [
+    552,
+    0,
+    -56
+   ],
+   "piezas": 124
+  },
+  {
+   "archivo": "chunk_18.json",
+   "nombre": "Ciudad_4_2",
+   "centro": [
+    552,
+    0,
+    200
+   ],
+   "piezas": 108
+  },
+  {
+   "archivo": "chunk_19.json",
+   "nombre": "Ciudad_4_3",
+   "centro": [
+    552,
+    0,
+    456
+   ],
+   "piezas": 47
+  }
+ ],
+ "spawns": {
+  "PlayerStart": {
+   "pos": [
+    -588,
+    4,
+    4
+   ],
+   "nota": "punto A: entrada oeste de la ciudad, sobre la calle del anillo"
+  },
+  "refugios": [
+   {
+    "nombre": "Refugio 1",
+    "pos": [
+     -132,
+     4,
+     -4
+    ],
+    "casa": "casa"
+   },
+   {
+    "nombre": "Refugio 2",
+    "pos": [
+     268,
+     4,
+     -136
+    ],
+    "casa": "casa"
+   },
+   {
+    "nombre": "B (refugio final)",
+    "pos": [
+     540,
+     4,
+     60
+    ],
+    "casa": "casa"
+   }
+  ]
+ },
+ "estadisticas": {
+  "manzanas": 14,
+  "plazas": 2,
+  "paseos": 0,
+  "parques": 0,
+  "casas": 44,
+  "tiendas": 13,
+  "edificios": 2,
+  "almacenes": 2,
+  "baldios": 7,
+  "cuartos": 180,
+  "puertas": 261,
+  "ventanasCerradas": 241,
+  "ventanasRotas": 66,
+  "portones": 89,
+  "medianas": 1,
+  "rejasCalle": 4,
+  "rejasParciales": 5,
+  "choques": 1,
+  "autos": 51,
+  "arboles": 8,
+  "ruta": 163,
+  "rutaCalles": 163
+ }
+}

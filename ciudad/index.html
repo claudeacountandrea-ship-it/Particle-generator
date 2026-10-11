@@ -1,0 +1,158 @@
+<title>Ciudad Zombi</title>
+<meta name="description" content="Generador de ciudad para un juego de zombis: calles con rejas, casas con cuartos, puertas y ventanas, refugios y ruta de A a B.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@600;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: barra de controles arriba, mapa grande a la izquierda, panel de datos y leyenda a la derecha (se apila en el teléfono). */
+:root {
+  color-scheme: dark;
+  --bg: #15181b; --panel: #1e2227; --line: #2e343b; --fg: #e7e3da; --muted: #9aa1a8;
+  --accent: #e8b23a; --danger: #d9534f; --route: #5fd3e8;
+  --display: "Saira Condensed", "Arial Narrow", sans-serif; --body: "Atkinson Hyperlegible", system-ui, sans-serif;
+}
+* { box-sizing: border-box }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 14px }
+.wrap { padding-inline: 16px; padding-block: 14px 24px; display: grid; gap: 12px }
+header { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center }
+h1 { font-family: var(--display); font-weight: 800; font-size: 30px; letter-spacing: .02em; margin: 0; text-transform: uppercase; line-height: 1 }
+h1 span { color: var(--accent) }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center }
+label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; display: flex; gap: 6px; align-items: center }
+input[type=number], select { background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 4px; padding: 6px 8px; font: inherit; width: 90px }
+select { width: auto }
+button { background: var(--accent); color: #1b1608; border: 0; border-radius: 4px; padding: 7px 12px; font: 700 13px var(--body); cursor: pointer }
+button.ghost { background: var(--panel); color: var(--fg); border: 1px solid var(--line) }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--route); outline-offset: 2px }
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 12px; align-items: start }
+@media (max-width: 860px) { .main { grid-template-columns: minmax(0, 1fr) } }
+.map { background: #0f1113; border: 1px solid var(--line); border-radius: 6px; overflow: auto; max-height: 82vh }
+canvas { display: block }
+aside { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px; display: grid; gap: 14px; min-width: 0 }
+aside h2 { font-family: var(--display); font-weight: 600; font-size: 17px; text-transform: uppercase; letter-spacing: .05em; margin: 0 0 6px; color: var(--accent) }
+dl { display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; margin: 0; font-variant-numeric: tabular-nums }
+dt { color: var(--muted) } dd { margin: 0; text-align: right }
+.legend { display: grid; gap: 4px }
+.legend div { display: flex; gap: 8px; align-items: center }
+.sw { width: 22px; height: 12px; border-radius: 2px; flex: none }
+.ln { width: 22px; height: 0; border-top: 3px solid; flex: none }
+.note { color: var(--muted); font-size: 12px; line-height: 1.45 }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Ciudad <span>zombi</span></h1>
+    <div class="controls">
+      <label for="seed">Semilla <input id="seed" type="number" value="7"></label>
+      <label for="size">Tamaño <select id="size"><option value="110x80">Chica</option><option value="150x110" selected>Media</option><option value="200x150">Grande</option></select></label>
+      <button id="go">Generar</button>
+      <button id="rnd" class="ghost">Otra ciudad</button>
+      <button id="zin" class="ghost" aria-label="Acercar">+</button>
+      <button id="zout" class="ghost" aria-label="Alejar">−</button>
+      <label for="showRoute"><input id="showRoute" type="checkbox" checked> Ruta</label>
+      <label for="showLabels"><input id="showLabels" type="checkbox" checked> Cuartos</label>
+    </div>
+  </header>
+  <div class="main">
+    <div class="map" id="mapBox"><canvas id="cv"></canvas></div>
+    <aside>
+      <section><h2>Ruta A → B</h2><dl id="routeStats"></dl></section>
+      <section><h2>Ciudad</h2><dl id="stats"></dl></section>
+      <section><h2>Leyenda</h2><div class="legend" id="legend"></div></section>
+      <p class="note">Las rejas cierran calles y patios: hay que rodear o buscar un portón. Las ventanas cerradas no se abren; las rotas (naranja) se pueden trepar. Los refugios tienen una sola entrada. 1 celda = 2 personas = 2 m arcade.</p>
+    </aside>
+  </div>
+</div>
+
+<script src="ciudad.js"></script>
+<script>
+const { T, E } = Ciudad;
+const $ = id => document.getElementById(id);
+const COL = {
+  street: '#45494f', lane: '#c9b458', plaza: '#b6ad98', park: '#5d8a3f', yard: '#7f9150', out: '#0f1113',
+  casa: '#c9a77c', tienda: '#b9c4cc', edificio: '#a39d93', almacen: '#8d8a83', refugio: '#e8b23a',
+  wall: '#121416', fence: '#c5ccd3', gate: '#7fe08a', door: '#c0782f', win: '#8ecae6', winOpen: '#ff8a1f', tree: '#2f5a24', fount: '#4f8fc0', route: '#5fd3e8', streetRoute: '#ffffff',
+};
+const ROLE = { sala: 'sala', cocina: 'cocina', dormitorio: 'dorm', 'baño': 'baño', tienda: 'tienda', 'depósito': 'depós', 'almacén': 'almacén', oficina: 'ofic', bodega: 'bodega', 'vestíbulo': 'vestíb', depto: 'depto' };
+let map = null, zoom = 1;
+
+function draw() {
+  const m = map, box = $('mapBox'), base = Math.max(3, Math.floor((box.clientWidth - 2) / m.W));
+  const s = Math.max(2, Math.round(base * zoom)), cv = $('cv'), dpr = window.devicePixelRatio || 1;
+  cv.width = m.W * s * dpr; cv.height = m.H * s * dpr; cv.style.width = m.W * s + 'px'; cv.style.height = m.H * s + 'px';
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const { W, H, cell, under, room, vE, hE } = m;
+  // suelos
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x, t = under[i] || cell[i]; let c;
+    if (t === T.FLOOR) { const h = m.houses[m.rooms[room[i]].house]; c = h.refuge ? COL.refugio : COL[h.type]; }
+    else c = t === T.STREET ? COL.street : t === T.PLAZA ? COL.plaza : t === T.PARK ? COL.park : t === T.YARD ? COL.yard : COL.out;
+    g.fillStyle = c; g.fillRect(x * s, y * s, s, s);
+  }
+  // líneas de carril en calles anchas sin reja al medio
+  g.strokeStyle = COL.lane; g.lineWidth = Math.max(1, s * 0.12); g.setLineDash([s * 1.2, s * 1.2]);
+  for (const st of m.streets) if (st.width >= 4 && !st.median) { g.beginPath(); if (st.dir === 'v') { const x = (st.x + st.width / 2) * s; g.moveTo(x, st.y * s); g.lineTo(x, (st.y + st.h) * s); } else { const y = (st.y + st.width / 2) * s; g.moveTo(st.x * s, y); g.lineTo((st.x + st.w) * s, y); } g.stroke(); }
+  g.setLineDash([]);
+  // fuentes, árboles, autos
+  for (const f of m.founts) { g.fillStyle = '#8f979c'; g.beginPath(); g.arc((f.x + f.s / 2) * s, (f.y + f.s / 2) * s, f.s * s / 2, 0, 7); g.fill(); g.fillStyle = COL.fount; g.beginPath(); g.arc((f.x + f.s / 2) * s, (f.y + f.s / 2) * s, f.s * s / 2 - s * 0.4, 0, 7); g.fill(); }
+  for (const [x, y] of m.trees) { g.fillStyle = COL.tree; g.beginPath(); g.arc((x + .5) * s, (y + .5) * s, s * 0.8, 0, 7); g.fill(); }
+  const carAt = (cx, cy, w, h, rot, color) => { g.save(); g.translate(cx * s, cy * s); g.rotate(rot * Math.PI / 180); g.fillStyle = color; g.strokeStyle = '#0c0d0e'; g.lineWidth = Math.max(1, s * .12); g.beginPath(); g.roundRect(-w * s / 2 + s * .15, -h * s / 2 + s * .15, w * s - s * .3, h * s - s * .3, s * .4); g.fill(); g.stroke(); g.fillStyle = 'rgba(20,24,30,.75)'; const cw = w > h ? w * .4 : w * .7, ch = w > h ? h * .7 : h * .4; g.fillRect(-cw * s / 2, -ch * s / 2, cw * s, ch * s); g.restore(); };
+  for (const c of m.cars) carAt(c.x + c.w / 2, c.y + c.h / 2, c.w, c.h, c.rot, c.color);
+  for (const p of m.piles) for (let k = 0; k < p.n; k++) { const t = (k + .5) / p.n, v = p.dir === 'v'; carAt(v ? p.x + t * p.w : p.x + 1.5, v ? p.y + 1.5 : p.y + t * p.h, v ? 4 : 2, v ? 2 : 4, (k % 2 ? 1 : -1) * (25 + 10 * k), ['#8c2f25', '#3a5f8f', '#9a9488'][k % 3]); }
+  // bordes: paredes, puertas, ventanas, rejas, portones
+  const seg = (x1, y1, x2, y2, color, w, dash) => { g.strokeStyle = color; g.lineWidth = w; g.setLineDash(dash || []); g.beginPath(); g.moveTo(x1 * s, y1 * s); g.lineTo(x2 * s, y2 * s); g.stroke(); };
+  const edge = (e, x1, y1, x2, y2) => {
+    if (e === E.WALL) seg(x1, y1, x2, y2, COL.wall, Math.max(1.5, s * .32));
+    else if (e === E.FENCE) seg(x1, y1, x2, y2, COL.fence, Math.max(1, s * .16), [s * .25, s * .2]);
+    else if (e === E.GATE) { g.fillStyle = COL.gate; for (const [px, py] of [[x1, y1], [x2, y2]]) g.fillRect(px * s - s * .12, py * s - s * .12, s * .24, s * .24); }
+    else if (e === E.DOOR || e === E.BIGDOOR) seg(x1, y1, x2, y2, COL.door, Math.max(1.5, s * .22));
+    else if (e === E.WIN) { seg(x1, y1, x2, y2, COL.wall, Math.max(1.5, s * .32)); seg(x1, y1, x2, y2, COL.win, Math.max(1, s * .14)); }
+    else if (e === E.WINOPEN) seg(x1, y1, x2, y2, COL.winOpen, Math.max(1.5, s * .26), [s * .2, s * .15]);
+  };
+  g.lineCap = 'square';
+  for (let y = 0; y <= H; y++) for (let x = 0; x < W; x++) { const e = hE[y * W + x]; if (e) edge(e, x, y, x + 1, y); }
+  for (let y = 0; y < H; y++) for (let x = 0; x <= W; x++) { const e = vE[y * (W + 1) + x]; if (e) edge(e, x, y, x, y + 1); }
+  g.setLineDash([]);
+  // nombres de los cuartos
+  if ($('showLabels').checked && s >= 6) {
+    g.font = `700 ${Math.max(8, Math.round(s * 1.05))}px ${getComputedStyle(document.body).fontFamily}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = 'rgba(20,18,14,.7)';
+    for (const r of m.rooms) { const w = (r.x1 - r.x0 + 1) * s, t = r.refugio ? 'REFUGIO' : ROLE[r.role] || r.role; if (g.measureText(t).width > w - 4) continue; g.fillText(t, (r.x0 + r.x1 + 1) / 2 * s, (r.y0 + r.y1 + 1) / 2 * s); }
+  }
+  // rutas
+  if ($('showRoute').checked) {
+    const path = (p, color, w, dash) => { if (!p) return; g.strokeStyle = color; g.lineWidth = w; g.setLineDash(dash || []); g.lineJoin = 'round'; g.beginPath(); p.path.forEach(([x, y], k) => k ? g.lineTo((x + .5) * s, (y + .5) * s) : g.moveTo((x + .5) * s, (y + .5) * s)); g.stroke(); g.setLineDash([]); };
+    path(m.routeStreets, COL.streetRoute, Math.max(1, s * .2), [s * .6, s * .5]);
+    path(m.route, COL.route, Math.max(2, s * .45));
+  }
+  // marcas A, B y refugios
+  const mark = (x, y, t, bg) => { const r = Math.max(9, s * 2.2); g.fillStyle = bg; g.beginPath(); g.arc(x * s, y * s, r, 0, 7); g.fill(); g.strokeStyle = '#111'; g.lineWidth = 2; g.stroke(); g.fillStyle = '#111'; g.font = `800 ${Math.round(r * 1.2)}px Saira Condensed, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(t, x * s, y * s + 1); };
+  mark(m.A[0] + .5, m.A[1] + .5, 'A', '#7fe08a');
+  m.refuges.forEach((hid, k) => { const r = m.rooms[m.houses[hid].front]; mark((r.x0 + r.x1 + 1) / 2, (r.y0 + r.y1 + 1) / 2, hid === m.B ? 'B' : 'R' + (k + 1), COL.refugio); });
+}
+
+function info() {
+  const st = map.stats, parts = Ciudad.toParts(map);
+  const row = (k, v) => `<dt>${k}</dt><dd>${v}</dd>`;
+  $('routeStats').innerHTML = row('Ruta más corta', st.ruta == null ? 'sin salida' : st.ruta + ' pasos') + row('Solo por calles', st.rutaCalles == null ? 'cortada' : st.rutaCalles + ' pasos') + row('Atajo por casas', st.ruta != null && st.rutaCalles != null ? (st.rutaCalles - st.ruta) + ' pasos' : '—') + row('Refugios en el camino', map.refuges.length - 1);
+  $('stats').innerHTML = row('Manzanas', st.manzanas) + row('Plazas / paseos / parques', `${st.plazas} / ${st.paseos} / ${st.parques}`) + row('Casas', st.casas) + row('Tiendas', st.tiendas) + row('Edificios', st.edificios) + row('Almacenes', st.almacenes) + row('Lotes baldíos', st.baldios) + row('Cuartos', st.cuartos)
+    + row('Puertas', st.puertas) + row('Ventanas cerradas', st.ventanasCerradas) + row('Ventanas rotas', st.ventanasRotas) + row('Portones en rejas', st.portones) + row('Rejas que cortan calle', st.rejasCalle) + row('Rejas con paso de 2', st.rejasParciales) + row('Avenidas con reja al medio', st.medianas) + row('Autos / choques', `${st.autos} / ${st.choques}`) + row('Piezas TruWorlds', parts.parts.length);
+}
+
+function legend() {
+  const items = [['sw', COL.street, 'Calle'], ['sw', COL.plaza, 'Plaza / paseo'], ['sw', COL.park, 'Parque'], ['sw', COL.yard, 'Patio / baldío'], ['sw', COL.casa, 'Casa'], ['sw', COL.tienda, 'Tienda'], ['sw', COL.edificio, 'Edificio'], ['sw', COL.almacen, 'Almacén'], ['sw', COL.refugio, 'Refugio'],
+    ['ln', COL.wall, 'Pared'], ['ln', COL.door, 'Puerta'], ['ln', COL.win, 'Ventana cerrada'], ['ln', COL.winOpen, 'Ventana rota (se trepa)'], ['ln', COL.fence, 'Reja'], ['ln', COL.gate, 'Portón / hueco en reja'], ['ln', COL.route, 'Ruta más corta'], ['ln', COL.streetRoute, 'Ruta solo por calles']];
+  $('legend').innerHTML = items.map(([k, c, t]) => `<div><span class="${k}" style="${k === 'sw' ? 'background' : 'border-color'}:${c}"></span>${t}</div>`).join('');
+}
+
+function run() {
+  const [w, h] = $('size').value.split('x').map(Number);
+  map = Ciudad.generate({ seed: +$('seed').value || 1, w, h });
+  draw(); info();
+}
+$('go').onclick = run;
+$('rnd').onclick = () => { $('seed').value = Math.floor(Math.random() * 99999); run(); };
+$('zin').onclick = () => { zoom = Math.min(4, zoom * 1.4); draw(); };
+$('zout').onclick = () => { zoom = Math.max(0.5, zoom / 1.4); draw(); };
+$('showRoute').onchange = $('showLabels').onchange = draw;
+window.addEventListener('resize', () => map && draw());
+legend(); run();
+</script>
