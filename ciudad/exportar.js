@@ -5,7 +5,7 @@ const fs = require('fs'), path = require('path');
 require('./ciudad.js'); require('./mazmorra_base.js'); require('./ciudad_diagonal.js'); require('./motor_ciudad.js');
 const args = Object.fromEntries(process.argv.slice(2).map(a => a.replace(/^--/, '').split('=')));
 const seed = +(args.semilla ?? 7), modo = args.modo ?? 'ciudad', diag = modo !== 'cuadricula', motor = modo === 'ciudad';
-const [w, h] = diag ? [+(args.n ?? (motor ? 14 : 19)), 0] : (args.tamano ?? '150x110').split('x').map(Number);
+const [w, h] = diag ? [+(args.n ?? (motor ? 12 : 19)), 0] : (args.tamano ?? '150x110').split('x').map(Number);
 const map = motor ? MotorCiudad.generate({ seed, n: w }) : diag ? CiudadDiagonal.generate({ seed, n: w }) : Ciudad.generate({ seed, w, h }), out = diag ? CiudadDiagonal.toParts(map) : Ciudad.toParts(map);
 const dir = path.join(__dirname, 'export', `${motor ? 'ciudad' : diag ? 'diagonal' : 'cuadricula'}_semilla_${seed}`);
 fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });

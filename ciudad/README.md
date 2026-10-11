@@ -14,6 +14,12 @@ Está separado del generador de mazmorras (`editor/`), que no se tocó. Tiene tr
   - **Calles con jerarquía**: calzada para autos (calles de 6 → 4 de calzada + veredas; avenidas desde el borde hasta la
     plaza, más anchas y con **mediana**), **veredas** pegadas a cada manzana (con bordillo), y las calles de menos de 3 de
     ancho son **pasajes peatonales** (personas y bicis).
+  - **Anchos de vía (vehículos)**: un carril mide al menos 4 de ancho (3 en diagonal, equivalente) y una calle normal lleva
+    2 carriles: **10 de ancho = 8 de calzada + 1 de vereda por lado** (escala ×4 + 1 de ensanche). Anillo de 10; autopistas y
+    avenida central de **2 carriles por sentido con mediana** (18). Ningún tramo de calzada queda con menos de 3: lo más
+    angosto pasa a vereda. Las veredas siguen las diagonales sin escalones.
+  - **Edificios especiales = recintos propios**: cada uno en su terreno cercado, separado de las casas, con **estacionamiento
+    al frente que llega a la calle**, portón de 4 del estacionamiento al terreno y el edificio de planta limpia en el medio.
   - **Borde**: el anillo de asfalto y las autopistas llevan **vereda a ambos lados**. Una **avenida-autopista** de 12
     (veredas + calzada con mediana) cruza la ciudad pasando junto a la plaza.
   - **Calzada para vehículos**: ningún tramo de calzada queda con menos de 3 de ancho (lo más angosto pasa a vereda).
@@ -57,7 +63,7 @@ Está separado del generador de mazmorras (`editor/`), que no se tocó. Tiene tr
 - `ciudad.js`: modo cuadrícula y la tabla `MEDIDAS` que usan los dos modos.
 - `index.html`: el visor. Elige modo, semilla y tamaño, y mira la ruta A→B.
 - `exportar.js`: escribe las piezas para TruWorlds.
-- `export/ciudad_semilla_7/`: **la ciudad del motor** (n=14, ~11.000 piezas).
+- `export/ciudad_semilla_7/`: **la ciudad del motor** (n=12, ~17.000 piezas).
 - `export/diagonal_semilla_7/`: ciudad diagonal ya exportada (19×19, **5.468 piezas, 25 chunks, máx. 391**).
 - `export/cuadricula_semilla_7/`: ciudad en cuadrícula ya exportada (150×110 celdas, 2.413 piezas).
 
@@ -126,7 +132,7 @@ Con estas medidas se cumple lo de TruWorlds: puertas de 8 studs o más, techos d
 
 ## Regenerar
 ```
-node ciudad/exportar.js --semilla=7 --n=14                          # ciudad (n: 12, 14, 16 o 18 = enorme)
+node ciudad/exportar.js --semilla=7 --n=12                          # ciudad (n: 10, 12, 14 o 16 = enorme)
 node ciudad/exportar.js --semilla=7 --modo=diagonal --n=19          # mazmorra pintada
 node ciudad/exportar.js --semilla=7 --modo=cuadricula --tamano=150x110
 ```

@@ -1,1 +1,1 @@
-{"name":"CiudadD_5_6","center":[-184,0,72],"parts":[{"name":"Plaza","shape":"Block","pos":[-172,-0.3,108],"size":[296,1,552],"rot":[0,0,0],"color":[0.725,0.69,0.612],"material":"Marble"}]}
+{"name":"CiudadD_14_6","center":[1888,0,-160],"parts":[{"name":"Mediana","shape":"Block","pos":[1768,2,-40],"size":[114,4,2],"rot":[0,0,0],"color":[0.788,0.765,0.71],"material":"SmoothSurface"}]}
