@@ -3,17 +3,25 @@
 Generador de ciudad para un juego de zombis con refugios: se va del punto A al punto B por calles, patios y casas.
 Está separado del generador de mazmorras (`editor/`), que no se tocó. Tiene tres modos:
 
-- **Ciudad (motor derivado, el principal)**: `motor_ciudad.js` usa la mazmorra como plantilla y la transforma en ciudad:
-  1. **simetría**: se queda la mitad con más plaza y se refleja (centro ordenado y simétrico);
-  2. **escala ×2** por cuartos de celda (las diagonales siguen limpias): pasillos → pistas de 4, salas → manzanas/casas grandes,
+- **Ciudad (motor derivado, el principal)**: `motor_ciudad.js` usa la mazmorra como plantilla y la transforma en ciudad,
+  respetando sus **reglas de vértices** (sin paredes cruzadas, sin filos a 45°, cuartos de 4 de ancho o más, puertas centradas
+  que no tocan otra pared; se mide con el mismo `checkRules` de la mazmorra):
+  1. **contorno simétrico, interior libre** (la silueta de la ciudad se refleja; calles y casas no);
+  2. **escala ×3** por cuartos de celda (las diagonales siguen limpias): pasillos → calles de 6, salas → manzanas,
      sala del jefe → **plaza grande** (libre, con reja y portones: ahí pones obstáculos y la entrada/salida);
-  3. **ensanche**: las pistas crecen 1 celda por lado → pistas de 6; en las rectas, **mediana** al medio (doble vía) con cortes para cruzar;
-  4. **zonas** como en una ciudad: junto a la plaza comercio (tiendas, oficinas y un **centro comercial**), anillo medio de
-     **condominios**, afuera **suburbio** de casas y algún almacén; los huecos grandes de la mazmorra son **parques**;
-  5. **casas con cuartos**: cada casa se parte en cuartos según su orientación (cortes rectos o diagonales), con puerta a la
-     calle centrada en su pared más larga, puertas interiores y ventanas (cerradas o rotas);
-  6. **ingeniería vial**: se derriban algunas casas que obligaban a dar un rodeo largo y su lugar queda como calle nueva;
-  7. entrada **A** en la muralla, ruta A → plaza y 2 refugios junto a la ruta.
+  3. **jerarquía de calles** de ciudad orgánica pero funcional: 3–4 **avenidas** desde la muralla hasta la plaza, más anchas
+     y con **mediana** (doble vía, con cortes para cruzar); calles sueltas se unen a la red (nada encerrado);
+  4. **chaflán** en las esquinas de las manzanas (sin esquinas de 90°, como la mazmorra);
+  5. **zonas**: comercio (tiendas y oficinas) junto a la plaza, **condominios** en el anillo medio, **suburbio** afuera;
+     los huecos grandes de la mazmorra son **parques**;
+  6. **manzanas en lotes** que dan a la calle; cada lote es una **casa de 3 a 7 cuartos** al frente y un **patio de césped**
+     atrás (reja con la calle y con los patios vecinos, portón, puerta trasera). Cortes rectos o diagonales según la casa,
+     siempre en "T" contra una pared;
+  7. **centro comercial en pesa** (dumbbell, el plano clásico): un ancla en cada punta, pasillo central con locales
+     enfrentados a los dos lados y un pasaje al medio hacia la calle; hasta 3 por ciudad;
+  8. **ingeniería vial**: se derriban casas que obligaban a un rodeo largo y su lugar queda como calle nueva;
+  9. **A y B lo más lejos posible**: A es el punto de la muralla más lejano a la plaza (B); al final se revisa desde A que
+     se llegue a todo y donde no, se abre una puerta o portón.
 - **Mazmorra pintada** (`ciudad_diagonal.js`): la mazmorra tal cual con capa de ciudad (la versión anterior).
 
 - **Diagonal (base mazmorra, el principal)**: parte del generador de mazmorras con sus diagonales y formas ya pulidas y le
@@ -30,7 +38,7 @@ Está separado del generador de mazmorras (`editor/`), que no se tocó. Tiene tr
 - `ciudad.js`: modo cuadrícula y la tabla `MEDIDAS` que usan los dos modos.
 - `index.html`: el visor. Elige modo, semilla y tamaño, y mira la ruta A→B.
 - `exportar.js`: escribe las piezas para TruWorlds.
-- `export/ciudad_semilla_7/`: **la ciudad del motor** (n=12).
+- `export/ciudad_semilla_7/`: **la ciudad del motor** (n=12, ~8.900 piezas en 78 chunks, máx. 280).
 - `export/diagonal_semilla_7/`: ciudad diagonal ya exportada (19×19, **5.468 piezas, 25 chunks, máx. 391**).
 - `export/cuadricula_semilla_7/`: ciudad en cuadrícula ya exportada (150×110 celdas, 2.413 piezas).
 
@@ -96,7 +104,7 @@ Con estas medidas se cumple lo de TruWorlds: puertas de 8 studs o más, techos d
 
 ## Regenerar
 ```
-node ciudad/exportar.js --semilla=7 --n=12                          # ciudad (n: 10, 12 o 16)
+node ciudad/exportar.js --semilla=7 --n=12                          # ciudad (n: 10, 12 o 14)
 node ciudad/exportar.js --semilla=7 --modo=diagonal --n=19          # mazmorra pintada
 node ciudad/exportar.js --semilla=7 --modo=cuadricula --tamano=150x110
 ```

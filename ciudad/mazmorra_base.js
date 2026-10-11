@@ -1851,5 +1851,5 @@ function checkRules(w, h, ws, ds, cols) { // cols: columns ('x,y'): a wall endin
 }
 
 
-root.MazmorraBase = { Halls, floorView, wk, parseW };
+root.MazmorraBase = { Halls, floorView, checkRules, wk, parseW };
 })(typeof window !== 'undefined' ? window : globalThis);

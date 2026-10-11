@@ -12,7 +12,7 @@ const vk = (x, y) => x + ',' + y;
 function wk(a, b) { const [p, q] = (a[1] < b[1] || (a[1] === b[1] && a[0] <= b[0])) ? [a, b] : [b, a]; return vk(p[0], p[1]) + '|' + vk(q[0], q[1]); }
 const parseW = k => k.split('|').map(s => s.split(',').map(Number));
 ${src}
-root.MazmorraBase = { Halls, floorView, wk, parseW };
+root.MazmorraBase = { Halls, floorView, checkRules, wk, parseW };
 })(typeof window !== 'undefined' ? window : globalThis);
 `;
 fs.writeFileSync(path.join(__dirname, 'mazmorra_base.js'), out);

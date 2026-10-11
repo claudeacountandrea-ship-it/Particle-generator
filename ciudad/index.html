@@ -59,7 +59,7 @@ dt { color: var(--muted) } dd { margin: 0; text-align: right }
       <section><h2>Ruta A → B</h2><dl id="routeStats"></dl></section>
       <section><h2>Ciudad</h2><dl id="stats"></dl></section>
       <section><h2>Leyenda</h2><div class="legend" id="legend"></div></section>
-      <p class="note">Las rejas cierran calles y patios: hay que rodear o buscar un portón. Las ventanas cerradas no se abren; las rotas (naranja) se pueden trepar. Los refugios tienen una sola entrada. 1 celda = 2 personas = 2 m arcade. El modo ciudad es un motor derivado de la mazmorra: refleja una mitad (simetría), escala ×2, ensancha las pistas a 6 con mediana, reparte zonas (comercio y oficinas junto a la plaza, condominios, suburbio), parte las casas en cuartos y derriba algunas para abrir calles nuevas.</p>
+      <p class="note">Las rejas cierran calles y patios: hay que rodear o buscar un portón. Las ventanas cerradas no se abren; las rotas (naranja) se pueden trepar. Los refugios tienen una sola entrada. 1 celda = 2 personas = 2 m arcade. El modo ciudad es un motor derivado de la mazmorra con sus reglas de vértices (sin paredes cruzadas ni filos): contorno simétrico e interior libre, escala ×3, avenidas de la muralla a la plaza con mediana, zonas (comercio y oficinas junto a la plaza, condominios, suburbio), manzanas en lotes con casa de 3 a 7 cuartos y patio de césped, centro comercial en pesa (anclas en las puntas, pasillo con locales) y algunas casas derribadas para abrir calles.</p>
     </aside>
   </div>
 </div>
@@ -159,7 +159,7 @@ function info() {
 }
 
 function legend() {
-  const items = [['sw', COL.street, 'Calle'], ['sw', COL.plaza, 'Plaza / paseo'], ['sw', COL.park, 'Parque'], ['sw', COL.yard, 'Patio / baldío'], ['sw', COL.casa, 'Casa'], ['sw', COL.tienda, 'Tienda'], ['sw', COL.edificio, 'Edificio'], ['sw', COL.almacen, 'Almacén'], ['sw', '#d3b98f', 'Condominio'], ['sw', '#8fa3b8', 'Oficinas'], ['sw', '#e6e1d6', 'Centro comercial'], ['sw', COL.refugio, 'Refugio'], ['ln', '#e3c75a', 'Mediana (doble vía)'],
+  const items = [['sw', COL.street, 'Calle'], ['sw', COL.plaza, 'Plaza / paseo'], ['sw', COL.park, 'Parque'], ['sw', '#7f9a4c', 'Patio (césped)'], ['sw', COL.casa, 'Casa'], ['sw', COL.tienda, 'Tienda'], ['sw', COL.edificio, 'Edificio'], ['sw', COL.almacen, 'Almacén'], ['sw', '#d3b98f', 'Condominio'], ['sw', '#8fa3b8', 'Oficinas'], ['sw', '#e6e1d6', 'Centro comercial'], ['sw', COL.refugio, 'Refugio'], ['ln', '#e3c75a', 'Mediana (doble vía)'],
     ['ln', COL.wall, 'Pared'], ['ln', COL.door, 'Puerta'], ['ln', COL.win, 'Ventana cerrada'], ['ln', COL.winOpen, 'Ventana rota (se trepa)'], ['ln', COL.fence, 'Reja'], ['ln', COL.gate, 'Portón / hueco en reja'], ['ln', COL.route, 'Ruta más corta'], ['ln', COL.streetRoute, 'Ruta solo por calles']];
   $('legend').innerHTML = items.map(([k, c, t]) => `<div><span class="${k}" style="${k === 'sw' ? 'background' : 'border-color'}:${c}"></span>${t}</div>`).join('');
 }
@@ -169,7 +169,7 @@ function run() {
   if ($('mode').value !== 'grid') {
     $('routeStats').innerHTML = '<dt>Generando… (5 a 15 s)</dt><dd></dd>';
     const motor = $('mode').value === 'motor';
-    setTimeout(() => { map = { diag: motor ? MotorCiudad.generate({ seed, n: { s: 10, m: 12, l: 16 }[sz] }) : CiudadDiagonal.generate({ seed, n: { s: 12, m: 16, l: 19 }[sz] }) }; draw(); info(); }, 30);
+    setTimeout(() => { map = { diag: motor ? MotorCiudad.generate({ seed, n: { s: 10, m: 12, l: 14 }[sz] }) : CiudadDiagonal.generate({ seed, n: { s: 12, m: 16, l: 19 }[sz] }) }; draw(); info(); }, 30);
     return;
   }
   const [w, h] = { s: [110, 80], m: [150, 110], l: [200, 150] }[sz];
