@@ -1,0 +1,336 @@
+{
+ "formato": "TruWorlds piezas v1: {name, shape, pos, size, rot (grados, orden Y,X,Z), color 0-1, material}; studs; Y arriba; el norte del mapa mira a -Z; el mapa está centrado en el origen",
+ "modo": "diagonal (base mazmorra)",
+ "semilla": 7,
+ "tamano": "19x19 (lattice de la mazmorra)",
+ "medidas": {
+  "studsPorMetro": 4,
+  "personaje": 3,
+  "celda": 2,
+  "pared": 4,
+  "puerta": 3,
+  "alfeizar": 1,
+  "reja": 2,
+  "grosor": 0.5
+ },
+ "escala": {
+  "studsPorCelda": 8,
+  "alturaPared": 16,
+  "alturaPuerta": 12,
+  "mapaStuds": [
+   1296,
+   1296
+  ],
+  "mapaMetros": [
+   324,
+   324
+  ]
+ },
+ "totalPiezas": 5468,
+ "chunks": [
+  {
+   "archivo": "chunk_00.json",
+   "nombre": "CiudadD_0_0",
+   "centro": [
+    -520,
+    0,
+    -520
+   ],
+   "piezas": 19
+  },
+  {
+   "archivo": "chunk_01.json",
+   "nombre": "CiudadD_0_1",
+   "centro": [
+    -520,
+    0,
+    -264
+   ],
+   "piezas": 118
+  },
+  {
+   "archivo": "chunk_02.json",
+   "nombre": "CiudadD_0_2",
+   "centro": [
+    -520,
+    0,
+    -8
+   ],
+   "piezas": 334
+  },
+  {
+   "archivo": "chunk_03.json",
+   "nombre": "CiudadD_0_3",
+   "centro": [
+    -520,
+    0,
+    248
+   ],
+   "piezas": 340
+  },
+  {
+   "archivo": "chunk_04.json",
+   "nombre": "CiudadD_0_4",
+   "centro": [
+    -520,
+    0,
+    504
+   ],
+   "piezas": 46
+  },
+  {
+   "archivo": "chunk_05.json",
+   "nombre": "CiudadD_1_0",
+   "centro": [
+    -264,
+    0,
+    -520
+   ],
+   "piezas": 268
+  },
+  {
+   "archivo": "chunk_06.json",
+   "nombre": "CiudadD_1_1",
+   "centro": [
+    -264,
+    0,
+    -264
+   ],
+   "piezas": 338
+  },
+  {
+   "archivo": "chunk_07.json",
+   "nombre": "CiudadD_1_2",
+   "centro": [
+    -264,
+    0,
+    -8
+   ],
+   "piezas": 360
+  },
+  {
+   "archivo": "chunk_08.json",
+   "nombre": "CiudadD_1_3",
+   "centro": [
+    -264,
+    0,
+    248
+   ],
+   "piezas": 249
+  },
+  {
+   "archivo": "chunk_09.json",
+   "nombre": "CiudadD_1_4",
+   "centro": [
+    -264,
+    0,
+    504
+   ],
+   "piezas": 107
+  },
+  {
+   "archivo": "chunk_10.json",
+   "nombre": "CiudadD_2_0",
+   "centro": [
+    -8,
+    0,
+    -520
+   ],
+   "piezas": 322
+  },
+  {
+   "archivo": "chunk_11.json",
+   "nombre": "CiudadD_2_1",
+   "centro": [
+    -8,
+    0,
+    -264
+   ],
+   "piezas": 358
+  },
+  {
+   "archivo": "chunk_12.json",
+   "nombre": "CiudadD_2_2",
+   "centro": [
+    -8,
+    0,
+    -8
+   ],
+   "piezas": 391
+  },
+  {
+   "archivo": "chunk_13.json",
+   "nombre": "CiudadD_2_3",
+   "centro": [
+    -8,
+    0,
+    248
+   ],
+   "piezas": 284
+  },
+  {
+   "archivo": "chunk_14.json",
+   "nombre": "CiudadD_2_4",
+   "centro": [
+    -8,
+    0,
+    504
+   ],
+   "piezas": 186
+  },
+  {
+   "archivo": "chunk_15.json",
+   "nombre": "CiudadD_3_0",
+   "centro": [
+    248,
+    0,
+    -520
+   ],
+   "piezas": 217
+  },
+  {
+   "archivo": "chunk_16.json",
+   "nombre": "CiudadD_3_1",
+   "centro": [
+    248,
+    0,
+    -264
+   ],
+   "piezas": 260
+  },
+  {
+   "archivo": "chunk_17.json",
+   "nombre": "CiudadD_3_2",
+   "centro": [
+    248,
+    0,
+    -8
+   ],
+   "piezas": 299
+  },
+  {
+   "archivo": "chunk_18.json",
+   "nombre": "CiudadD_3_3",
+   "centro": [
+    248,
+    0,
+    248
+   ],
+   "piezas": 353
+  },
+  {
+   "archivo": "chunk_19.json",
+   "nombre": "CiudadD_3_4",
+   "centro": [
+    248,
+    0,
+    504
+   ],
+   "piezas": 103
+  },
+  {
+   "archivo": "chunk_20.json",
+   "nombre": "CiudadD_4_0",
+   "centro": [
+    504,
+    0,
+    -520
+   ],
+   "piezas": 11
+  },
+  {
+   "archivo": "chunk_21.json",
+   "nombre": "CiudadD_4_1",
+   "centro": [
+    504,
+    0,
+    -264
+   ],
+   "piezas": 36
+  },
+  {
+   "archivo": "chunk_22.json",
+   "nombre": "CiudadD_4_2",
+   "centro": [
+    504,
+    0,
+    -8
+   ],
+   "piezas": 227
+  },
+  {
+   "archivo": "chunk_23.json",
+   "nombre": "CiudadD_4_3",
+   "centro": [
+    504,
+    0,
+    248
+   ],
+   "piezas": 226
+  },
+  {
+   "archivo": "chunk_24.json",
+   "nombre": "CiudadD_4_4",
+   "centro": [
+    504,
+    0,
+    504
+   ],
+   "piezas": 16
+  }
+ ],
+ "spawns": {
+  "PlayerStart": {
+   "pos": [
+    -36.957,
+    12,
+    -531.043
+   ],
+   "nota": "punto A: el patio de entrada de la ciudad"
+  },
+  "refugios": [
+   {
+    "nombre": "Refugio 1",
+    "pos": [
+     154.46,
+     12,
+     -374.567
+    ],
+    "casa": "casa"
+   },
+   {
+    "nombre": "Refugio 2",
+    "pos": [
+     279.318,
+     12,
+     -244.318
+    ],
+    "casa": "casa"
+   },
+   {
+    "nombre": "B (refugio final)",
+    "pos": [
+     466.4,
+     12,
+     -101.6
+    ],
+    "casa": "casa"
+   }
+  ]
+ },
+ "estadisticas": {
+  "casas": 89,
+  "tiendas": 14,
+  "edificios": 12,
+  "almacenes": 8,
+  "refugios": 3,
+  "cuartos": 229,
+  "puertas": 377,
+  "ventanasCerradas": 177,
+  "ventanasRotas": 45,
+  "rejas": 122,
+  "portones": 177,
+  "tramosDiagonales": 1496,
+  "ruta": 362
+ }
+}

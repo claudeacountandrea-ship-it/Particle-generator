@@ -43,7 +43,8 @@ dt { color: var(--muted) } dd { margin: 0; text-align: right }
     <h1>Ciudad <span>zombi</span></h1>
     <div class="controls">
       <label for="seed">Semilla <input id="seed" type="number" value="7"></label>
-      <label for="size">Tamaño <select id="size"><option value="110x80">Chica</option><option value="150x110" selected>Media</option><option value="200x150">Grande</option></select></label>
+      <label for="mode">Modo <select id="mode"><option value="diag" selected>Diagonal (base mazmorra)</option><option value="grid">Cuadrícula</option></select></label>
+      <label for="size">Tamaño <select id="size"><option value="s">Chica</option><option value="m" selected>Media</option><option value="l">Grande</option></select></label>
       <button id="go">Generar</button>
       <button id="rnd" class="ghost">Otra ciudad</button>
       <button id="zin" class="ghost" aria-label="Acercar">+</button>
@@ -58,12 +59,14 @@ dt { color: var(--muted) } dd { margin: 0; text-align: right }
       <section><h2>Ruta A → B</h2><dl id="routeStats"></dl></section>
       <section><h2>Ciudad</h2><dl id="stats"></dl></section>
       <section><h2>Leyenda</h2><div class="legend" id="legend"></div></section>
-      <p class="note">Las rejas cierran calles y patios: hay que rodear o buscar un portón. Las ventanas cerradas no se abren; las rotas (naranja) se pueden trepar. Los refugios tienen una sola entrada. 1 celda = 2 personas = 2 m arcade.</p>
+      <p class="note">Las rejas cierran calles y patios: hay que rodear o buscar un portón. Las ventanas cerradas no se abren; las rotas (naranja) se pueden trepar. Los refugios tienen una sola entrada. 1 celda = 2 personas = 2 m arcade. El modo diagonal parte del generador de mazmorras: pasillos → calles, salas → casas, paredes del medio → rejas, compuertas → portones, huecos → ruinas.</p>
     </aside>
   </div>
 </div>
 
 <script src="ciudad.js"></script>
+<script src="mazmorra_base.js"></script>
+<script src="ciudad_diagonal.js"></script>
 <script>
 const { T, E } = Ciudad;
 const $ = id => document.getElementById(id);
@@ -76,6 +79,7 @@ const ROLE = { sala: 'sala', cocina: 'cocina', dormitorio: 'dorm', 'baño': 'ba�
 let map = null, zoom = 1;
 
 function draw() {
+  if (map.diag) return drawDiag();
   const m = map, box = $('mapBox'), base = Math.max(3, Math.floor((box.clientWidth - 2) / m.W));
   const s = Math.max(2, Math.round(base * zoom)), cv = $('cv'), dpr = window.devicePixelRatio || 1;
   cv.width = m.W * s * dpr; cv.height = m.H * s * dpr; cv.style.width = m.W * s + 'px'; cv.style.height = m.H * s + 'px';
@@ -129,7 +133,21 @@ function draw() {
   m.refuges.forEach((hid, k) => { const r = m.rooms[m.houses[hid].front]; mark((r.x0 + r.x1 + 1) / 2, (r.y0 + r.y1 + 1) / 2, hid === m.B ? 'B' : 'R' + (k + 1), COL.refugio); });
 }
 
+function drawDiag() {
+  const c = map.diag, box = $('mapBox'), base = Math.max(3, Math.floor((box.clientWidth - 2) / c.C4));
+  const s = Math.max(2, Math.round(base * zoom)), cv = $('cv'), dpr = window.devicePixelRatio || 1;
+  cv.width = c.C4 * s * dpr; cv.height = (c.H - 1) * s * dpr; cv.style.width = c.C4 * s + 'px'; cv.style.height = (c.H - 1) * s + 'px';
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  CiudadDiagonal.draw(g, c, s, { route: $('showRoute').checked });
+}
+function infoDiag() {
+  const st = map.diag.stats, parts = CiudadDiagonal.toParts(map.diag), row = (k, v) => `<dt>${k}</dt><dd>${v}</dd>`;
+  $('routeStats').innerHTML = row('Camino A → B', st.ruta + ' pasos') + row('Refugios en el camino', st.refugios - 1);
+  $('stats').innerHTML = row('Casas', st.casas) + row('Tiendas', st.tiendas) + row('Edificios', st.edificios) + row('Almacenes', st.almacenes) + row('Cuartos', st.cuartos) + row('Puertas', st.puertas)
+    + row('Ventanas cerradas', st.ventanasCerradas) + row('Ventanas rotas', st.ventanasRotas) + row('Tramos de reja', st.rejas) + row('Portones', st.portones) + row('Tramos en diagonal', st.tramosDiagonales) + row('Piezas TruWorlds', parts.parts.length);
+}
 function info() {
+  if (map.diag) return infoDiag();
   const st = map.stats, parts = Ciudad.toParts(map);
   const row = (k, v) => `<dt>${k}</dt><dd>${v}</dd>`;
   $('routeStats').innerHTML = row('Ruta más corta', st.ruta == null ? 'sin salida' : st.ruta + ' pasos') + row('Solo por calles', st.rutaCalles == null ? 'cortada' : st.rutaCalles + ' pasos') + row('Atajo por casas', st.ruta != null && st.rutaCalles != null ? (st.rutaCalles - st.ruta) + ' pasos' : '—') + row('Refugios en el camino', map.refuges.length - 1);
@@ -144,8 +162,14 @@ function legend() {
 }
 
 function run() {
-  const [w, h] = $('size').value.split('x').map(Number);
-  map = Ciudad.generate({ seed: +$('seed').value || 1, w, h });
+  const seed = +$('seed').value || 1, sz = $('size').value;
+  if ($('mode').value === 'diag') {
+    $('routeStats').innerHTML = '<dt>Generando…</dt><dd></dd>';
+    setTimeout(() => { map = { diag: CiudadDiagonal.generate({ seed, n: { s: 12, m: 16, l: 19 }[sz] }) }; draw(); info(); }, 30);
+    return;
+  }
+  const [w, h] = { s: [110, 80], m: [150, 110], l: [200, 150] }[sz];
+  map = Ciudad.generate({ seed, w, h });
   draw(); info();
 }
 $('go').onclick = run;
@@ -153,6 +177,7 @@ $('rnd').onclick = () => { $('seed').value = Math.floor(Math.random() * 99999); 
 $('zin').onclick = () => { zoom = Math.min(4, zoom * 1.4); draw(); };
 $('zout').onclick = () => { zoom = Math.max(0.5, zoom / 1.4); draw(); };
 $('showRoute').onchange = $('showLabels').onchange = draw;
+$('mode').onchange = run;
 window.addEventListener('resize', () => map && draw());
 legend(); run();
 </script>

@@ -1,10 +1,8 @@
 {
  "formato": "TruWorlds piezas v1: {name, shape, pos, size, rot (grados, orden Y,X,Z), color 0-1, material}; studs; Y arriba; el norte del mapa mira a -Z; el mapa está centrado en el origen",
+ "modo": "cuadricula",
  "semilla": 7,
- "tamanoCeldas": [
-  150,
-  110
- ],
+ "tamano": "150x110 celdas",
  "medidas": {
   "studsPorMetro": 4,
   "personaje": 3,
