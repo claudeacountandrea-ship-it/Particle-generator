@@ -110,11 +110,11 @@
     const ROOF = { casa: '#8c4a3a', tienda: '#5a6470', edificio: '#4e4a46', oficinas: '#3f4a57', condominio: '#7a5a48', comercial: '#e0ddd6', almacen: '#6d6f73', entrada: '#6d6f73' };
     // suelo de calle bajo toda la ciudad, pisos de las casas encima, escombros en los huecos
     for (const g of greedy((x, y) => anyIn(x, y) ? 1 : null)) add('Calle', 'Block', [X(g.x + g.w / 2), -0.5, Z(g.y + g.h / 2)], [g.w * C, 1, g.h * C], '#3d4045', 'SmoothSurface', null, g.x + g.w / 2, g.y + g.h / 2);
-    for (const g of greedy(fullRoom)) { const h = c.houses.get(g.k), [cl, mt] = h.refuge ? ['#c9a43a', 'Wood'] : FLOOR[h.type]; add('Piso', 'Block', [X(g.x + g.w / 2), -0.3, Z(g.y + g.h / 2)], [g.w * C, 1, g.h * C], cl, mt, null, g.x + g.w / 2, g.y + g.h / 2); }
-    for (const [kd, nm, cl, mt] of [['plaza', 'Plaza', '#b9b09c', 'Marble'], ['parque', 'Parque', '#5f8a3e', 'Grass'], ['patio', 'Patio', '#7d8f4e', 'Grass']]) for (const g of greedy((x, y) => { const ls = cellLabels(x, y); return ls.some(l => c.kindOf(l) === kd) ? 1 : null; })) add(nm, 'Block', [X(g.x + g.w / 2), -0.3, Z(g.y + g.h / 2)], [g.w * C, 1, g.h * C], cl, mt, null, g.x + g.w / 2, g.y + g.h / 2);
+    for (const g of greedy(fullRoom)) { const h = c.houses.get(g.k), [cl, mt] = h.refuge ? ['#c9a43a', 'Wood'] : FLOOR[h.type] || FLOOR.casa; add('Piso', 'Block', [X(g.x + g.w / 2), -0.3, Z(g.y + g.h / 2)], [g.w * C, 1, g.h * C], cl, mt, null, g.x + g.w / 2, g.y + g.h / 2); }
+    for (const [kd, nm, cl, mt] of [['plaza', 'Plaza', '#b9b09c', 'Marble'], ['parque', 'Parque', '#5f8a3e', 'Grass'], ['patio', 'Patio', '#7d8f4e', 'Grass'], ['vereda', 'Vereda', '#a7a39b', 'SmoothSurface'], ['pasaje', 'Pasaje', '#8a7d6a', 'Gravel']]) for (const g of greedy((x, y) => { const ls = cellLabels(x, y); return ls.some(l => c.kindOf(l) === kd) ? 1 : null; })) add(nm, 'Block', [X(g.x + g.w / 2), -0.3, Z(g.y + g.h / 2)], [g.w * C, 1, g.h * C], cl, mt, null, g.x + g.w / 2, g.y + g.h / 2);
     for (const g of greedy((x, y) => { const ls = cellLabels(x, y); return ls.every(l => c.kindOf(l) === 'pillar') ? 1 : null; })) add('Ruina', 'Block', [X(g.x + g.w / 2), WALL_H / 4, Z(g.y + g.h / 2)], [g.w * C, WALL_H / 2, g.h * C], '#4a4038', 'Gravel', null, g.x + g.w / 2, g.y + g.h / 2);
     if (o.roofs !== false) for (const g of greedy((x, y) => { const l = fullRoom(x, y); return l && l !== c.houseOf(c.bossL) ? l : null; })) {
-      const h = c.houses.get(g.k); add('Techo', 'Block', [X(g.x + g.w / 2), WALL_H + 0.5, Z(g.y + g.h / 2)], [g.w * C + TH, 1, g.h * C + TH], h.refuge ? '#d4a017' : ROOF[h.type], 'SmoothSurface', null, g.x + g.w / 2, g.y + g.h / 2);
+      const h = c.houses.get(g.k); add('Techo', 'Block', [X(g.x + g.w / 2), WALL_H + 0.5, Z(g.y + g.h / 2)], [g.w * C + TH, 1, g.h * C + TH], h.refuge ? '#d4a017' : (root.CiudadTone ? root.CiudadTone.houseTone(h, ROOF[h.type] || ROOF.casa) : ROOF[h.type]), 'SmoothSurface', null, g.x + g.w / 2, g.y + g.h / 2);
     }
     // bordes: tramos rectos (también diagonales) fusionados en una pieza por capa
     const LAYERS = [
@@ -160,20 +160,24 @@
   }
 
   // ---------- dibujo para el visor
-  const COLS = { calle: '#45494f', out: '#0f1113', ruina: '#3a332c', casa: '#c9a77c', tienda: '#b9c4cc', edificio: '#a39d93', oficinas: '#8fa3b8', condominio: '#d3b98f', comercial: '#e6e1d6', almacen: '#8d8a83', mercado: '#b6ad98', entrada: '#7f9150', refugio: '#e8b23a', plaza: '#b6ad98', parque: '#5d8a3f', patio: '#7f9a4c' };
+  const COLS = { calle: '#45494f', vereda: '#9a958c', pasaje: '#7a6d5c', out: '#2f3d26', ruina: '#3a332c', casa: '#c9a77c', tienda: '#b9c4cc', edificio: '#a39d93', oficinas: '#8fa3b8', condominio: '#d3b98f', comercial: '#e6e1d6', almacen: '#8d8a83', mercado: '#b6ad98', entrada: '#7f9150', refugio: '#e8b23a', plaza: '#b6ad98', parque: '#5d8a3f', patio: '#7f9a4c' };
+  // cada casa con su propio tono (variación del color de su tipo), para distinguir casas vecinas
+  const shade = (hex, f) => { const v = parseInt(hex.slice(1), 16), ch = sh => Math.max(0, Math.min(255, Math.round(((v >> sh) & 255) * f))); return '#' + [16, 8, 0].map(sh => ch(sh).toString(16).padStart(2, '0')).join(''); };
+  const houseTone = (h, base) => shade(base, 0.8 + ((h.id * 2654435761 >>> 0) % 1000) / 1000 * 0.4);
+  root.CiudadTone = { shade, houseTone };
   function draw(g, c, s, opt = {}) {
     const { C4, H, q } = c;
     for (let y = 0; y < H - 1; y++) for (let x = 0; x < C4; x++) for (let kq = 0; kq < 4; kq++) {
       const l = q[(y * C4 + x) * 4 + kq], kd = c.kindOf(l); let col;
-      if (kd === 'out') col = COLS.out; else if (kd === 'corr') col = COLS.calle; else if (kd === 'pillar') col = COLS.ruina; else if (kd === 'plaza' || kd === 'parque' || kd === 'patio') col = COLS[kd];
-      else { const h = c.houses.get(c.houseOf(l)); col = h.refuge ? COLS.refugio : COLS[h.type]; }
+      if (kd === 'out') col = COLS.out; else if (kd === 'corr') col = COLS.calle; else if (kd === 'pillar') col = COLS.ruina; else if (COLS[kd] && kd !== 'room') col = COLS[kd];
+      else { const h = c.houses.get(c.houseOf(l)); col = !h ? COLS.casa : h.refuge ? COLS.refugio : houseTone(h, COLS[h.type] || COLS.casa); }
       const tri = [[[x, y], [x + 1, y]], [[x + 1, y], [x + 1, y + 1]], [[x + 1, y + 1], [x, y + 1]], [[x, y + 1], [x, y]]][kq];
       g.fillStyle = col; g.beginPath(); g.moveTo(tri[0][0] * s, tri[0][1] * s); g.lineTo(tri[1][0] * s, tri[1][1] * s); g.lineTo((x + .5) * s, (y + .5) * s); g.closePath(); g.fill();
     }
     if (opt.route) { g.fillStyle = 'rgba(95,211,232,.55)'; for (const [x, y] of c.routeCells) g.fillRect(x * s + s * .2, y * s + s * .2, s * .6, s * .6); }
     const ST = {
       exterior: ['#121416', .32], interior: ['#121416', .26], medianera: ['#121416', .32], muralla: ['#7a4b3a', .5], ruina: ['#5a4d42', .3],
-      puerta: ['#c0782f', .22], mediana: ['#e3c75a', .18, [.6, .3]], entrada: ['#7fe08a', .3, [.1, .3]], ventana: ['#8ecae6', .2], ventanaRota: ['#ff8a1f', .26, [.2, .15]], reja: ['#c5ccd3', .16, [.25, .2]], porton: ['#7fe08a', .16, [.08, .3]],
+      puerta: ['#c0782f', .22], bordillo: ['#b9b4aa', .08], mediana: ['#e3c75a', .18, [.6, .3]], entrada: ['#7fe08a', .3, [.1, .3]], ventana: ['#8ecae6', .2], ventanaRota: ['#ff8a1f', .26, [.2, .15]], reja: ['#c5ccd3', .16, [.25, .2]], porton: ['#7fe08a', .16, [.08, .3]],
     };
     g.lineCap = 'round';
     for (const sg of c.segs) {

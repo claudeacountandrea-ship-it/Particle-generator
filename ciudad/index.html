@@ -159,7 +159,7 @@ function info() {
 }
 
 function legend() {
-  const items = [['sw', COL.street, 'Calle'], ['sw', COL.plaza, 'Plaza / paseo'], ['sw', COL.park, 'Parque'], ['sw', '#7f9a4c', 'Patio (césped)'], ['sw', COL.casa, 'Casa'], ['sw', COL.tienda, 'Tienda'], ['sw', COL.edificio, 'Edificio'], ['sw', COL.almacen, 'Almacén'], ['sw', '#d3b98f', 'Condominio'], ['sw', '#8fa3b8', 'Oficinas'], ['sw', '#e6e1d6', 'Centro comercial'], ['sw', COL.refugio, 'Refugio'], ['ln', '#e3c75a', 'Mediana (doble vía)'],
+  const items = [['sw', COL.street, 'Calzada (autos)'], ['sw', '#9a958c', 'Vereda'], ['sw', '#7a6d5c', 'Pasaje peatonal'], ['sw', '#2f3d26', 'Campo'], ['sw', COL.plaza, 'Plaza / paseo'], ['sw', COL.park, 'Parque'], ['sw', '#7f9a4c', 'Patio (césped)'], ['sw', COL.casa, 'Casa'], ['sw', COL.tienda, 'Tienda'], ['sw', COL.edificio, 'Edificio'], ['sw', COL.almacen, 'Almacén'], ['sw', '#d3b98f', 'Condominio'], ['sw', '#8fa3b8', 'Oficinas'], ['sw', '#e6e1d6', 'Centro comercial'], ['sw', COL.refugio, 'Refugio'], ['ln', '#e3c75a', 'Mediana (doble vía)'],
     ['ln', COL.wall, 'Pared'], ['ln', COL.door, 'Puerta'], ['ln', COL.win, 'Ventana cerrada'], ['ln', COL.winOpen, 'Ventana rota (se trepa)'], ['ln', COL.fence, 'Reja'], ['ln', COL.gate, 'Portón / hueco en reja'], ['ln', COL.route, 'Ruta más corta'], ['ln', COL.streetRoute, 'Ruta solo por calles']];
   $('legend').innerHTML = items.map(([k, c, t]) => `<div><span class="${k}" style="${k === 'sw' ? 'background' : 'border-color'}:${c}"></span>${t}</div>`).join('');
 }
@@ -178,9 +178,16 @@ function run() {
 }
 $('go').onclick = run;
 $('rnd').onclick = () => { $('seed').value = Math.floor(Math.random() * 99999); run(); };
-$('zin').onclick = () => { zoom = Math.min(4, zoom * 1.4); draw(); };
+$('zin').onclick = () => { zoom = Math.min(10, zoom * 1.4); draw(); };
 $('zout').onclick = () => { zoom = Math.max(0.5, zoom / 1.4); draw(); };
 $('showRoute').onchange = $('showLabels').onchange = draw;
+// zoom con la rueda (hacia el punto del mouse) y arrastrar para moverse
+{ const box = $('mapBox'); let drag = null;
+  box.addEventListener('wheel', e => { if (!map) return; e.preventDefault(); const r = box.getBoundingClientRect(), fx = (box.scrollLeft + e.clientX - r.left) / box.scrollWidth, fy = (box.scrollTop + e.clientY - r.top) / box.scrollHeight;
+    zoom = Math.max(0.5, Math.min(10, zoom * (e.deltaY < 0 ? 1.25 : 0.8))); draw(); box.scrollLeft = fx * box.scrollWidth - (e.clientX - r.left); box.scrollTop = fy * box.scrollHeight - (e.clientY - r.top); }, { passive: false });
+  box.addEventListener('pointerdown', e => { drag = [e.clientX, e.clientY, box.scrollLeft, box.scrollTop]; box.setPointerCapture(e.pointerId); });
+  box.addEventListener('pointermove', e => { if (drag) { box.scrollLeft = drag[2] - (e.clientX - drag[0]); box.scrollTop = drag[3] - (e.clientY - drag[1]); } });
+  box.addEventListener('pointerup', () => { drag = null; }); }
 $('mode').onchange = run;
 window.addEventListener('resize', () => map && draw());
 legend(); run();

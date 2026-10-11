@@ -4,24 +4,22 @@ Generador de ciudad para un juego de zombis con refugios: se va del punto A al p
 Está separado del generador de mazmorras (`editor/`), que no se tocó. Tiene tres modos:
 
 - **Ciudad (motor derivado, el principal)**: `motor_ciudad.js` usa la mazmorra como plantilla y la transforma en ciudad,
-  respetando sus **reglas de vértices** (sin paredes cruzadas, sin filos a 45°, cuartos de 4 de ancho o más, puertas centradas
-  que no tocan otra pared; se mide con el mismo `checkRules` de la mazmorra):
-  1. **contorno simétrico, interior libre** (la silueta de la ciudad se refleja; calles y casas no);
-  2. **escala ×3** por cuartos de celda (las diagonales siguen limpias): pasillos → calles de 6, salas → manzanas,
-     sala del jefe → **plaza grande** (libre, con reja y portones: ahí pones obstáculos y la entrada/salida);
-  3. **jerarquía de calles** de ciudad orgánica pero funcional: 3–4 **avenidas** desde la muralla hasta la plaza, más anchas
-     y con **mediana** (doble vía, con cortes para cruzar); calles sueltas se unen a la red (nada encerrado);
-  4. **chaflán** en las esquinas de las manzanas (sin esquinas de 90°, como la mazmorra);
-  5. **zonas**: comercio (tiendas y oficinas) junto a la plaza, **condominios** en el anillo medio, **suburbio** afuera;
-     los huecos grandes de la mazmorra son **parques**;
-  6. **manzanas en lotes** que dan a la calle; cada lote es una **casa de 3 a 7 cuartos** al frente y un **patio de césped**
-     atrás (reja con la calle y con los patios vecinos, portón, puerta trasera). Cortes rectos o diagonales según la casa,
-     siempre en "T" contra una pared;
-  7. **centro comercial en pesa** (dumbbell, el plano clásico): un ancla en cada punta, pasillo central con locales
-     enfrentados a los dos lados y un pasaje al medio hacia la calle; hasta 3 por ciudad;
-  8. **ingeniería vial**: se derriban casas que obligaban a un rodeo largo y su lugar queda como calle nueva;
-  9. **A y B lo más lejos posible**: A es el punto de la muralla más lejano a la plaza (B); al final se revisa desde A que
-     se llegue a todo y donde no, se abre una puerta o portón.
+  con sus **reglas de vértices**: cada celda es entera o partida por una sola diagonal completa (nunca en X, nunca media),
+  sin filos a 45°, sin esquinas de 90° (bisel), cuartos de 4 de ancho o más, puertas que no tocan otra pared. Se mide con el
+  mismo `checkRules` de la mazmorra (semilla 7: 0 cruces, 0 huecos finos, 0 espacios chicos, 0 paredes sueltas, ~8 filos y
+  ~8 esquinas que quedan en bordes difíciles).
+  - **Sin muralla**: no es una mazmorra; la ciudad se abre al campo. Solo el contorno es simétrico; el interior es libre.
+  - **Calles con jerarquía**: calzada para autos (calles de 6 → 4 de calzada + veredas; avenidas desde el borde hasta la
+    plaza, más anchas y con **mediana**), **veredas** pegadas a cada manzana (con bordillo), y las calles de menos de 3 de
+    ancho son **pasajes peatonales** (personas y bicis).
+  - **Plaza** al centro, siempre rodeada de **césped** (con reja y varias entradas) y luego de **pista**.
+  - **Zonas**: comercio y oficinas junto a la plaza, condominios en el anillo medio, suburbio afuera, parques.
+  - **Casas**: cada manzana se parte en lotes que dan a la calle. Casas **adosadas** (comparten pared con la vecina, patio
+    atrás) y **sueltas** (rodeadas de su jardín). Cada casa es un conjunto de **3 a 7 cuartos** de tamaño parejo; el jardín
+    tiene reja y **al menos 2 entradas**; las puertas son de **2 de ancho**. Cada casa se pinta con su propio tono.
+  - **Centro comercial en pesa** (anclas en las puntas, pasillo con locales, pasaje al medio), nunca delgado.
+  - **Ingeniería vial**: algunas casas que obligaban a un rodeo se derriban y queda calle nueva.
+  - **A y B lo más lejos posible**: A es la calle del borde más lejana a la plaza (B); se revisa que se llegue a todo.
 - **Mazmorra pintada** (`ciudad_diagonal.js`): la mazmorra tal cual con capa de ciudad (la versión anterior).
 
 - **Diagonal (base mazmorra, el principal)**: parte del generador de mazmorras con sus diagonales y formas ya pulidas y le
@@ -38,7 +36,7 @@ Está separado del generador de mazmorras (`editor/`), que no se tocó. Tiene tr
 - `ciudad.js`: modo cuadrícula y la tabla `MEDIDAS` que usan los dos modos.
 - `index.html`: el visor. Elige modo, semilla y tamaño, y mira la ruta A→B.
 - `exportar.js`: escribe las piezas para TruWorlds.
-- `export/ciudad_semilla_7/`: **la ciudad del motor** (n=12, ~8.900 piezas en 78 chunks, máx. 280).
+- `export/ciudad_semilla_7/`: **la ciudad del motor** (n=12, ~12.100 piezas en 76 chunks, máx. 372).
 - `export/diagonal_semilla_7/`: ciudad diagonal ya exportada (19×19, **5.468 piezas, 25 chunks, máx. 391**).
 - `export/cuadricula_semilla_7/`: ciudad en cuadrícula ya exportada (150×110 celdas, 2.413 piezas).
 
@@ -74,7 +72,7 @@ Los pisos y techos de las salas en diagonal se arman con rectángulos y dejan si
 ### Nombres de las piezas
 | Nombre | Qué es |
 |---|---|
-| `Calle`, `Plaza`, `Parque`, `Patio`, `Piso` | Suelos |
+| `Calle`, `Vereda`, `Pasaje`, `Plaza`, `Parque`, `Patio`, `Piso` | Suelos |
 | `Pared` | Pared completa |
 | `Muralla` | Borde de la ciudad (ladrillo) |
 | `Dintel` | La parte de pared sobre una puerta o ventana |
