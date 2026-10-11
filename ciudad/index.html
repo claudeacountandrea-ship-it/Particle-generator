@@ -43,7 +43,7 @@ dt { color: var(--muted) } dd { margin: 0; text-align: right }
     <h1>Ciudad <span>zombi</span></h1>
     <div class="controls">
       <label for="seed">Semilla <input id="seed" type="number" value="7"></label>
-      <label for="mode">Modo <select id="mode"><option value="diag" selected>Diagonal (base mazmorra)</option><option value="grid">Cuadrícula</option></select></label>
+      <label for="mode">Modo <select id="mode"><option value="motor" selected>Ciudad (motor derivado)</option><option value="diag">Mazmorra pintada</option><option value="grid">Cuadrícula</option></select></label>
       <label for="size">Tamaño <select id="size"><option value="s">Chica</option><option value="m" selected>Media</option><option value="l">Grande</option></select></label>
       <button id="go">Generar</button>
       <button id="rnd" class="ghost">Otra ciudad</button>
@@ -59,7 +59,7 @@ dt { color: var(--muted) } dd { margin: 0; text-align: right }
       <section><h2>Ruta A → B</h2><dl id="routeStats"></dl></section>
       <section><h2>Ciudad</h2><dl id="stats"></dl></section>
       <section><h2>Leyenda</h2><div class="legend" id="legend"></div></section>
-      <p class="note">Las rejas cierran calles y patios: hay que rodear o buscar un portón. Las ventanas cerradas no se abren; las rotas (naranja) se pueden trepar. Los refugios tienen una sola entrada. 1 celda = 2 personas = 2 m arcade. El modo diagonal parte del generador de mazmorras: pasillos → calles, salas → casas, paredes del medio → rejas, compuertas → portones, huecos → ruinas.</p>
+      <p class="note">Las rejas cierran calles y patios: hay que rodear o buscar un portón. Las ventanas cerradas no se abren; las rotas (naranja) se pueden trepar. Los refugios tienen una sola entrada. 1 celda = 2 personas = 2 m arcade. El modo ciudad es un motor derivado de la mazmorra: refleja una mitad (simetría), escala ×2, ensancha las pistas a 6 con mediana, reparte zonas (comercio y oficinas junto a la plaza, condominios, suburbio), parte las casas en cuartos y derriba algunas para abrir calles nuevas.</p>
     </aside>
   </div>
 </div>
@@ -67,6 +67,7 @@ dt { color: var(--muted) } dd { margin: 0; text-align: right }
 <script src="ciudad.js"></script>
 <script src="mazmorra_base.js"></script>
 <script src="ciudad_diagonal.js"></script>
+<script src="motor_ciudad.js"></script>
 <script>
 const { T, E } = Ciudad;
 const $ = id => document.getElementById(id);
@@ -142,8 +143,10 @@ function drawDiag() {
 }
 function infoDiag() {
   const st = map.diag.stats, parts = CiudadDiagonal.toParts(map.diag), row = (k, v) => `<dt>${k}</dt><dd>${v}</dd>`;
-  $('routeStats').innerHTML = row('Camino A → B', st.ruta + ' pasos') + row('Refugios en el camino', st.refugios - 1);
-  $('stats').innerHTML = row('Casas', st.casas) + row('Tiendas', st.tiendas) + row('Edificios', st.edificios) + row('Almacenes', st.almacenes) + row('Cuartos', st.cuartos) + row('Puertas', st.puertas)
+  const motor = !!map.diag.motor;
+  $('routeStats').innerHTML = row(motor ? 'Camino A → plaza' : 'Camino A → B', st.ruta == null ? '—' : st.ruta + ' pasos') + row('Refugios en el camino', motor ? st.refugios : st.refugios - 1) + (motor ? row('Plaza (celdas)', st.plazaCeldas) : '');
+  $('stats').innerHTML = (motor ? row('Casas (suburbio)', st.casas) + row('Condominios', st.condominios) + row('Oficinas', st.oficinas) + row('Tiendas', st.tiendas) + row('Centro comercial', st.centroComercial) + row('Parques', st.parques) + row('Casas derribadas (calles nuevas)', st.derribos) + row('Tramos de mediana (doble vía)', st.mediana)
+      : row('Casas', st.casas) + row('Tiendas', st.tiendas) + row('Edificios', st.edificios)) + row('Almacenes', st.almacenes) + row('Cuartos', st.cuartos) + row('Puertas', st.puertas)
     + row('Ventanas cerradas', st.ventanasCerradas) + row('Ventanas rotas', st.ventanasRotas) + row('Tramos de reja', st.rejas) + row('Portones', st.portones) + row('Tramos en diagonal', st.tramosDiagonales) + row('Piezas TruWorlds', parts.parts.length);
 }
 function info() {
@@ -156,16 +159,17 @@ function info() {
 }
 
 function legend() {
-  const items = [['sw', COL.street, 'Calle'], ['sw', COL.plaza, 'Plaza / paseo'], ['sw', COL.park, 'Parque'], ['sw', COL.yard, 'Patio / baldío'], ['sw', COL.casa, 'Casa'], ['sw', COL.tienda, 'Tienda'], ['sw', COL.edificio, 'Edificio'], ['sw', COL.almacen, 'Almacén'], ['sw', COL.refugio, 'Refugio'],
+  const items = [['sw', COL.street, 'Calle'], ['sw', COL.plaza, 'Plaza / paseo'], ['sw', COL.park, 'Parque'], ['sw', COL.yard, 'Patio / baldío'], ['sw', COL.casa, 'Casa'], ['sw', COL.tienda, 'Tienda'], ['sw', COL.edificio, 'Edificio'], ['sw', COL.almacen, 'Almacén'], ['sw', '#d3b98f', 'Condominio'], ['sw', '#8fa3b8', 'Oficinas'], ['sw', '#e6e1d6', 'Centro comercial'], ['sw', COL.refugio, 'Refugio'], ['ln', '#e3c75a', 'Mediana (doble vía)'],
     ['ln', COL.wall, 'Pared'], ['ln', COL.door, 'Puerta'], ['ln', COL.win, 'Ventana cerrada'], ['ln', COL.winOpen, 'Ventana rota (se trepa)'], ['ln', COL.fence, 'Reja'], ['ln', COL.gate, 'Portón / hueco en reja'], ['ln', COL.route, 'Ruta más corta'], ['ln', COL.streetRoute, 'Ruta solo por calles']];
   $('legend').innerHTML = items.map(([k, c, t]) => `<div><span class="${k}" style="${k === 'sw' ? 'background' : 'border-color'}:${c}"></span>${t}</div>`).join('');
 }
 
 function run() {
   const seed = +$('seed').value || 1, sz = $('size').value;
-  if ($('mode').value === 'diag') {
-    $('routeStats').innerHTML = '<dt>Generando…</dt><dd></dd>';
-    setTimeout(() => { map = { diag: CiudadDiagonal.generate({ seed, n: { s: 12, m: 16, l: 19 }[sz] }) }; draw(); info(); }, 30);
+  if ($('mode').value !== 'grid') {
+    $('routeStats').innerHTML = '<dt>Generando… (5 a 15 s)</dt><dd></dd>';
+    const motor = $('mode').value === 'motor';
+    setTimeout(() => { map = { diag: motor ? MotorCiudad.generate({ seed, n: { s: 10, m: 12, l: 16 }[sz] }) : CiudadDiagonal.generate({ seed, n: { s: 12, m: 16, l: 19 }[sz] }) }; draw(); info(); }, 30);
     return;
   }
   const [w, h] = { s: [110, 80], m: [150, 110], l: [200, 150] }[sz];

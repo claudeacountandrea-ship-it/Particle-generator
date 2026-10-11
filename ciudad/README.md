@@ -1,7 +1,20 @@
 # Ciudad zombi
 
 Generador de ciudad para un juego de zombis con refugios: se va del punto A al punto B por calles, patios y casas.
-Está separado del generador de mazmorras (`editor/`), que no se tocó. Tiene dos modos:
+Está separado del generador de mazmorras (`editor/`), que no se tocó. Tiene tres modos:
+
+- **Ciudad (motor derivado, el principal)**: `motor_ciudad.js` usa la mazmorra como plantilla y la transforma en ciudad:
+  1. **simetría**: se queda la mitad con más plaza y se refleja (centro ordenado y simétrico);
+  2. **escala ×2** por cuartos de celda (las diagonales siguen limpias): pasillos → pistas de 4, salas → manzanas/casas grandes,
+     sala del jefe → **plaza grande** (libre, con reja y portones: ahí pones obstáculos y la entrada/salida);
+  3. **ensanche**: las pistas crecen 1 celda por lado → pistas de 6; en las rectas, **mediana** al medio (doble vía) con cortes para cruzar;
+  4. **zonas** como en una ciudad: junto a la plaza comercio (tiendas, oficinas y un **centro comercial**), anillo medio de
+     **condominios**, afuera **suburbio** de casas y algún almacén; los huecos grandes de la mazmorra son **parques**;
+  5. **casas con cuartos**: cada casa se parte en cuartos según su orientación (cortes rectos o diagonales), con puerta a la
+     calle centrada en su pared más larga, puertas interiores y ventanas (cerradas o rotas);
+  6. **ingeniería vial**: se derriban algunas casas que obligaban a dar un rodeo largo y su lugar queda como calle nueva;
+  7. entrada **A** en la muralla, ruta A → plaza y 2 refugios junto a la ruta.
+- **Mazmorra pintada** (`ciudad_diagonal.js`): la mazmorra tal cual con capa de ciudad (la versión anterior).
 
 - **Diagonal (base mazmorra, el principal)**: parte del generador de mazmorras con sus diagonales y formas ya pulidas y le
   pone encima la capa de ciudad: pasillos → calles, salas → casas (sus particiones son los cuartos; las salas unidas por
@@ -10,18 +23,20 @@ Está separado del generador de mazmorras (`editor/`), que no se tocó. Tiene do
   Las paredes en diagonal salen como **una sola pieza girada 45°** en Y.
 - **Cuadrícula**: ciudad recta con manzanas, lotes, patios, plazas, parques, avenidas y autos (ver abajo).
 
-- `ciudad_diagonal.js`: modo diagonal (`CiudadDiagonal.generate` / `toParts`).
+- `motor_ciudad.js`: el motor de ciudad (`MotorCiudad.generate`); lo exporta y dibuja `ciudad_diagonal.js`.
+- `ciudad_diagonal.js`: modo mazmorra pintada, más la exportación (`toParts`) y el dibujo de los dos modos con diagonales.
 - `mazmorra_base.js`: el generador de mazmorras empaquetado. Se arma con `node ciudad/construir_base.js` desde `editor/index.html`;
   vuelve a correrlo cuando mejore la mazmorra y la ciudad hereda las mejoras.
 - `ciudad.js`: modo cuadrícula y la tabla `MEDIDAS` que usan los dos modos.
 - `index.html`: el visor. Elige modo, semilla y tamaño, y mira la ruta A→B.
 - `exportar.js`: escribe las piezas para TruWorlds.
+- `export/ciudad_semilla_7/`: **la ciudad del motor** (n=12).
 - `export/diagonal_semilla_7/`: ciudad diagonal ya exportada (19×19, **5.468 piezas, 25 chunks, máx. 391**).
 - `export/cuadricula_semilla_7/`: ciudad en cuadrícula ya exportada (150×110 celdas, 2.413 piezas).
 
 ## Para la sesión de TruWorlds: qué archivo leer
 
-1. Lee `ciudad/export/diagonal_semilla_7/index.json` (o `cuadricula_semilla_7`): tiene el total de piezas, la lista de chunks con su centro y cantidad, los spawns y las medidas.
+1. Lee `ciudad/export/ciudad_semilla_7/index.json` (o `diagonal_semilla_7` / `cuadricula_semilla_7`): tiene el total de piezas, la lista de chunks con su centro y cantidad, los spawns y las medidas.
 2. Construye cada `chunk_XX.json` en una llamada. Cada chunk tiene `{name, center, parts}`, y cada pieza es
    `{name, shape, pos, size, rot, color, material}`:
    - `shape` es Block, Ball o Cylinder;
@@ -44,6 +59,7 @@ Los pisos y techos de las salas en diagonal se arman con rectángulos y dejan si
 | Grande | 200×150 | 400×300 m | ~4.800 |
 
 ### Spawns (en `index.json` → `spawns`)
+- `plaza`: centro de la plaza (llegada, B) en el modo ciudad.
 - `PlayerStart`: punto A. En diagonal es el patio de entrada; en cuadrícula, la entrada oeste sobre la calle del anillo.
 - `refugios`: 2 refugios intermedios y B (refugio final). La posición es el centro del cuarto con la puerta principal.
 
@@ -80,7 +96,8 @@ Con estas medidas se cumple lo de TruWorlds: puertas de 8 studs o más, techos d
 
 ## Regenerar
 ```
-node ciudad/exportar.js --semilla=7 --n=19                          # diagonal (n: 12, 16 o 19)
+node ciudad/exportar.js --semilla=7 --n=12                          # ciudad (n: 10, 12 o 16)
+node ciudad/exportar.js --semilla=7 --modo=diagonal --n=19          # mazmorra pintada
 node ciudad/exportar.js --semilla=7 --modo=cuadricula --tamano=150x110
 ```
 La salida queda en `ciudad/export/<modo>_semilla_<n>/`. El modo diagonal tarda unos 10 s en 19×19. La misma semilla y el mismo tamaño dan siempre la misma ciudad.
