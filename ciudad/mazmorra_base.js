@@ -3,6 +3,7 @@
 const vk = (x, y) => x + ',' + y;
 function wk(a, b) { const [p, q] = (a[1] < b[1] || (a[1] === b[1] && a[0] <= b[0])) ? [a, b] : [b, a]; return vk(p[0], p[1]) + '|' + vk(q[0], q[1]); }
 const parseW = k => k.split('|').map(s => s.split(',').map(Number));
+if (!Array.prototype.__mezcla) Object.defineProperty(Array.prototype, '__mezcla', { configurable: true, value: function () { for (let i = this.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = this[i]; this[i] = this[j]; this[j] = t; } return this; } });
 // ---------- grand dungeon: recursive, packed, shared walls ----------
 // Space is a grid of cells, each split in 4 quarters (N E S W) that carry a region label
 // (0 = rock). Regions are painted with shapes (rectangles with bevels, rombos), walls are
@@ -316,7 +317,7 @@ const Grand = (() => {
     // axis: from the entrance hall up to the great hall
     avenue(ex, fy1 - 8, [0, -1], fy1 - 8 - hy, false);
     if (!sym && ex !== hx) avenue(ex, hy + hallR + 3, [Math.sign(hx - ex), 0], Math.abs(hx - ex), false);
-    const dirs = sym ? [[-1, 0], [-1, -1], [-1, 1], [0, -1]] : [[-1, 0], [1, 0], [-1, -1], [1, -1], [-1, 1], [1, 1], [0, -1]].sort(() => Math.random() - .5).slice(0, rnd(3, 5));
+    const dirs = sym ? [[-1, 0], [-1, -1], [-1, 1], [0, -1]] : [[-1, 0], [1, 0], [-1, -1], [1, -1], [-1, 1], [1, 1], [0, -1]].__mezcla().slice(0, rnd(3, 5));
     for (const d of dirs) {
       const diag = d[0] && d[1];
       const sx = hx + d[0] * (diag ? k : hallR), sy = hy + d[1] * (diag ? k : hallR);
@@ -719,7 +720,7 @@ const Halls = (() => {
       if (!onTree.length) { lacking.push(r); continue; }
       const cand = onTree;
       const nDoors = r.kind === 'gal' || r.kind === 'dgal' ? rnd(3, 5) : r.w * r.h > 1 && Math.random() < 0.5 ? 2 : 1;
-      for (const s of [...cand].sort(() => Math.random() - .5).slice(0, nDoors)) {
+      for (const s of [...cand].__mezcla().slice(0, nDoors)) {
         edges.set(ekey(nid(...s[0]), nid(...s[1])), { a: s[0], b: s[1], diag: false });
         roomDoors.push([r, s]);
       }
@@ -1368,7 +1369,7 @@ const Halls = (() => {
       for (const k of doors) { const [[x1, y1], [x2, y2]] = parseW(k); if (x1 !== x2 && y1 !== y2) continue; const h = y1 === y2, key = (h ? 'h' : 'v') + (h ? y1 : x1), pos = h ? Math.min(x1, x2) : Math.min(y1, y2); if (!byLine.has(key)) byLine.set(key, []); byLine.get(key).push(pos); }
       const doorRuns = [];
       for (const [key, list] of byLine) { const h = key[0] === 'h', L = +key.slice(1); list.sort((a, b) => a - b); for (let t = 0; t < list.length;) { let e = t; while (e + 1 < list.length && list[e + 1] === list[e] + 1) e++; doorRuns.push([h, L, list[t], list[e] + 1]); t = e + 1; } }
-      for (const [h, L, a, b] of doorRuns.sort(() => Math.random() - 0.5)) {
+      for (const [h, L, a, b] of doorRuns.__mezcla()) {
         if (Math.random() < 0.05) continue;
         // the gate goes at the column that ends the door's wall (where a room wall meets the corridor wall): it carries
         // that wall on across the corridor, and the door stays in the middle of its wall between two columns
@@ -1494,11 +1495,11 @@ const Halls = (() => {
       const tryIn = (pc, big) => {
           const inBig = (x, y) => pc.has(Qi(x, y, 0)) && pc.find(Qi(x, y, 0)) === big, cands = [], MAX = 8;
           const add = g => { if (g && cands.length < MAX && !cands.some(o => o.segs.some(k => g.segs.includes(k)))) cands.push(g); return cands.length >= MAX; };
-          const opts = [...orthoAt.map(o => ['o', o]), ...diagAt.map(o => ['d', o])].filter(([t, o]) => t === 'o' ? (o[0] ? inBig(o[2], o[1]) : inBig(o[1], o[2])) : inBig(o[0][0], o[0][1])).sort(() => Math.random() - 0.5);
+          const opts = [...orthoAt.map(o => ['o', o]), ...diagAt.map(o => ['d', o])].filter(([t, o]) => t === 'o' ? (o[0] ? inBig(o[2], o[1]) : inBig(o[1], o[2])) : inBig(o[0][0], o[0][1])).__mezcla();
           for (const [t, o] of opts) if (add(t === 'o' ? tryOrtho(o[0], o[1], o[2], 1) : tryDiag(o[0], o[1]))) break;
-          if (cands.length < MAX) { const wc = wallCand.filter(w => nearBig(inBig, w[2])).sort(() => Math.random() - 0.5);
+          if (cands.length < MAX) { const wc = wallCand.filter(w => nearBig(inBig, w[2])).__mezcla();
             out: for (const w of [2, 3, 4]) for (const [t, o, , q, st] of wc) if (add(t === 'o' ? tryOrthoW(o[0], o[1], o[2], o[3], w) : w === 2 ? tryDiag(o[0], o[1]) : tryDiagW(q, st, o[1], w))) break out; }
-          if (cands.length < MAX) { const wp = wallPts.filter(q => nearBig(inBig, q)).sort(() => Math.random() - 0.5);
+          if (cands.length < MAX) { const wp = wallPts.filter(q => nearBig(inBig, q)).__mezcla();
             const paths = st => { const out = []; for (const w of [2, 3, 4, 5, 6, 7, 8, 9, 10]) out.push(Array(w).fill(st));
               if (st[0] && st[1]) for (const w of [1, 2, 3]) for (const o of [[st[0], 0], [0, st[1]]]) { const a = Array(w).fill(st); a.splice(w >> 1, 0, o); out.push(a); }
               return out.sort((a, b) => a.length - b.length); };
@@ -1566,7 +1567,7 @@ const Halls = (() => {
           if (!pc.has(ci)) continue; const pid = pc.find(ci); if (!byRoom.has(rl)) byRoom.set(rl, new Map()); const m2 = byRoom.get(rl); if (!m2.has(pid)) m2.set(pid, []); m2.get(pid).push(g); }
         const doorPieces = new Map(); for (const k of doors) { const g = segsF.find(s => s.k === k); if (!g || g.d === 'd1' || g.d === 'd2') continue; const rl = g.a === corr ? g.b : g.b === corr ? g.a : 0; if (!rl) continue; const ci = g.d === 'h' ? (g.a === corr ? Qi(g.pos, g.line - 1, 2) : Qi(g.pos, g.line, 0)) : (g.a === corr ? Qi(g.line - 1, g.pos, 1) : Qi(g.line, g.pos, 3)); if (!pc.has(ci)) continue; if (!doorPieces.has(rl)) doorPieces.set(rl, new Set()); doorPieces.get(rl).add(pc.find(ci)); }
         const target = Math.round(n * m / 30);
-        for (const [rl, m2] of [...byRoom].sort(() => Math.random() - 0.5)) {
+        for (const [rl, m2] of [...byRoom].__mezcla()) {
           if (nThrough >= target || m2.size < 2) continue;
           const has = doorPieces.get(rl) || new Set(); if (!has.size) continue;
           for (const [pid, list] of m2) { if (has.has(pid)) continue;
@@ -1613,7 +1614,7 @@ const Halls = (() => {
         for (const k of doors) { const [a, b] = g0.sideOf(k); if (!g0.floorS(a) || !g0.floorS(b) || a === b) continue; const key = Math.min(a, b) + '-' + Math.max(a, b); if (!pairs.has(key)) pairs.set(key, []); pairs.get(key).push(k); }
         const allP = new Set(); for (const k of [...doors, ...gates]) { const [a, b] = g0.sideOf(k); if (g0.floorS(a) && g0.floorS(b) && a !== b) allP.add(Math.min(a, b) + '-' + Math.max(a, b)); }
         const loops = allP.size - total + 1; let target = Math.round(loops / 4), cut = 0;
-        for (const [, ks] of [...pairs].sort(() => Math.random() - 0.5)) {
+        for (const [, ks] of [...pairs].__mezcla()) {
           if (cut >= target) break;
           const idx = ks.map(k => doors.indexOf(k)); for (const k of ks) doors.splice(doors.indexOf(k), 1);
           if (graph().depth.size < total) doors.push(...ks); else cut++;
@@ -1625,7 +1626,7 @@ const Halls = (() => {
         for (const k of gates) { const [a, b] = g0.sideOf(k); if (!g0.floorS(a) || !g0.floorS(b) || a === b) continue; const key = Math.min(a, b) + '-' + Math.max(a, b); if (!byPair.has(key)) byPair.set(key, []); byPair.get(key).push(k); }
         const allP = new Set(); for (const k of [...doors, ...gates]) { const [a, b] = g0.sideOf(k); if (g0.floorS(a) && g0.floorS(b) && a !== b) allP.add(Math.min(a, b) + '-' + Math.max(a, b)); }
         const target = Math.round((allP.size - total + 1) / 3);
-        for (const [, ks] of [...byPair].sort(() => Math.random() - 0.5)) { if (nShut >= target) break;
+        for (const [, ks] of [...byPair].__mezcla()) { if (nShut >= target) break;
           for (const k of ks) gates.splice(gates.indexOf(k), 1);
           if (graph().depth.size < total) gates.push(...ks); else { halfWalls.push(...ks); nShut++; nShutSegs += ks.length; } } }
       const degA = new Map(); for (const k of [...segsF.map(g => g.k), ...gates, ...halfWalls]) for (const q of parseW(k)) degA.set(vk(...q), (degA.get(vk(...q)) || 0) + 1);

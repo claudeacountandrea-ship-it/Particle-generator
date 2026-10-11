@@ -111,7 +111,7 @@
     // suelo de calle bajo toda la ciudad, pisos de las casas encima, escombros en los huecos
     for (const g of greedy((x, y) => anyIn(x, y) ? 1 : null)) add('Calle', 'Block', [X(g.x + g.w / 2), -0.5, Z(g.y + g.h / 2)], [g.w * C, 1, g.h * C], '#3d4045', 'SmoothSurface', null, g.x + g.w / 2, g.y + g.h / 2);
     for (const g of greedy(fullRoom)) { const h = c.houses.get(g.k), [cl, mt] = h.refuge ? ['#c9a43a', 'Wood'] : FLOOR[h.type] || FLOOR.casa; add('Piso', 'Block', [X(g.x + g.w / 2), -0.3, Z(g.y + g.h / 2)], [g.w * C, 1, g.h * C], cl, mt, null, g.x + g.w / 2, g.y + g.h / 2); }
-    for (const [kd, nm, cl, mt] of [['plaza', 'Plaza', '#b9b09c', 'Marble'], ['parque', 'Parque', '#5f8a3e', 'Grass'], ['patio', 'Patio', '#7d8f4e', 'Grass'], ['vereda', 'Vereda', '#a7a39b', 'SmoothSurface'], ['pasaje', 'Pasaje', '#8a7d6a', 'Gravel']]) for (const g of greedy((x, y) => { const ls = cellLabels(x, y); return ls.some(l => c.kindOf(l) === kd) ? 1 : null; })) add(nm, 'Block', [X(g.x + g.w / 2), -0.3, Z(g.y + g.h / 2)], [g.w * C, 1, g.h * C], cl, mt, null, g.x + g.w / 2, g.y + g.h / 2);
+    for (const [kd, nm, cl, mt] of [['plaza', 'Plaza', '#b9b09c', 'Marble'], ['parque', 'Parque', '#5f8a3e', 'Grass'], ['patio', 'Patio', '#7d8f4e', 'Grass'], ['vereda', 'Vereda', '#a7a39b', 'SmoothSurface'], ['parking', 'Estacionamiento', '#55585e', 'SmoothSurface'], ['pasaje', 'Pasaje', '#8a7d6a', 'Gravel']]) for (const g of greedy((x, y) => { const ls = cellLabels(x, y); return ls.some(l => c.kindOf(l) === kd) ? 1 : null; })) add(nm, 'Block', [X(g.x + g.w / 2), -0.3, Z(g.y + g.h / 2)], [g.w * C, 1, g.h * C], cl, mt, null, g.x + g.w / 2, g.y + g.h / 2);
     for (const g of greedy((x, y) => { const ls = cellLabels(x, y); return ls.every(l => c.kindOf(l) === 'pillar') ? 1 : null; })) add('Ruina', 'Block', [X(g.x + g.w / 2), WALL_H / 4, Z(g.y + g.h / 2)], [g.w * C, WALL_H / 2, g.h * C], '#4a4038', 'Gravel', null, g.x + g.w / 2, g.y + g.h / 2);
     if (o.roofs !== false) for (const g of greedy((x, y) => { const l = fullRoom(x, y); return l && l !== c.houseOf(c.bossL) ? l : null; })) {
       const h = c.houses.get(g.k); add('Techo', 'Block', [X(g.x + g.w / 2), WALL_H + 0.5, Z(g.y + g.h / 2)], [g.w * C + TH, 1, g.h * C + TH], h.refuge ? '#d4a017' : (root.CiudadTone ? root.CiudadTone.houseTone(h, ROOF[h.type] || ROOF.casa) : ROOF[h.type]), 'SmoothSurface', null, g.x + g.w / 2, g.y + g.h / 2);
@@ -121,7 +121,7 @@
       { name: 'Pared', test: s => WALLISH.has(s.cls) && !s.cls.startsWith('ventana'), y0: 0, y1: WALL_H, th: TH, color: '#d8cfc0', mat: 'SmoothSurface' },
       { name: 'Muralla', test: s => s.cls === 'muralla', y0: 0, y1: WALL_H + k, th: TH * 2, color: '#7a4b3a', mat: 'Brick' },
       { name: 'Ruina', test: s => s.cls === 'ruina', y0: 0, y1: WALL_H / 2, th: TH, color: '#5a4d42', mat: 'Brick' },
-      { name: 'Dintel', test: s => s.cls === 'puerta' || s.cls.startsWith('ventana'), y0: DOOR_H, y1: WALL_H, th: TH, color: '#d8cfc0', mat: 'SmoothSurface' },
+      { name: 'Dintel', test: s => s.cls === 'puerta' || s.cls === 'garaje' || s.cls.startsWith('ventana'), y0: DOOR_H, y1: WALL_H, th: TH, color: '#d8cfc0', mat: 'SmoothSurface' },
       { name: 'Alfeizar', test: s => s.cls.startsWith('ventana'), y0: 0, y1: SILL, th: TH, color: '#d8cfc0', mat: 'SmoothSurface' },
       { name: 'VentanaCerrada', test: s => s.cls === 'ventana', y0: SILL, y1: DOOR_H, th: TH * 0.3, color: '#9cc9e6', mat: 'SmoothSurface' },
       { name: 'Mediana', test: s => s.cls === 'mediana', y0: 0, y1: k, th: TH, color: '#c9c3b5', mat: 'SmoothSurface' },
@@ -160,24 +160,32 @@
   }
 
   // ---------- dibujo para el visor
-  const COLS = { calle: '#45494f', vereda: '#9a958c', pasaje: '#7a6d5c', out: '#2f3d26', ruina: '#3a332c', casa: '#c9a77c', tienda: '#b9c4cc', edificio: '#a39d93', oficinas: '#8fa3b8', condominio: '#d3b98f', comercial: '#e6e1d6', almacen: '#8d8a83', mercado: '#b6ad98', entrada: '#7f9150', refugio: '#e8b23a', plaza: '#b6ad98', parque: '#5d8a3f', patio: '#7f9a4c' };
+  const COLS = { calle: '#45494f', vereda: '#9a958c', pasaje: '#7a6d5c', out: '#2f3d26', ruina: '#3a332c', casa: '#c9a77c', tienda: '#b9c4cc', edificio: '#a39d93', oficinas: '#8fa3b8', condominio: '#d3b98f', comercial: '#e6e1d6', almacen: '#8d8a83', parking: '#585c63', mercado: '#b6ad98', entrada: '#7f9150', refugio: '#e8b23a', plaza: '#b6ad98', parque: '#5d8a3f', patio: '#7f9a4c' };
   // cada casa con su propio tono (variación del color de su tipo), para distinguir casas vecinas
   const shade = (hex, f) => { const v = parseInt(hex.slice(1), 16), ch = sh => Math.max(0, Math.min(255, Math.round(((v >> sh) & 255) * f))); return '#' + [16, 8, 0].map(sh => ch(sh).toString(16).padStart(2, '0')).join(''); };
   const houseTone = (h, base) => shade(base, 0.8 + ((h.id * 2654435761 >>> 0) % 1000) / 1000 * 0.4);
   root.CiudadTone = { shade, houseTone };
   function draw(g, c, s, opt = {}) {
-    const { C4, H, q } = c;
-    for (let y = 0; y < H - 1; y++) for (let x = 0; x < C4; x++) for (let kq = 0; kq < 4; kq++) {
-      const l = q[(y * C4 + x) * 4 + kq], kd = c.kindOf(l); let col;
+    const { C4, H, q } = c, colCache = new Map();
+    const colorOf = l => { let col = colCache.get(l); if (col) return col; const kd = c.kindOf(l);
       if (kd === 'out') col = COLS.out; else if (kd === 'corr') col = COLS.calle; else if (kd === 'pillar') col = COLS.ruina; else if (COLS[kd] && kd !== 'room') col = COLS[kd];
       else { const h = c.houses.get(c.houseOf(l)); col = !h ? COLS.casa : h.refuge ? COLS.refugio : houseTone(h, COLS[h.type] || COLS.casa); }
-      const tri = [[[x, y], [x + 1, y]], [[x + 1, y], [x + 1, y + 1]], [[x + 1, y + 1], [x, y + 1]], [[x, y + 1], [x, y]]][kq];
-      g.fillStyle = col; g.beginPath(); g.moveTo(tri[0][0] * s, tri[0][1] * s); g.lineTo(tri[1][0] * s, tri[1][1] * s); g.lineTo((x + .5) * s, (y + .5) * s); g.closePath(); g.fill();
+      colCache.set(l, col); return col; };
+    // nítido: cada celda se pinta entera y, si está partida, la otra mitad encima (sin costuras entre triángulos)
+    const tri = (pts, col) => { g.fillStyle = col; g.beginPath(); g.moveTo(pts[0][0] * s, pts[0][1] * s); for (let k2 = 1; k2 < pts.length; k2++) g.lineTo(pts[k2][0] * s, pts[k2][1] * s); g.closePath(); g.fill(); };
+    const pk = new Map();
+    for (let y = 0; y < H - 1; y++) for (let x = 0; x < C4; x++) {
+      const i = (y * C4 + x) * 4, N = q[i], E = q[i + 1], S2 = q[i + 2], O = q[i + 3];
+      g.fillStyle = colorOf(N); g.fillRect(x * s - 0.25, y * s - 0.25, s + 0.5, s + 0.5);
+      if (N === E && S2 === O && N !== S2) tri([[x, y + 1], [x + 1, y + 1], [x, y]], colorOf(S2)), tri([[x + 1, y + 1], [x, y], [x + 1, y]], colorOf(N));
+      else if (N === O && S2 === E && N !== S2) tri([[x + 1, y], [x + 1, y + 1], [x, y + 1]], colorOf(S2));
+      else if (!(N === E && E === S2 && S2 === O)) { const C5 = [[0.5, 0], [1, 0.5], [0.5, 1], [0, 0.5]]; [E, S2, O].forEach((l, k2) => { const kq = k2 + 1, A2 = [[x, y], [x + 1, y], [x + 1, y + 1], [x, y + 1]]; tri([A2[kq], A2[(kq + 1) % 4], [x + 0.5, y + 0.5]], colorOf(l)); }); }
+      if (c.kindOf(N) === 'parking') { let a = pk.get(N); if (!a) pk.set(N, a = [0, 0, 0]); a[0] += x + 0.5; a[1] += y + 0.5; a[2]++; }
     }
     if (opt.route) { g.fillStyle = 'rgba(95,211,232,.55)'; for (const [x, y] of c.routeCells) g.fillRect(x * s + s * .2, y * s + s * .2, s * .6, s * .6); }
     const ST = {
       exterior: ['#121416', .32], interior: ['#121416', .26], medianera: ['#121416', .32], muralla: ['#7a4b3a', .5], ruina: ['#5a4d42', .3],
-      puerta: ['#c0782f', .22], bordillo: ['#b9b4aa', .08], mediana: ['#e3c75a', .18, [.6, .3]], entrada: ['#7fe08a', .3, [.1, .3]], ventana: ['#8ecae6', .2], ventanaRota: ['#ff8a1f', .26, [.2, .15]], reja: ['#c5ccd3', .16, [.25, .2]], porton: ['#7fe08a', .16, [.08, .3]],
+      puerta: ['#c0782f', .24], garaje: ['#d9d4c7', .3, [.35, .12]], hueco: ['#ff8a1f', .2, [.12, .25]], bordillo: ['#b9b4aa', .08], mediana: ['#e3c75a', .18, [.6, .3]], entrada: ['#7fe08a', .3, [.1, .3]], ventana: ['#8ecae6', .2], ventanaRota: ['#ff8a1f', .26, [.2, .15]], reja: ['#c5ccd3', .16, [.25, .2]], porton: ['#7fe08a', .16, [.08, .3]],
     };
     g.lineCap = 'round';
     for (const sg of c.segs) {
@@ -187,6 +195,17 @@
       g.beginPath(); g.moveTo(sg.a[0] * s, sg.a[1] * s); g.lineTo(sg.b[0] * s, sg.b[1] * s); g.stroke();
     }
     g.setLineDash([]);
+    // estacionamientos: una P en el medio
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    for (const [, a] of pk) if (a[2] > 30) { g.fillStyle = '#e6e6e6'; g.font = `800 ${Math.max(10, Math.round(s * 3))}px Saira Condensed, sans-serif`; g.fillText('P', a[0] / a[2] * s, a[1] / a[2] * s); }
+    // contorno de cada casa con un color propio (para ver dónde termina una y empieza la vecina)
+    if (opt.outline) { g.lineWidth = Math.max(2, s * 0.4); g.lineCap = 'butt';
+      for (const sg of c.segs) { const h1 = c.kindOf(sg.L1) === 'room' ? c.houseOf(sg.L1) : 0, h2 = c.kindOf(sg.L2) === 'room' ? c.houseOf(sg.L2) : 0; if (h1 === h2) continue;
+        for (const [hh, side] of [[h1, 1], [h2, -1]]) { if (!hh) continue; const nx = -(sg.b[1] - sg.a[1]), ny = sg.b[0] - sg.a[0], ln = Math.hypot(nx, ny), o2 = side * 0.18 * (sg.L1 === sg.L1 ? 1 : 1);
+          g.strokeStyle = `hsl(${(hh * 137.508) % 360},85%,58%)`; g.beginPath(); g.moveTo((sg.a[0] - nx / ln * o2) * s, (sg.a[1] - ny / ln * o2) * s); g.lineTo((sg.b[0] - nx / ln * o2) * s, (sg.b[1] - ny / ln * o2) * s); g.stroke(); } } }
+    // nombre de cada cuarto al acercar
+    if (opt.labels && c.roomInfo && s >= 7) { g.font = `700 ${Math.max(9, Math.round(s * 0.95))}px Atkinson Hyperlegible, sans-serif`; g.fillStyle = 'rgba(20,18,14,.8)';
+      for (const r of c.roomInfo) if (r.role && r.area >= 9) g.fillText(r.role, r.cx * s, r.cy * s); }
     const mark = (h, t) => { if (!h) return; const r = Math.max(9, s * 2.4); g.fillStyle = t === 'A' ? '#7fe08a' : '#e8b23a'; g.beginPath(); g.arc(h.cx * s, h.cy * s, r, 0, 7); g.fill(); g.strokeStyle = '#111'; g.lineWidth = 2; g.stroke(); g.fillStyle = '#111'; g.font = `800 ${Math.round(r * 1.2)}px Saira Condensed, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(t, h.cx * s, h.cy * s + 1); };
     mark(c.A ? { cx: c.A[0], cy: c.A[1] } : c.houses.get(c.houseOf(c.startL)), 'A');
     let k = 0; for (const h of c.houses.values()) if (h.refuge) mark(h, h.final ? 'B' : 'R' + (++k));

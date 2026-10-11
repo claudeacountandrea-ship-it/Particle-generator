@@ -8,18 +8,29 @@ Está separado del generador de mazmorras (`editor/`), que no se tocó. Tiene tr
   sin filos a 45°, sin esquinas de 90° (bisel), cuartos de 4 de ancho o más, puertas que no tocan otra pared. Se mide con el
   mismo `checkRules` de la mazmorra (semilla 7: 0 cruces, 0 huecos finos, 0 espacios chicos, 0 paredes sueltas, ~8 filos y
   ~8 esquinas que quedan en bordes difíciles).
-  - **Sin muralla**: no es una mazmorra; la ciudad se abre al campo. Solo el contorno es simétrico; el interior es libre.
+  - **Sin muralla**: la ciudad termina en un **anillo de asfalto** y de ahí salen **2–3 autopistas** (8 de ancho, con
+    mediana) hasta el borde del mapa: la salida hacia otra ciudad. A está en la punta de la autopista más lejana a la plaza.
+    Solo el contorno es simétrico; el interior es libre.
   - **Calles con jerarquía**: calzada para autos (calles de 6 → 4 de calzada + veredas; avenidas desde el borde hasta la
     plaza, más anchas y con **mediana**), **veredas** pegadas a cada manzana (con bordillo), y las calles de menos de 3 de
     ancho son **pasajes peatonales** (personas y bicis).
+  - **Rejas en las calles**: cruzan la calle de vereda a vereda y casi siempre dejan un paso de 2; algunas la cierran
+    (solo si igual se llega a todo por otro lado: hay que rodear).
+  - **Estacionamientos** (P): algunos lotes del centro y del anillo medio se sacrifican para estacionar.
   - **Plaza** al centro, siempre rodeada de **césped** (con reja y varias entradas) y luego de **pista**.
   - **Zonas**: comercio y oficinas junto a la plaza, condominios en el anillo medio, suburbio afuera, parques.
   - **Casas**: cada manzana se parte en lotes que dan a la calle. Casas **adosadas** (comparten pared con la vecina, patio
-    atrás) y **sueltas** (rodeadas de su jardín). Cada casa es un conjunto de **3 a 7 cuartos** de tamaño parejo; el jardín
-    tiene reja y **al menos 2 entradas**; las puertas son de **2 de ancho**. Cada casa se pinta con su propio tono.
-  - **Centro comercial en pesa** (anclas en las puntas, pasillo con locales, pasaje al medio), nunca delgado.
+    atrás) y **sueltas** (rodeadas de su jardín). Cada casa es un conjunto de **3 a 7 cuartos** de tamaño parejo con su uso:
+    **sala** (puerta principal de 2), **garaje** (portón de 3 a la calle, en casas de 4 cuartos o más), **cocina** (puerta
+    trasera al patio), **baño** y **dormitorios**; las grandes, condominios y oficinas tienen **salida de emergencia**
+    (hasta 3 entradas). El jardín tiene reja y al menos 2 entradas propias (portón o un **hueco roto**).
+  - **Tiendas** con 2 puertas principales (salvo una minitienda), local y depósito; oficinas con recepción.
+  - **Centro comercial en pesa** (anclas en las puntas, pasillo de 4, locales enfrentados, pasaje al medio), hecho con
+    cortes válidos de la rejilla; nunca delgado (al menos 30×18).
   - **Ingeniería vial**: algunas casas que obligaban a un rodeo se derriban y queda calle nueva.
-  - **A y B lo más lejos posible**: A es la calle del borde más lejana a la plaza (B); se revisa que se llegue a todo.
+  - **Misma semilla, misma ciudad** en el navegador y en Node (no se usa `sort` con azar, que cambia entre versiones).
+  - Visor: zoom hasta ×10 con la rueda, arrastrar para moverse, **nombres de cuartos** al acercar y **contorno de casas**
+    (cada casa con su color) activable.
 - **Mazmorra pintada** (`ciudad_diagonal.js`): la mazmorra tal cual con capa de ciudad (la versión anterior).
 
 - **Diagonal (base mazmorra, el principal)**: parte del generador de mazmorras con sus diagonales y formas ya pulidas y le
@@ -36,7 +47,7 @@ Está separado del generador de mazmorras (`editor/`), que no se tocó. Tiene tr
 - `ciudad.js`: modo cuadrícula y la tabla `MEDIDAS` que usan los dos modos.
 - `index.html`: el visor. Elige modo, semilla y tamaño, y mira la ruta A→B.
 - `exportar.js`: escribe las piezas para TruWorlds.
-- `export/ciudad_semilla_7/`: **la ciudad del motor** (n=12, ~12.100 piezas en 76 chunks, máx. 372).
+- `export/ciudad_semilla_7/`: **la ciudad del motor** (n=14, ~11.000 piezas).
 - `export/diagonal_semilla_7/`: ciudad diagonal ya exportada (19×19, **5.468 piezas, 25 chunks, máx. 391**).
 - `export/cuadricula_semilla_7/`: ciudad en cuadrícula ya exportada (150×110 celdas, 2.413 piezas).
 
@@ -72,7 +83,7 @@ Los pisos y techos de las salas en diagonal se arman con rectángulos y dejan si
 ### Nombres de las piezas
 | Nombre | Qué es |
 |---|---|
-| `Calle`, `Vereda`, `Pasaje`, `Plaza`, `Parque`, `Patio`, `Piso` | Suelos |
+| `Calle`, `Vereda`, `Pasaje`, `Estacionamiento`, `Plaza`, `Parque`, `Patio`, `Piso` | Suelos |
 | `Pared` | Pared completa |
 | `Muralla` | Borde de la ciudad (ladrillo) |
 | `Dintel` | La parte de pared sobre una puerta o ventana |
@@ -102,7 +113,7 @@ Con estas medidas se cumple lo de TruWorlds: puertas de 8 studs o más, techos d
 
 ## Regenerar
 ```
-node ciudad/exportar.js --semilla=7 --n=12                          # ciudad (n: 10, 12 o 14)
+node ciudad/exportar.js --semilla=7 --n=14                          # ciudad (n: 12, 14 o 16)
 node ciudad/exportar.js --semilla=7 --modo=diagonal --n=19          # mazmorra pintada
 node ciudad/exportar.js --semilla=7 --modo=cuadricula --tamano=150x110
 ```
