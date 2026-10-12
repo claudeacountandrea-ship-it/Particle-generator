@@ -154,6 +154,7 @@ Las puertas son huecos en la pared, sin hoja.
 - **Veredas**: las esquinas de 90° de las veredas (con la calle, el campo o un parque) se biselan a 45°, en varias pasadas
   (primero las puntas, después los rincones); la punta de una vereda nunca se afila.
 - **Óvalos**: isla de pasto de radio 5 con un anillo de 2 carriles marcado; nunca pegados al campo ni a la plaza.
+- **Veredas que se tocan por una punta** (sobre todo junto al campo): la esquina se cierra con media celda en diagonal.
 - **Sierra de medias celdas**: al crecer una forma con diagonales, sus lados rectos quedaban como una pila de medias celdas
   (la sierra «≶»); esas celdas se vuelven enteras antes del bisel y otra vez después de la reparación de esquinas.
 - **Sentido del tráfico** (por la derecha): a cada lado de la mediana, carriles de 3 con línea blanca entre ellos y flechas
@@ -167,6 +168,12 @@ Las puertas son huecos en la pared, sin hoja.
   cuarto más de 2,6 veces largo que ancho se parte en dos (sala y comedor, cocina y lavandería, dos dormitorios).
 - **Condominios**: pasillo desde la calle hacia adentro con departamentos (sala y dormitorio) a los dos lados, o a un lado si
   es angosto; la escalera en el pasillo o un departamento; 3 a 5 pisos.
+- **Baño y pasillo**: el baño es el cuarto privado chico con menos vecinos (en un rincón, con pared afuera) y tiene una
+  sola puerta: nunca se pasa por él a otro cuarto. En casas de 5 cuartos o más, el cuarto privado que toca a 3 o más es el
+  pasillo (distribuidor), y arriba sigue siendo pasillo.
+- **Casas sin partir**: si el lote tiene forma rara y no se puede partir, la casa es el núcleo (2 celdas hacia adentro) y el
+  borde queda de jardín. Un cuarto suelto grande ya no se pega como anexo a la vecina: pasa a ser jardín (de la vecina o
+  público). Un cuarto demasiado grande para su uso se parte en dos (la sala hasta 2,6 cuartos normales, el resto hasta 2).
 - **Antejardín**: en la mitad de los barrios la casa se retira 3 de la vereda y se entra por un jardín al frente.
 - **Mercado** (1, o 2 en ciudades grandes): nave de puestos grande y depósito, frigorífico, baños y carga al fondo, con
   estacionamiento. **Comida rápida** en el centro y el anillo medio: comedor al frente, cocina y baño.
