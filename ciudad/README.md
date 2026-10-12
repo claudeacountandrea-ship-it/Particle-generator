@@ -151,7 +151,18 @@ Las puertas son huecos en la pared, sin hoja.
 - **Centro comercial**: locales más grandes y abiertos enteros al pasillo (sin pared delante); los anaqueles van después.
 - **Mansiones**: en el suburbio, en medio de su jardín cercado, simétricas: hall y salón al centro, un ala con comedor y cocina y
   otra con biblioteca y sala de juegos; 2 pisos con dormitorios arriba.
-- **Veredas**: las esquinas de 90° de las veredas (con la calle, el campo o un parque) se biselan a 45°.
+- **Veredas**: las esquinas de 90° de las veredas (con la calle, el campo o un parque) se biselan a 45°, en varias pasadas
+  (primero las puntas, después los rincones); la punta de una vereda nunca se afila.
+- **Óvalos**: isla de pasto de radio 5 con un anillo de 2 carriles marcado; nunca pegados al campo ni a la plaza.
+- **Islas verdes**: donde la calzada sobra (muy ancha en todas direcciones) se pone una isla octogonal de pasto.
+- **Estacionamientos**: la vereda de delante pasa a ser calzada: entrada grande de autos desde la pista.
+- **Anchos mínimos**: un lote de menos de 6 de ancho no es casa ni oficina: queda de área verde (letreros, decoración). Un
+  cuarto más de 2,6 veces largo que ancho se parte en dos (sala y comedor, cocina y lavandería, dos dormitorios).
+- **Condominios**: pasillo desde la calle hacia adentro con departamentos (sala y dormitorio) a los dos lados, o a un lado si
+  es angosto; la escalera en el pasillo o un departamento; 3 a 5 pisos.
+- **Antejardín**: en la mitad de los barrios la casa se retira 3 de la vereda y se entra por un jardín al frente.
+- **Mercado** (1, o 2 en ciudades grandes): nave de puestos grande y depósito, frigorífico, baños y carga al fondo, con
+  estacionamiento. **Comida rápida** en el centro y el anillo medio: comedor al frente, cocina y baño.
 - **Visor**: «Contornos» rodea cada lote (casa + jardín) y cada parque, juegos o lago; «Tipo de edificio» escribe casa,
   condominio, tienda u oficinas con sus pisos (por ejemplo «condominio 3P»). El selector «Piso» muestra la calle, los pisos 2 a 4 (lo que no llega queda oscuro) y los techos con los puentes.
 

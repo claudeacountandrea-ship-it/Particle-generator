@@ -106,8 +106,8 @@
     const cellLabels = (x, y) => { const i = (y * C4 + x) * 4; return [q[i], q[i + 1], q[i + 2], q[i + 3]]; };
     const anyIn = (x, y) => cellLabels(x, y).some(l => c.kindOf(l) !== 'out');
     const fullRoom = (x, y) => { const ls = cellLabels(x, y); return ls.every(l => l === ls[0]) && c.kindOf(ls[0]) === 'room' ? c.houseOf(ls[0]) : null; };
-    const FLOOR = { mansion: ['#8a5a3a', 'Wood'], escuela: ['#d9b46a', 'Wood'], hospital: ['#e9eef2', 'SmoothSurface'], policia: ['#8c9bb3', 'SmoothSurface'], bomberos: ['#b8b0a6', 'SmoothSurface'], militar: ['#8a8b6e', 'Ground'], carcel: ['#8a8782', 'SmoothSurface'], casa: ['#a07850', 'Wood'], tienda: ['#c8c2b4', 'Marble'], edificio: ['#8f8a80', 'SmoothSurface'], oficinas: ['#9aa3ad', 'SmoothSurface'], condominio: ['#b8a58a', 'Wood'], comercial: ['#d6d0c4', 'Marble'], almacen: ['#7c7a74', 'Gravel'], mercado: ['#b9b09c', 'Marble'], entrada: ['#8aa05a', 'Grass'] };
-    const ROOF = { mansion: '#3e4a5c', escuela: '#b5652e', hospital: '#f2f4f6', policia: '#2f4a78', bomberos: '#a3322a', militar: '#5d6440', carcel: '#55524e', casa: '#8c4a3a', tienda: '#5a6470', edificio: '#4e4a46', oficinas: '#3f4a57', condominio: '#7a5a48', comercial: '#e0ddd6', almacen: '#6d6f73', entrada: '#6d6f73' };
+    const FLOOR = { comida: ['#c9b48a', 'SmoothSurface'], mansion: ['#8a5a3a', 'Wood'], escuela: ['#d9b46a', 'Wood'], hospital: ['#e9eef2', 'SmoothSurface'], policia: ['#8c9bb3', 'SmoothSurface'], bomberos: ['#b8b0a6', 'SmoothSurface'], militar: ['#8a8b6e', 'Ground'], carcel: ['#8a8782', 'SmoothSurface'], casa: ['#a07850', 'Wood'], tienda: ['#c8c2b4', 'Marble'], edificio: ['#8f8a80', 'SmoothSurface'], oficinas: ['#9aa3ad', 'SmoothSurface'], condominio: ['#b8a58a', 'Wood'], comercial: ['#d6d0c4', 'Marble'], almacen: ['#7c7a74', 'Gravel'], mercado: ['#b9b09c', 'Marble'], entrada: ['#8aa05a', 'Grass'] };
+    const ROOF = { comida: '#c0392b', mercado: '#6a7a5a', mansion: '#3e4a5c', escuela: '#b5652e', hospital: '#f2f4f6', policia: '#2f4a78', bomberos: '#a3322a', militar: '#5d6440', carcel: '#55524e', casa: '#8c4a3a', tienda: '#5a6470', edificio: '#4e4a46', oficinas: '#3f4a57', condominio: '#7a5a48', comercial: '#e0ddd6', almacen: '#6d6f73', entrada: '#6d6f73' };
     // suelo de calle bajo toda la ciudad, pisos de las casas encima, escombros en los huecos
     for (const g of greedy((x, y) => anyIn(x, y) ? 1 : null)) add('Calle', 'Block', [X(g.x + g.w / 2), -0.5, Z(g.y + g.h / 2)], [g.w * C, 1, g.h * C], '#3d4045', 'SmoothSurface', null, g.x + g.w / 2, g.y + g.h / 2);
     const court = new Set((c.roomInfo || []).filter(r => r.role === 'patio de recreo' || r.role === 'patio de presos').map(r => r.l)); // patios dentro de edificios: pasto y sin techo
@@ -203,7 +203,7 @@
   }
 
   // ---------- dibujo para el visor
-  const COLS = { mansion: '#d8c4a0', calle: '#45494f', vereda: '#9a958c', pasaje: '#7a6d5c', out: '#2f3d26', ruina: '#3a332c', casa: '#c9a77c', tienda: '#b9c4cc', edificio: '#a39d93', oficinas: '#8fa3b8', condominio: '#d3b98f', comercial: '#e6e1d6', almacen: '#8d8a83', parking: '#585c63', escuela: '#e8c26a', rotonda: '#6fa34a', cantero: '#7cb35a', hospital: '#e9eef2', policia: '#5b7bb0', bomberos: '#c9574a', militar: '#7a8250', carcel: '#77736e', agua: '#3d7fb3', juegos: '#93c463', mercado: '#b6ad98', entrada: '#7f9150', refugio: '#e8b23a', plaza: '#b6ad98', parque: '#5d8a3f', patio: '#7f9a4c' };
+  const COLS = { comida: '#f0b860', mercado: '#c9d28f', mansion: '#d8c4a0', calle: '#45494f', vereda: '#9a958c', pasaje: '#7a6d5c', out: '#2f3d26', ruina: '#3a332c', casa: '#c9a77c', tienda: '#b9c4cc', edificio: '#a39d93', oficinas: '#8fa3b8', condominio: '#d3b98f', comercial: '#e6e1d6', almacen: '#8d8a83', parking: '#585c63', escuela: '#e8c26a', rotonda: '#6fa34a', cantero: '#7cb35a', hospital: '#e9eef2', policia: '#5b7bb0', bomberos: '#c9574a', militar: '#7a8250', carcel: '#77736e', agua: '#3d7fb3', juegos: '#93c463', mercado: '#b6ad98', entrada: '#7f9150', refugio: '#e8b23a', plaza: '#b6ad98', parque: '#5d8a3f', patio: '#7f9a4c' };
   // cada casa con su propio tono (variación del color de su tipo), para distinguir casas vecinas
   const shade = (hex, f) => { const v = parseInt(hex.slice(1), 16), ch = sh => Math.max(0, Math.min(255, Math.round(((v >> sh) & 255) * f))); return '#' + [16, 8, 0].map(sh => ch(sh).toString(16).padStart(2, '0')).join(''); };
   const houseTone = (h, base) => shade(base, (h.tint ? 0.88 : 0.8) + ((h.id * 2654435761 >>> 0) % 1000) / 1000 * (h.tint ? 0.24 : 0.4)); // en un barrio, tonos parecidos
@@ -218,7 +218,7 @@
       colCache.set(l, col); return col; };
     // vista por piso: lo que no llega a ese piso queda oscuro; en los techos cada edificio con el color de su techo
     const piso = opt.piso === 'techo' ? 99 : +(opt.piso || 1), pisoOf = l => { if (c.kindOf(l) !== 'room') return 0; const h = c.houses.get(c.houseOf(l)); return h ? h.pisos || 1 : 1; };
-    const ROOFC = { mansion: '#3e4a5c', casa: '#8c4a3a', condominio: '#7a5a48', tienda: '#5a6470', oficinas: '#3f4a57', comercial: '#e0ddd6', almacen: '#6d6f73', hospital: '#f2f4f6', policia: '#2f4a78', bomberos: '#a3322a', escuela: '#b5652e', militar: '#5d6440', carcel: '#55524e' };
+    const ROOFC = { comida: '#c0392b', mercado: '#6a7a5a', mansion: '#3e4a5c', casa: '#8c4a3a', condominio: '#7a5a48', tienda: '#5a6470', oficinas: '#3f4a57', comercial: '#e0ddd6', almacen: '#6d6f73', hospital: '#f2f4f6', policia: '#2f4a78', bomberos: '#a3322a', escuela: '#b5652e', militar: '#5d6440', carcel: '#55524e' };
     const baseCol = colorOf, dimCache = new Map();
     const colorAt = piso === 1 ? baseCol : l => { let col = dimCache.get(l); if (col) return col; const p2 = pisoOf(l);
       if (piso === 99 && p2) { const h = c.houses.get(c.houseOf(l)); col = houseTone(h, h.roofTint || ROOFC[h.type] || ROOFC.casa); }
@@ -235,10 +235,12 @@
       else if (!(N === E && E === S2 && S2 === O)) { [E, S2, O].forEach((l, k2) => { const kq = k2 + 1, A2 = [[x, y], [x + 1, y], [x + 1, y + 1], [x, y + 1]]; tri([A2[kq], A2[(kq + 1) % 4], [x + 0.5, y + 0.5]], colorAt(l)); }); }
       if (c.kindOf(N) === 'parking') { let a = pk.get(N); if (!a) pk.set(N, a = [0, 0, 0]); a[0] += x + 0.5; a[1] += y + 0.5; a[2]++; }
     }
+    // óvalos: sus dos carriles marcados con una línea discontinua alrededor de la isla
+    if (c.rotondas && piso === 1) for (const [cx2, cy2] of c.rotondas) { g.strokeStyle = 'rgba(240,240,240,.75)'; g.lineWidth = Math.max(1, s * 0.15); g.setLineDash([s * 0.8, s * 0.6]); g.beginPath(); const rr2 = 9.5; for (let a = 0; a <= 8; a++) { const an = (a + 0.5) * Math.PI / 4, px = cx2 + Math.cos(an) * rr2, py = cy2 + Math.sin(an) * rr2; a ? g.lineTo(px * s, py * s) : g.moveTo(px * s, py * s); } g.stroke(); g.setLineDash([]); }
     if (opt.route) { g.fillStyle = 'rgba(95,211,232,.55)'; for (const [x, y] of c.routeCells) g.fillRect(x * s + s * .2, y * s + s * .2, s * .6, s * .6); }
     const ST = {
       exterior: ['#121416', .32], interior: ['#121416', .26], medianera: ['#121416', .32], muralla: ['#7a4b3a', .5], ruina: ['#5a4d42', .3],
-      puerta: ['#c0782f', .24], muro: ['#2a211c', .55], garaje: ['#d9d4c7', .3, [.35, .12]], hueco: ['#ff8a1f', .2, [.12, .25]], bordillo: ['#b9b4aa', .08], mediana: ['#e3c75a', .18, [.6, .3]], entrada: ['#7fe08a', .3, [.1, .3]], ventana: ['#8ecae6', .2], ventanaRota: ['#ff8a1f', .26, [.2, .15]], reja: ['#c5ccd3', .16, [.25, .2]], porton: ['#7fe08a', .16, [.08, .3]],
+      puerta: ['#c0782f', .24], muro: ['#2a211c', .55], garaje: ['#d9d4c7', .3, [.35, .12]], hueco: ['#ff8a1f', .2, [.12, .25]], bordillo: ['#d8d2c4', .14], mediana: ['#e3c75a', .18, [.6, .3]], entrada: ['#7fe08a', .3, [.1, .3]], ventana: ['#8ecae6', .2], ventanaRota: ['#ff8a1f', .26, [.2, .15]], reja: ['#c5ccd3', .16, [.25, .2]], porton: ['#7fe08a', .16, [.08, .3]],
     };
     g.lineCap = 'round';
     const segList = piso === 1 ? c.segs : piso === 99 ? [] : (c.pisos && c.pisos[piso - 2] ? c.pisos[piso - 2].segs : []);
@@ -281,11 +283,11 @@
     if (opt.barrios && c.barrios && s < 6) { g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `800 ${Math.max(12, Math.round(s * 7))}px Saira Condensed, sans-serif`;
       for (const b of c.barrios) { g.lineWidth = 4; g.strokeStyle = 'rgba(0,0,0,.55)'; g.strokeText(b.nombre.toUpperCase(), b.cx * s, b.cy * s); g.fillStyle = 'rgba(255,240,200,.95)'; g.fillText(b.nombre.toUpperCase(), b.cx * s, b.cy * s); } }
     // edificios especiales: su nombre en el medio
-    { const TAG = { mansion: 'MANSIÓN', hospital: '✚ HOSPITAL', policia: 'POLICÍA', bomberos: 'BOMBEROS', militar: 'BASE MILITAR', carcel: 'CÁRCEL', comercial: 'CENTRO COMERCIAL', escuela: 'ESCUELA' };
+    { const TAG = { mercado: 'MERCADO', mansion: 'MANSIÓN', hospital: '✚ HOSPITAL', policia: 'POLICÍA', bomberos: 'BOMBEROS', militar: 'BASE MILITAR', carcel: 'CÁRCEL', comercial: 'CENTRO COMERCIAL', escuela: 'ESCUELA' };
       g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `800 ${Math.max(10, Math.round(s * 2.6))}px Saira Condensed, sans-serif`;
       for (const h of c.houses.values()) { const tg = TAG[h.type]; if (!tg) continue; g.lineWidth = Math.max(2, s * 0.5); g.strokeStyle = 'rgba(0,0,0,.65)'; g.strokeText(tg, h.cx * s, h.cy * s); g.fillStyle = h.type === 'hospital' ? '#ff5a5a' : '#fff'; g.fillText(tg, h.cx * s, h.cy * s); } }
     // tipo de cada edificio (y sus pisos) a media distancia
-    if (opt.tipos && s >= 2.2 && s < 7) { const AB = { casa: 'casa', condominio: 'condominio', tienda: 'tienda', oficinas: 'oficinas', almacen: 'almacén', mansion: '' };
+    if (opt.tipos && s >= 2.2 && s < 7) { const AB = { comida: 'comida rápida', casa: 'casa', condominio: 'condominio', tienda: 'tienda', oficinas: 'oficinas', almacen: 'almacén', mansion: '' };
       g.font = `700 ${Math.max(9, Math.round(s * 1.5))}px Atkinson Hyperlegible, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
       for (const h of c.houses.values()) { const nm = AB[h.type]; if (nm == null || !nm) continue; const t2 = nm + ((h.pisos || 1) > 1 ? ' ' + h.pisos + 'P' : '');
         g.lineWidth = 3; g.strokeStyle = 'rgba(255,255,255,.85)'; g.strokeText(t2, h.cx * s, h.cy * s); g.fillStyle = '#1a1612'; g.fillText(t2, h.cx * s, h.cy * s); } }
