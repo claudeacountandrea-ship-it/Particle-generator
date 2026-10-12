@@ -166,7 +166,7 @@
         for (const c of cells) for (let k = 0; k < 4; k++) t[c * 4 + k] = 6; nPas++;
       } }
     // rotondas (óvalos) donde se cruzan las vías principales: el cruce se abre en un octógono con una isla de pasto al medio
-    let nRot = 0, nIsla = 0; const rotPts = [];
+    let nRot = 0, nIsla = 0; const rotPts = [], decoPts = []; // decoPts: islas donde va una estatua, un letrero o un árbol
     { const pts = []; const overlap = (A, B) => { const seen = new Uint8Array(C * Rr); for (let c = 0; c < C * Rr; c++) { if (!A[c] || !B[c] || seen[c]) continue; let sx = 0, sy = 0, k2 = 0; const st = [c]; seen[c] = 1;
           while (st.length) { const d = st.pop(), x = d % C, y = (d / C) | 0; sx += x; sy += y; k2++; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy, j = ny * C + nx; if (nx >= 0 && ny >= 0 && nx < C && ny < Rr && A[j] && B[j] && !seen[j]) { seen[j] = 1; st.push(j); } } }
           if (k2 >= 20) pts.push([Math.round(sx / k2), Math.round(sy / k2)]); } };
@@ -184,7 +184,7 @@
       const rad = 12, cand = []; for (let y = rad; y < Rr - rad; y += 2) for (let x = rad; x < C - rad; x += 2) { if (!R1[y * C + x]) continue; let ok = true; for (let dy = -rad; dy <= rad && ok; dy++) for (let dx = -rad; dx <= rad; dx++) if (Math.abs(dx) + Math.abs(dy) <= rad + 4 && !R1[(y + dy) * C + x + dx]) { ok = false; break; } if (ok) cand.push([x, y]); }
       const pick = []; for (const p of mezcla(cand, R)) if ([...pick, ...rotPts].every(q2 => Math.hypot(q2[0] - p[0], q2[1] - p[1]) > 28)) pick.push(p);
       for (const [cx, cy] of pick) for (let y = cy - 5; y <= cy + 5; y++) for (let x = cx - 5; x <= cx + 5; x++) for (let k = 0; k < 4; k++) { const i = (y * C + x) * 4 + k, dx = Math.abs(x + CEN[k][0] - cx), dy = Math.abs(y + CEN[k][1] - cy); if (dx < 4 && dy < 4 && dx + dy < 6 && t[i] === 1) t[i] = 9; } // isla octogonal
-      nIsla = pick.length; }
+      nIsla = pick.length; decoPts.push(...pick); }
     // veredas: la franja de calle pegada a manzanas, parques y césped
     { const B = t.map(v => v === 3 || v === 4 || v === 5 ? 1 : 0), V = grow(B, 1); for (let i = 0; i < NQ; i++) if (t[i] === 1 && V[i]) t[i] = 7; }
     // el anillo y las autopistas también tienen vereda del lado del campo: veredas a ambos lados
@@ -666,6 +666,13 @@
     // estacionamientos: la vereda delante pasa a ser calzada (entrada grande de autos que conecta con la pista)
     { const PK = new Uint8Array(NQ); for (let i = 0; i < NQ; i++) if (kindOf(q[i]) === 'parking') PK[i] = 1; const G2 = grow(PK, 2), RD = new Uint8Array(NQ); for (let i = 0; i < NQ; i++) if (q[i] === ROAD) RD[i] = 1; const NR = grow(RD, 2);
       for (let i = 0; i < NQ; i++) if (G2[i] && NR[i] && q[i] === VEREDA) { q[i] = ROAD; nEntP++; } }
+    // sierra de medias celdas: al crecer una forma con diagonales, sus lados rectos quedan como una pila de medias celdas iguales
+    // (vertical u horizontal); esas celdas pasan a ser enteras (vereda si una mitad es vereda)
+    const sierra = () => { const SOFT0 = new Set(['vereda', 'corr', 'out', 'pasaje', 'parque']), sig = c => { const i = c * 4, N = q[i], E = q[i + 1], S = q[i + 2], O = q[i + 3]; if (N === E && S === O && N !== S) return 'a' + N + ',' + S; if (N === O && S === E && N !== S) return 'b' + N + ',' + S; return null; };
+      const fix = []; for (let y = 1; y < Rr - 1; y++) for (let x = 1; x < C - 1; x++) { const c = y * C + x, g = sig(c); if (!g) continue; const i = c * 4; if (![q[i], q[i + 2]].every(l => SOFT0.has(kindOf(l)))) continue;
+        if (sig(c - C) === g || sig(c + C) === g || sig(c - 1) === g || sig(c + 1) === g) fix.push(c); }
+      for (const c of fix) { const i = c * 4, A2 = q[i], B2 = q[i + 2], to = kindOf(A2) === 'vereda' ? A2 : kindOf(B2) === 'vereda' ? B2 : A2; for (let k = 0; k < 4; k++) q[i + k] = to; } };
+    sierra();
     // veredas sin esquinas de 90°: la esquina de una celda de vereda (o de calle/campo pegado a la vereda) se bisela a 45°;
     // dos pasadas: primero las puntas y después los rincones que quedan
     for (let pass = 0; pass < 3; pass++) { const SOFT = new Set(['vereda', 'corr', 'out', 'pasaje', 'parque', 'rotonda']), snap = q.slice();
@@ -675,10 +682,15 @@
         const X0 = U(x, y); if (X0 < 0 || !SOFT.has(kindOf(X0))) continue;
         // [lado1 (dx,dy,cuarto que mira), lado2, diagonal, opuesto1, opuesto2, cuartos que cambian]: N=0 E=1 S=2 O=3
         for (const [a, b, d, oa, ob, ks] of [[[0, -1, 2], [1, 0, 3], [1, -1], [0, 1, 0], [-1, 0, 1], [0, 1]], [[1, 0, 3], [0, 1, 0], [1, 1], [-1, 0, 1], [0, -1, 2], [1, 2]], [[0, 1, 0], [-1, 0, 1], [-1, 1], [0, -1, 2], [1, 0, 3], [2, 3]], [[-1, 0, 1], [0, -1, 2], [-1, -1], [1, 0, 3], [0, 1, 0], [3, 0]]]) {
-          const Y0 = F(x + a[0], y + a[1], a[2]); if (Y0 < 0 || Y0 === X0 || !SOFT.has(kindOf(Y0)) || F(x + b[0], y + b[1], b[2]) !== Y0) continue;
+          const Y0 = U(x + a[0], y + a[1]); if (Y0 < 0 || Y0 === X0 || !SOFT.has(kindOf(Y0)) || U(x + b[0], y + b[1]) !== Y0) continue; // lados enteros: sin cascada de medias celdas (sierra)
           if (![0, 1, 2, 3].some(k => F(x + d[0], y + d[1], k) === Y0)) continue;
           if (F(x + oa[0], y + oa[1], oa[2]) === Y0 || F(x + ob[0], y + ob[1], ob[2]) === Y0) continue;
           if (kindOf(X0) === 'vereda' && [F(x, y - 1, 2), F(x + 1, y, 3), F(x, y + 1, 0), F(x - 1, y, 1)].filter(l => l !== X0).length >= 3) continue; // la punta de una vereda no se afila
+          // final de una franja de 2 de ancho: si la vecina de al lado también es esquina hacia el mismo lado, el final queda recto
+          // (biselar las dos hace la sierra «≶»)
+          { let strip = false; for (const [sA, sB] of [[a, b], [b, a]]) { const px = x - sA[0], py = y - sA[1]; if (U(px, py) !== X0 && F(px, py, [0, 1, 2, 3].find(k => true)) !== X0) continue;
+              const fB = F(px + sB[0], py + sB[1], sB[2]), fA = F(px - sA[0], py - sA[1], (sA[2] + 2) % 4); if (fB === Y0 && fA === Y0) strip = true; }
+            if (strip) continue; }
           if (kindOf(X0) === kindOf(Y0)) continue;
           const i = (y * C + x) * 4; if (q[i] !== X0 || q[i + 1] !== X0 || q[i + 2] !== X0 || q[i + 3] !== X0) continue;
           for (const k of ks) q[i + k] = Y0; break; } } }
@@ -728,7 +740,7 @@
       }
       for (let i = 0; i < NQ; i++) { const m2 = remap.get(q[i]); if (m2) q[i] = m2; }
     }
-    normalize();
+    sierra(); normalize(); // la reparación de esquinas también puede dejar sierra en las veredas
     // consistencia: cada cuarto que quedó en el mapa pertenece a una casa existente
     { const present = new Map(); for (let i = 0; i < NQ; i++) { const l = q[i]; if (kinds[l] === 'room') { if (!present.has(l)) present.set(l, []); present.get(l).push(i); } }
       for (const h of houses.values()) h.rooms = new Set([...h.rooms].filter(l => present.has(l)));
@@ -897,6 +909,7 @@
         if (full) { if (base < 0) base = reachN(); if (reachN() < base) { added.forEach(s2 => segAt.delete(keyOf(s2))); continue; } nBarrFull++; }
         segs.push(...added); nBarr++;
       } }
+    const medRuns = []; // tramos de mediana (para los carriles y el sentido del tráfico)
     // doble vía: mediana al medio de las pistas rectas de 6, con cortes para cruzar
     let nMed = 0;
     { const full = new Uint8Array(C * Rr); for (let c = 0; c < C * Rr; c++) full[c] = q[c * 4] === ROAD && q[c * 4 + 1] === ROAD && q[c * 4 + 2] === ROAD && q[c * 4 + 3] === ROAD ? 1 : 0;
@@ -907,11 +920,21 @@
       const cand = new Map();
       for (let y = 0; y < Rr; y++) for (let x = 1; x < C; x++) if (D(x - 1, y) === D(x, y) && D(x, y) >= 3 && D(x, y) <= 10 && D(x - 2, y) === D(x, y) - 1 && D(x + 1, y) === D(x, y) - 1) cand.set('v' + x + ',' + y, 1);
       for (let y = 1; y < Rr; y++) for (let x = 0; x < C; x++) if (D(x, y - 1) === D(x, y) && D(x, y) >= 3 && D(x, y) <= 10 && D(x, y - 2) === D(x, y) - 1 && D(x, y + 1) === D(x, y) - 1) cand.set('h' + x + ',' + y, 1);
-      const take = (keyOf, line, len) => { let run = []; const flush = () => { if (run.length >= 10) run.forEach((k, i) => { if (i % 16 < 14) { const [x, y] = k.slice(1).split(',').map(Number); const s = { a: k[0] === 'v' ? [x, y] : [x, y], b: k[0] === 'v' ? [x, y + 1] : [x + 1, y], dir: k[0], line: k[0] === 'v' ? x : y, pos: k[0] === 'v' ? y : x, L1: ROAD, L2: ROAD, cls: 'mediana' }; segs.push(s); nMed++; } }); run = []; };
+      const take = (keyOf, line, len) => { let run = []; const flush = () => { if (run.length >= 10) { const [x0r, y0r] = run[0].slice(1).split(',').map(Number), [x1r, y1r] = run[run.length - 1].slice(1).split(',').map(Number); medRuns.push({ dir: run[0][0], line, p0: run[0][0] === 'v' ? y0r : x0r, p1: run[0][0] === 'v' ? y1r : x1r, d: D(x0r, y0r) }); } if (run.length >= 10) run.forEach((k, i) => { if (i % 16 < 14) { const [x, y] = k.slice(1).split(',').map(Number); const s = { a: k[0] === 'v' ? [x, y] : [x, y], b: k[0] === 'v' ? [x, y + 1] : [x + 1, y], dir: k[0], line: k[0] === 'v' ? x : y, pos: k[0] === 'v' ? y : x, L1: ROAD, L2: ROAD, cls: 'mediana' }; segs.push(s); nMed++; } }); run = []; };
         for (let p = 0; p <= len; p++) { const k = keyOf(p); if (p < len && cand.has(k)) run.push(k); else flush(); } };
       for (let x = 1; x < C; x++) take(p => 'v' + x + ',' + p, x, Rr);
       for (let y = 1; y < Rr; y++) take(p => 'h' + p + ',' + y, y, C);
     }
+    // sentido del tráfico (por la derecha): a cada lado de la mediana sus carriles de 3, con flechas cada 10 celdas y líneas
+    // blancas entre carriles; en los óvalos se gira en sentido antihorario
+    const trafico = { flechas: [], lineas: [] };
+    for (const r of medRuns) { const nL = Math.max(1, Math.round(r.d / 3)), lw = r.d / nL;
+      for (const side of [1, -1]) { // h: abajo va al este, arriba al oeste; v: a la izquierda va al sur, a la derecha al norte
+        const dirA = r.dir === 'h' ? [side, 0] : [0, -side];
+        for (let j = 0; j < nL; j++) { const off = side * (j + 0.5) * lw;
+          for (let p = r.p0 + 4; p <= r.p1 - 3; p += 10) trafico.flechas.push(r.dir === 'h' ? { x: p + 0.5, y: r.line + off, dx: dirA[0], dy: dirA[1] } : { x: r.line + off, y: p + 0.5, dx: dirA[0], dy: dirA[1] }); }
+        for (let j = 1; j < nL; j++) { const off = side * j * lw; trafico.lineas.push(r.dir === 'h' ? { x1: r.p0, y1: r.line + off, x2: r.p1 + 1, y2: r.line + off } : { x1: r.line + off, y1: r.p0, x2: r.line + off, y2: r.p1 + 1 }); } } }
+    for (const [cx, cy] of rotPts) for (let a = 0; a < 8; a++) { const th = (a + 0.5) * Math.PI / 4; trafico.flechas.push({ x: cx + Math.cos(th) * 8.5, y: cy + Math.sin(th) * 8.5, dx: +Math.sin(th).toFixed(3), dy: +(-Math.cos(th)).toFixed(3), ovalo: true }); }
     const route = s0 >= 0 ? (() => { const r = walk(s0, i => q[i] === PLAZA); if (r.i < 0) return null; const p = []; for (let j = r.i; j >= 0; j = r.prev[j]) p.push(j); return { quarters: p.reverse(), cost: r.dist[r.i] }; })() : null;
     const routeCells = route ? [...new Set(route.quarters.map(i => i >> 2))].map(c => [c % C, (c / C) | 0]) : [];
     // refugios: casas junto a la ruta a 1/3 y 2/3; una sola entrada y ventanas cerradas
@@ -1041,7 +1064,7 @@
     const roomInfo = []; { const acc = new Map(); for (let i = 0; i < NQ; i++) { const l = q[i]; if (kinds[l] !== 'room') continue; const c = i >> 2; let a = acc.get(l); if (!a) acc.set(l, a = [0, 0, 0]); a[0] += c % C + 0.5; a[1] += ((c / C) | 0) + 0.5; a[2]++; }
       for (const [l, a] of acc) roomInfo.push({ l, cx: a[0] / a[2], cy: a[1] / a[2], area: a[2] / 4, role: roleOf.get(l) || '', arriba: rolesUp.get(l) || [] }); }
     for (const b of barrios) if (b.n) { b.cx = b.sx / b.n; b.cy = b.sy / b.n; }
-    return { motor: true, roomInfo, objetos, barrios: barrios.filter(b => b.n).map(b => ({ nombre: b.nombre, cx: b.cx, cy: b.cy, estilo: b.suelta > 0.5 ? 'casas sueltas con jardín' : 'casas adosadas' })), seed, n, W, H, C4: C, q, kinds, kindOf, houseOf, segs, houses, bossL: PLAZA, plaza, A, routeCells, stats, pisos, maxPisos, escaleras, puentes, viaMayor: major, rotondas: rotPts };
+    return { motor: true, roomInfo, objetos, barrios: barrios.filter(b => b.n).map(b => ({ nombre: b.nombre, cx: b.cx, cy: b.cy, estilo: b.suelta > 0.5 ? 'casas sueltas con jardín' : 'casas adosadas' })), seed, n, W, H, C4: C, q, kinds, kindOf, houseOf, segs, houses, bossL: PLAZA, plaza, A, routeCells, stats, pisos, maxPisos, escaleras, puentes, viaMayor: major, rotondas: rotPts, trafico, decoracion: [...rotPts, ...decoPts].map(([x, y]) => ({ x, y })) };
   }
 
   root.MotorCiudad = { generate };

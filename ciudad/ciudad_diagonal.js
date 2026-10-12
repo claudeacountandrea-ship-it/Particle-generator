@@ -184,6 +184,9 @@
       else if (ob.tipo === 'tobogan') add('Tobogan', 'Wedge', [X(ob.x), 3 * sc2, Z(ob.y)], [3 * sc2, 6 * sc2, 10 * sc2], '#e04f4f', 'Plastic', null, ob.x, ob.y);
       else if (ob.tipo === 'columpio') add('Columpio', 'Block', [X(ob.x), 4 * sc2, Z(ob.y)], [10 * sc2, 8 * sc2, 1 * sc2], '#3f7fd9', 'Metal', null, ob.x, ob.y);
       else add('Arenero', 'Block', [X(ob.x), 0.3 * sc2, Z(ob.y)], [8 * sc2, 0.6 * sc2, 8 * sc2], '#e8d28a', 'Sand', null, ob.x, ob.y); }
+    // marcas del piso: líneas entre carriles y flechas del sentido del tráfico (piezas planas blancas)
+    if (c.trafico && o.marcas !== false) { for (const l of c.trafico.lineas) { const hor = l.y1 === l.y2, len = (hor ? l.x2 - l.x1 : l.y2 - l.y1) * C, cx = (l.x1 + l.x2) / 2, cy = (l.y1 + l.y2) / 2; add('LineaCarril', 'Block', [X(cx), 0.05, Z(cy)], hor ? [len, 0.1, 0.4] : [0.4, 0.1, len], '#f2f2f2', 'SmoothSurface', null, cx, cy); }
+      for (const f of c.trafico.flechas) add('FlechaCarril', 'Block', [X(f.x), 0.05, Z(f.y)], [C * 1.6, 0.1, 0.6], '#f2f2f2', 'SmoothSurface', [0, +(-Math.atan2(f.dy, f.dx) * 180 / Math.PI).toFixed(1), 0], f.x, f.y); }
     // chunks
     const byKey = new Map();
     for (const p of parts) { const [cx, cy] = p._c, kk = Math.floor(cx / chunkCells) + '_' + Math.floor(cy / chunkCells); delete p._c; if (!byKey.has(kk)) byKey.set(kk, []); byKey.get(kk).push(p); }
@@ -198,6 +201,8 @@
       PlayerStart: A ? { pos: at(A), nota: c.A ? 'punto A: la entrada de la muralla' : 'punto A: el patio de entrada de la ciudad' } : null,
       refugios: [...c.houses.values()].filter(h => h.refuge).map((h, i) => ({ nombre: h.final ? 'B (refugio final)' : 'Refugio ' + (i + 1), pos: at(h), casa: h.type })),
       ...(c.plaza ? { plaza: { nombre: 'B: plaza (llegada)', pos: at(c.plaza), celdas: Math.round(c.plaza.area) } } : {}),
+      ...(c.decoracion ? { decoracion: c.decoracion.map(d => ({ pos: [X(d.x), 0, Z(d.y)], nota: 'isla libre: estatua, letrero o árbol' })) } : {}),
+      ...(c.trafico ? { sentidoTrafico: c.trafico.flechas.map(f => ({ pos: [X(f.x), 0, Z(f.y)], dir: [+f.dx.toFixed(3), 0, +f.dy.toFixed(3)], ovalo: !!f.ovalo })) } : {}),
     };
     return { parts, chunks, spawns, medidas: M, scale: { studsPorCelda: C, alturaPared: WALL_H, alturaPuerta: DOOR_H, mapaStuds: [(W - 1) * C, (H - 1) * C], mapaMetros: [(W - 1) * M.celda, (H - 1) * M.celda] } };
   }
@@ -237,6 +242,13 @@
     }
     // óvalos: sus dos carriles marcados con una línea discontinua alrededor de la isla
     if (c.rotondas && piso === 1) for (const [cx2, cy2] of c.rotondas) { g.strokeStyle = 'rgba(240,240,240,.75)'; g.lineWidth = Math.max(1, s * 0.15); g.setLineDash([s * 0.8, s * 0.6]); g.beginPath(); const rr2 = 9.5; for (let a = 0; a <= 8; a++) { const an = (a + 0.5) * Math.PI / 4, px = cx2 + Math.cos(an) * rr2, py = cy2 + Math.sin(an) * rr2; a ? g.lineTo(px * s, py * s) : g.moveTo(px * s, py * s); } g.stroke(); g.setLineDash([]); }
+    // carriles: líneas blancas entre carriles, flechas con el sentido del tráfico y puntos de decoración (islas, óvalos)
+    if (c.trafico && piso === 1 && opt.trafico !== false) { g.strokeStyle = 'rgba(245,245,245,.6)'; g.lineWidth = Math.max(1, s * 0.1); g.setLineDash([s * 1.2, s * 1.2]);
+      for (const l of c.trafico.lineas) { g.beginPath(); g.moveTo(l.x1 * s, l.y1 * s); g.lineTo(l.x2 * s, l.y2 * s); g.stroke(); } g.setLineDash([]);
+      g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = Math.max(1.2, s * 0.18); g.lineJoin = 'round';
+      for (const f of c.trafico.flechas) { const L = 0.9, px = f.x * s, py = f.y * s, ux = f.dx, uy = f.dy, nx2 = -uy, ny2 = ux; g.beginPath(); g.moveTo(px - ux * L * s, py - uy * L * s); g.lineTo(px + ux * L * s, py + uy * L * s);
+        g.moveTo(px + (ux * L - ux * 0.55 + nx2 * 0.45) * s, py + (uy * L - uy * 0.55 + ny2 * 0.45) * s); g.lineTo(px + ux * L * s, py + uy * L * s); g.lineTo(px + (ux * L - ux * 0.55 - nx2 * 0.45) * s, py + (uy * L - uy * 0.55 - ny2 * 0.45) * s); g.stroke(); } }
+    if (c.decoracion && piso === 1) for (const d of c.decoracion) { g.fillStyle = '#f2d36b'; g.strokeStyle = '#3a2a08'; g.lineWidth = 1; g.beginPath(); for (let a = 0; a < 10; a++) { const r2 = (a % 2 ? 0.45 : 1.1) * s, an = a * Math.PI / 5 - Math.PI / 2; a ? g.lineTo(d.x * s + Math.cos(an) * r2, d.y * s + Math.sin(an) * r2) : g.moveTo(d.x * s + Math.cos(an) * r2, d.y * s + Math.sin(an) * r2); } g.closePath(); g.fill(); g.stroke(); }
     if (opt.route) { g.fillStyle = 'rgba(95,211,232,.55)'; for (const [x, y] of c.routeCells) g.fillRect(x * s + s * .2, y * s + s * .2, s * .6, s * .6); }
     const ST = {
       exterior: ['#121416', .32], interior: ['#121416', .26], medianera: ['#121416', .32], muralla: ['#7a4b3a', .5], ruina: ['#5a4d42', .3],

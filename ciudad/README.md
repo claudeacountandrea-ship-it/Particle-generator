@@ -154,6 +154,13 @@ Las puertas son huecos en la pared, sin hoja.
 - **Veredas**: las esquinas de 90° de las veredas (con la calle, el campo o un parque) se biselan a 45°, en varias pasadas
   (primero las puntas, después los rincones); la punta de una vereda nunca se afila.
 - **Óvalos**: isla de pasto de radio 5 con un anillo de 2 carriles marcado; nunca pegados al campo ni a la plaza.
+- **Sierra de medias celdas**: al crecer una forma con diagonales, sus lados rectos quedaban como una pila de medias celdas
+  (la sierra «≶»); esas celdas se vuelven enteras antes del bisel y otra vez después de la reparación de esquinas.
+- **Sentido del tráfico** (por la derecha): a cada lado de la mediana, carriles de 3 con línea blanca entre ellos y flechas
+  cada 10 celdas; en los óvalos se gira en sentido antihorario. En la exportación salen como `LineaCarril` y `FlechaCarril`
+  (piezas planas) y en `index.json` → `spawns.sentidoTrafico` (posición y dirección) para que los autos sigan los carriles.
+- **Decoración**: las islas de los óvalos y las islas verdes quedan marcadas (estrella en el visor, `spawns.decoracion` en
+  `index.json`) para poner ahí una estatua, un letrero o un árbol.
 - **Islas verdes**: donde la calzada sobra (muy ancha en todas direcciones) se pone una isla octogonal de pasto.
 - **Estacionamientos**: la vereda de delante pasa a ser calzada: entrada grande de autos desde la pista.
 - **Anchos mínimos**: un lote de menos de 6 de ancho no es casa ni oficina: queda de área verde (letreros, decoración). Un
