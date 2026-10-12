@@ -17,7 +17,7 @@
   const BLOCK = new Set(['exterior', 'interior', 'medianera', 'muralla', 'reja', 'ventana', 'ruina', 'muro']);
 
   function generate(o = {}) {
-    const seed = (o.seed ?? 7) >>> 0, n = o.n ?? 12, F = o.escala ?? 4, ens = o.ensanche ?? 1; // calles: 2 de pasillo ×4 + 1 por lado = 10 (8 de calzada: 2 carriles de 4)
+    const seed = (o.seed ?? 7) >>> 0, n = o.n ?? 12, F = o.escala ?? 4, ens = o.ensanche ?? 0; // calles: 2 de pasillo ×4 = 8 (6 de calzada: un carril de 3 por sentido + veredas). Un auto mide 2, un carril 3
     const old = Math.random; Math.random = rng(seed);
     let m; try { m = root.MazmorraBase.Halls(n, undefined, null, { central: true, rmin: 4, rmax: 8, round: true }); } finally { Math.random = old; }
     const R = rng(seed ^ 0x3c6ef372), chance = p => R() < p, rnd = (a, b) => a + Math.floor(R() * (b - a + 1));
@@ -54,14 +54,14 @@
     const grow = (mask, steps) => { let cur = mask; for (let s2 = 0; s2 < steps; s2++) { const nx = new Uint8Array(cur); for (let y = 0; y < Rr; y++) for (let x = 0; x < C; x++) for (let k = 0; k < 4; k++) { const i = (y * C + x) * 4 + k; if (cur[i]) continue; g: for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const xx = x + dx, yy = y + dy; if (xx >= 0 && yy >= 0 && xx < C && yy < Rr && cur[(yy * C + xx) * 4 + k]) { nx[i] = 1; break g; } } } cur = nx; } return cur; };
     // la ciudad termina en un anillo de asfalto (6) y de ahí salen autopistas (8, con mediana) hasta el borde: hacia otra ciudad
     let nHwy = 0;
-    { const city = t.map(v => v ? 1 : 0), ring = grow(city, 10); // anillo de 10: 8 de calzada y veredas
+    { const city = t.map(v => v ? 1 : 0), ring = grow(city, 8); // anillo de 8: 6 de calzada y veredas
       for (let i = 0; i < NQ; i++) if (!t[i] && ring[i]) t[i] = 1;
       let sx = 0, sy = 0, sn = 0; for (let i = 0; i < NQ; i++) if (city[i]) { const c = i >> 2; sx += c % C; sy += (c / C) | 0; sn++; }
       const cx = Math.round(sx / sn), cy = Math.round(sy / sn), dirs = mezcla([[1, 0], [-1, 0], [0, 1], [0, -1]], R).slice(0, rnd(2, 3));
       for (const [dx, dy] of dirs) { nHwy++; const off = rnd(-8, 8);
         for (let y = 0; y < Rr; y++) for (let x = 0; x < C; x++) {
           const along = dx ? (x - cx) * dx : (y - cy) * dy, across = dx ? y - (cy + off) : x - (cx + off);
-          if (along > 0 && across >= -9 && across < 9) /* autopista: 2 carriles de 4 por sentido + mediana */ for (let k = 0; k < 4; k++) { const i = (y * C + x) * 4 + k; if (!t[i]) t[i] = 1; } } } }
+          if (along > 0 && across >= -8 && across < 8) /* autopista: 2 carriles de 3 por sentido + mediana + veredas = 16 */ for (let k = 0; k < 4; k++) { const i = (y * C + x) * 4 + k; if (!t[i]) t[i] = 1; } } } }
     const typeAt = (tt, px, py) => { const cx = Math.floor(px), cy = Math.floor(py); if (cx < 0 || cy < 0 || cx >= C || cy >= Rr) return 0; return tt[(cy * C + cx) * 4 + quarterOf(px - cx, py - cy)]; };
     // 3) ensanche: la calle avanza `ens` celdas sobre casas y huecos
     const OFF = [-1, -0.5, 0, 0.5, 1];
@@ -121,7 +121,7 @@
     let nBlvd = 0;
     { let x0 = 1e9, x1 = -1, y0 = 1e9, y1 = -1, cx0 = 1e9, cx1 = -1, cy0 = 1e9, cy1 = -1;
       for (let i = 0; i < NQ; i++) { const c = i >> 2, x = c % C, y = (c / C) | 0; if (t[i] === 2) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); } if (t[i]) { cx0 = Math.min(cx0, x); cx1 = Math.max(cx1, x); cy0 = Math.min(cy0, y); cy1 = Math.max(cy1, y); } }
-      if (x1 >= 0 && o.avenidaCentral !== false) { const horiz = cx1 - cx0 >= cy1 - cy0, side = chance(0.5), W2 = 18;
+      if (x1 >= 0 && o.avenidaCentral !== false) { const horiz = cx1 - cx0 >= cy1 - cy0, side = chance(0.5), W2 = 16;
         const p0 = horiz ? (side ? y1 + 12 : y0 - 12 - W2) : (side ? x1 + 12 : x0 - 12 - W2);
         if (p0 > (horiz ? cy0 : cx0) + 10 && p0 + W2 < (horiz ? cy1 : cx1) - 10) { nBlvd = 1;
           for (let y = 0; y < Rr; y++) for (let x = 0; x < C; x++) { const v = horiz ? y : x; if (v < p0 || v >= p0 + W2) continue; for (let k = 0; k < 4; k++) { const i = (y * C + x) * 4 + k; if (t[i] === 3 || t[i] === 4) t[i] = 1; } } } } }
@@ -141,7 +141,7 @@
       t = nt;
     }
     // la plaza siempre rodeada de césped (2) y después de pista (6)
-    { const P = t.map(v => v === 2 ? 1 : 0), g2 = grow(P, 2), r8 = grow(g2, 10);
+    { const P = t.map(v => v === 2 ? 1 : 0), g2 = grow(P, 2), r8 = grow(g2, 8);
       for (let i = 0; i < NQ; i++) { if (t[i] === 0 || P[i]) continue; if (g2[i]) t[i] = 5; else if (r8[i]) t[i] = 1; }
       const { list } = comps((i, j) => (t[i] === 3 || t[i] === 4) && t[j] === t[i] && orig[j] === orig[i]);
       for (const mem of list) if (mem.length / 4 < 60) for (const i of mem) t[i] = 1; }
@@ -172,6 +172,13 @@
     { const full = c => [0, 1, 2, 3].every(k => t[c * 4 + k] === 1), core = new Uint8Array(NQ);
       for (let y = 1; y < Rr - 1; y++) for (let x = 1; x < C - 1; x++) { let ok = true; for (let dy = -1; dy <= 1 && ok; dy++) for (let dx = -1; dx <= 1; dx++) if (!full((y + dy) * C + x + dx)) { ok = false; break; } if (ok) for (let k = 0; k < 4; k++) core[(y * C + x) * 4 + k] = 1; }
       const wide = grow(core, 2); for (let i = 0; i < NQ; i++) if (t[i] === 1 && !wide[i]) t[i] = 7; } // sin escalones en las diagonales
+    // veredas suaves: sin dientes de sierra entre vereda y calzada (cada celda sigue a la mayoría de sus vecinas)
+    for (let pass = 0; pass < 3; pass++) { const nt = new Uint8Array(t);
+      for (let y = 1; y < Rr - 1; y++) for (let x = 1; x < C - 1; x++) { const c = y * C + x, qs = [0, 1, 2, 3].map(k => t[c * 4 + k]); if (!qs.every(v => v === 1 || v === 7)) continue;
+        let nV = 0, nR2 = 0, nearB = false; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { if (!dx && !dy) continue; const j = ((y + dy) * C + x + dx) * 4, vs = [t[j], t[j + 1], t[j + 2], t[j + 3]]; if (vs.every(v => v === 7)) nV++; else if (vs.every(v => v === 1)) nR2++; if (vs.some(v => v === 3 || v === 4 || v === 5)) nearB = true; }
+        if (nR2 >= 5 && nV <= 2 && !nearB && qs.some(v => v === 7)) for (let k = 0; k < 4; k++) nt[c * 4 + k] = 1; // diente de vereda suelto en la calzada
+        else if (nV >= 5 && nR2 <= 2 && qs.some(v => v === 1)) for (let k = 0; k < 4; k++) nt[c * 4 + k] = 7; } // muesca de calzada en la vereda
+      t = nt; }
     // etiquetas finales: calzada, plaza, vereda, pasaje, césped de la plaza; parques; manzanas en lotes con casa y patio
     const q = new Int32Array(NQ), kinds = ['out', 'corr', 'plaza', 'vereda', 'pasaje', 'parque'], houseOfL = [0, 0, 0, 0, 0, 0], houses = new Map();
     for (let i = 0; i < NQ; i++) q[i] = t[i] === 1 ? ROAD : t[i] === 2 ? PLAZA : t[i] === 7 ? VEREDA : t[i] === 6 ? PASAJE : t[i] === 5 ? RING : 0;
@@ -225,7 +232,7 @@
       return null;
     };
     const bspLeaves = (set, minA, diag, minT) => { const out = []; const rec = (s, d) => { const r = s.length / 4 >= 2 * minA && d < 10 ? cut(s, minA, diag, minT) || cut(s, minA, !diag, minT) : null; if (!r) out.push(s); else { rec(r[0], d + 1); rec(r[1], d + 1); } }; rec(set, 0); return out; };
-    const splitN = (set, nR, minA, diag) => { const lv = [set], stuck = new Set(); while (lv.length < nR) { let bi = -1; lv.forEach((s, k) => { if (!stuck.has(s) && (bi < 0 || s.length > lv[bi].length)) bi = k; }); if (bi < 0) break; const r = cut(lv[bi], minA, diag, 4) || cut(lv[bi], minA, !diag, 4); if (!r) stuck.add(lv[bi]); else lv.splice(bi, 1, r[0], r[1]); } return lv; };
+    const splitN = (set, nR, minA, diag, minT = 4) => { const lv = [set], stuck = new Set(); while (lv.length < nR) { let bi = -1; lv.forEach((s, k) => { if (!stuck.has(s) && (bi < 0 || s.length > lv[bi].length)) bi = k; }); if (bi < 0) break; const r = cut(lv[bi], minA, diag, minT) || cut(lv[bi], minA, !diag, minT); if (!r) stuck.add(lv[bi]); else lv.splice(bi, 1, r[0], r[1]); } return lv; };
     // el rectángulo más grande (en la orientación pedida) que entra en un terreno; en diagonal sus bordes caen en vértices
     const rectIn = (set, dg) => {
       if (!set.length) return null;
@@ -345,6 +352,14 @@
       for (const p of parks) if (lakes > 0 && p.length / 4 >= 180) { special.set(p, 'lago'); lakes--; }
       while (lakes-- > 0) take('lago', big(['medio', 'suburbio'], 300)); }
     const nSpecial = {}; for (const v of special.values()) nSpecial[v] = (nSpecial[v] || 0) + 1;
+    // barrios: la ciudad se reparte en barrios (regiones vecinas) y cada uno tiene su estilo: casas sueltas o adosadas,
+    // tamaño de casa y de cuartos, y un tono de fachada y de techo; las casas de un barrio se parecen entre sí
+    const NOMBRES = ['Los Álamos', 'San Telmo', 'La Loma', 'El Puerto', 'Villa Nueva', 'Las Flores', 'El Molino', 'Santa Rita', 'Los Pinos', 'La Estación', 'Las Acacias', 'El Mirador', 'San Roque', 'La Cantera'];
+    const TINTS = [['#d9b48c', '#8c4a3a'], ['#c9a27e', '#6f4a3a'], ['#e3c9a0', '#9a5a3a'], ['#bfa892', '#5a5048'], ['#d7b9a6', '#7a3f3a'], ['#c8b38f', '#4f5a3a'], ['#e0bf9a', '#8a6a3a'], ['#b9a38a', '#5a4a6a']];
+    const barrios = []; { const seeds = mezcla(bz.slice(), R).slice(0, Math.min(bz.length, 4 + Math.round(n / 2)));
+      seeds.forEach((sd, k2) => { const [cx, cy] = centerOf(sd.b), tn = TINTS[k2 % TINTS.length];
+        barrios.push({ id: k2, nombre: NOMBRES[k2 % NOMBRES.length], cx, cy, suelta: [0.15, 0.4, 0.7, 0.9][rnd(0, 3)], nR: [[3, 4], [3, 5], [4, 6], [5, 7]][rnd(0, 3)], per: [[28, 34], [32, 40], [36, 46]][rnd(0, 2)], tint: tn[0], roof: tn[1], n: 0, sx: 0, sy: 0 }); }); }
+    const barrioOf = set => { const [x, y] = centerOf(set); let b2 = barrios[0], bd = 1e9; for (const b of barrios) { const d = Math.hypot(b.cx - x, b.cy - y); if (d < bd) { bd = d; b2 = b; } } b2.n++; b2.sx += x; b2.sy += y; return b2; };
     const roleMap = (roles, m2) => roles.map(r => m2[r] || r);
     for (const mem of blocks) {
       const sp = special.get(mem), area = mem.length / 4;
@@ -377,7 +392,7 @@
       }
       if (mem === forcedMall || (zone === 'centro' && area > 700 && nMalls < 3 && chance(0.5))) { const ml = mallLayout(mem, diag) || mallLayout(mem, !diag); if (ml) { addHouse('comercial', zone, ml.rooms, null, ml.hub, roleMap(ml.roles, { localB: 'local' })); nMalls++; continue; } }
       if (zone === 'suburbio' && area > 420 && chance(0.2)) { addHouse('almacen', zone, splitN(mem, rnd(2, 3), area / 4, diag), null); continue; }
-      const lotMin = zone === 'centro' ? 70 : zone === 'medio' ? 130 : 105;
+      const lotMin = zone === 'centro' ? 120 : zone === 'medio' ? 230 : 190; // lotes más grandes: cuartos donde entra un auto
       const front = [], orphan = [];
       for (const lot of bspLeaves(mem, lotMin, diag, 5)) (lot.some(roadNb) ? front : orphan).push(lot);
       if (!front.length) front.push(...orphan.splice(0));
@@ -391,11 +406,12 @@
         if (zone !== 'suburbio' && chance(zone === 'centro' ? 0.16 : 0.08)) { const l = newLabel('parking', 0); for (const i of [...lot, ...extra[k]]) q[i] = l; nPark++; return; }
         const type = zone === 'centro' ? (chance(0.75) ? 'tienda' : 'oficinas') : zone === 'medio' ? (chance(0.6) ? 'condominio' : 'casa') : 'casa';
         let nR = type === 'casa' ? rnd(3, 7) : type === 'condominio' ? rnd(5, 7) : type === 'tienda' ? rnd(2, 4) : rnd(4, 6);
-        const per = type === 'casa' ? rnd(14, 20) : rnd(16, 22); // área de cada cuarto (celdas), pareja dentro de la casa
+        const B2 = barrioOf(lot); nR = type === 'casa' ? rnd(B2.nR[0], B2.nR[1]) : nR; // el barrio decide el tamaño de sus casas
+        const per = type === 'casa' ? rnd(B2.per[0], B2.per[1]) : rnd(34, 46); // área de cada cuarto: entra al menos un auto (5×6 o más)
         // casa suelta (rodeada de su jardín) o adosada (comparte pared con las vecinas)
-        const style = (type === 'casa' || type === 'condominio') && chance(zone === 'suburbio' ? 0.55 : zone === 'medio' ? 0.3 : 0) ? 'suelta' : 'adosada';
+        const style = (type === 'casa' || type === 'condominio') && chance(zone === 'centro' ? 0 : B2.suelta) ? 'suelta' : 'adosada'; // estilo del barrio
         let house = [], yard = [];
-        if (style === 'suelta') for (const e of [2, 1]) { const core = erode(lot, e); if (core.length / 4 < 3 * 14) continue; const n2 = Math.max(3, Math.min(nR, Math.floor(core.length / 4 / 14))); if (splitN(core, n2, 12, diag).length < 3) continue; const inC = new Set(core); house = core; yard = lot.filter(i => !inC.has(i)); nR = n2; break; }
+        if (style === 'suelta') for (const e of [2, 1]) { const core = erode(lot, e); if (core.length / 4 < 3 * 28) continue; const n2 = Math.max(3, Math.min(nR, Math.floor(core.length / 4 / 28))); if (splitN(core, n2, 25, diag, 5).length < 3) continue; const inC = new Set(core); house = core; yard = lot.filter(i => !inC.has(i)); nR = n2; break; }
         if (!house.length) {
         // la casa al frente y el patio de césped atrás, separados por un corte paralelo a la calle
         const fr = lot.map(i => { const c = i >> 2, px = c % C + CEN[i & 3][0], py = ((c / C) | 0) + CEN[i & 3][1]; return diag ? [px + py, px - py] : [px, py]; });
@@ -408,10 +424,10 @@
         if (type === 'tienda' || type === 'oficinas' || yard.length / 4 < 16 || house.length / 4 < 16) { house = lot; yard = []; }
         }
         yard.push(...extra[k]);
-        const lvs = splitN(house, nR, type === 'condominio' ? 16 : 12, diag);
+        const lvs = splitN(house, nR, 25, diag, 5);
         // cuartos parejos: el que pase del máximo se vuelve a partir
-        for (let guard = 0; guard < 6; guard++) { const bi = lvs.findIndex(s2 => s2.length / 4 > per * 1.6); if (bi < 0) break; const r = cut(lvs[bi], 12, diag, 4) || cut(lvs[bi], 12, !diag, 4); if (!r) break; lvs.splice(bi, 1, r[0], r[1]); }
-        addHouse(type, zone, lvs, yard).style = style;
+        for (let guard = 0; guard < 6; guard++) { const bi = lvs.findIndex(s2 => s2.length / 4 > per * 1.7); if (bi < 0) break; const r = cut(lvs[bi], 25, diag, 5) || cut(lvs[bi], 25, !diag, 5); if (!r) break; lvs.splice(bi, 1, r[0], r[1]); }
+        const hh = addHouse(type, zone, lvs, yard); hh.style = style; hh.barrio = B2.id; if (type === 'casa' || type === 'condominio') { hh.tint = B2.tint; hh.roofTint = B2.roof; }
       });
     }
     // pedazos sueltos de un cuarto (casas en L): si son chicos se suman al cuarto vecino de la misma casa
@@ -759,7 +775,8 @@
       for (const [, a] of acc) { const cx = a[0] / a[2], cy = a[1] / a[2]; objetos.push({ tipo: 'tobogan', x: cx - 2, y: cy }, { tipo: 'columpio', x: cx + 2, y: cy }, { tipo: 'arenero', x: cx, y: cy + 2.5 }); } }
     const roomInfo = []; { const acc = new Map(); for (let i = 0; i < NQ; i++) { const l = q[i]; if (kinds[l] !== 'room') continue; const c = i >> 2; let a = acc.get(l); if (!a) acc.set(l, a = [0, 0, 0]); a[0] += c % C + 0.5; a[1] += ((c / C) | 0) + 0.5; a[2]++; }
       for (const [l, a] of acc) roomInfo.push({ l, cx: a[0] / a[2], cy: a[1] / a[2], area: a[2] / 4, role: roleOf.get(l) || '' }); }
-    return { motor: true, roomInfo, objetos, seed, n, W, H, C4: C, q, kinds, kindOf, houseOf, segs, houses, bossL: PLAZA, plaza, A, routeCells, stats };
+    for (const b of barrios) if (b.n) { b.cx = b.sx / b.n; b.cy = b.sy / b.n; }
+    return { motor: true, roomInfo, objetos, barrios: barrios.filter(b => b.n).map(b => ({ nombre: b.nombre, cx: b.cx, cy: b.cy, estilo: b.suelta > 0.5 ? 'casas sueltas con jardín' : 'casas adosadas' })), seed, n, W, H, C4: C, q, kinds, kindOf, houseOf, segs, houses, bossL: PLAZA, plaza, A, routeCells, stats };
   }
 
   root.MotorCiudad = { generate };

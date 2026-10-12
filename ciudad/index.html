@@ -51,6 +51,7 @@ dt { color: var(--muted) } dd { margin: 0; text-align: right }
       <button id="zout" class="ghost" aria-label="Alejar">−</button>
       <label for="showRoute"><input id="showRoute" type="checkbox" checked> Ruta</label>
       <label for="showLabels"><input id="showLabels" type="checkbox" checked> Cuartos</label>
+      <label for="showBarrios"><input id="showBarrios" type="checkbox" checked> Barrios</label>
       <label for="showOutline"><input id="showOutline" type="checkbox"> Contorno de casas</label>
     </div>
   </header>
@@ -140,7 +141,7 @@ function drawDiag() {
   const s = Math.max(0.4, base * zoom), cv = $('cv'), dpr = window.devicePixelRatio || 1;
   cv.width = c.C4 * s * dpr; cv.height = (c.H - 1) * s * dpr; cv.style.width = c.C4 * s + 'px'; cv.style.height = (c.H - 1) * s + 'px';
   const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
-  CiudadDiagonal.draw(g, c, s, { route: $('showRoute').checked, labels: $('showLabels').checked, outline: $('showOutline').checked });
+  CiudadDiagonal.draw(g, c, s, { route: $('showRoute').checked, labels: $('showLabels').checked, outline: $('showOutline').checked, barrios: $('showBarrios').checked });
 }
 function infoDiag() {
   const st = map.diag.stats, parts = CiudadDiagonal.toParts(map.diag), row = (k, v) => `<dt>${k}</dt><dd>${v}</dd>`;
@@ -181,7 +182,7 @@ $('go').onclick = run;
 $('rnd').onclick = () => { $('seed').value = Math.floor(Math.random() * 99999); run(); };
 $('zin').onclick = () => { zoom = Math.min(10, zoom * 1.4); draw(); };
 $('zout').onclick = () => { zoom = Math.max(0.2, zoom / 1.4); draw(); };
-$('showRoute').onchange = $('showLabels').onchange = $('showOutline').onchange = draw;
+$('showRoute').onchange = $('showLabels').onchange = $('showOutline').onchange = $('showBarrios').onchange = draw;
 // zoom con la rueda (hacia el punto del mouse) y arrastrar para moverse
 { const box = $('mapBox'); let drag = null;
   box.addEventListener('wheel', e => { if (!map) return; e.preventDefault(); const r = box.getBoundingClientRect(), fx = (box.scrollLeft + e.clientX - r.left) / box.scrollWidth, fy = (box.scrollTop + e.clientY - r.top) / box.scrollHeight;

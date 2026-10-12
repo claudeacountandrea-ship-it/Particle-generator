@@ -26,30 +26,20 @@
    912
   ]
  },
- "totalPiezas": 17365,
+ "totalPiezas": 17162,
  "chunks": [
   {
    "archivo": "chunk_00.json",
-   "nombre": "CiudadD_0_10",
-   "centro": [
-    -1696,
-    0,
-    864
-   ],
-   "piezas": 3
-  },
-  {
-   "archivo": "chunk_01.json",
    "nombre": "CiudadD_0_6",
    "centro": [
     -1696,
     0,
     -160
    ],
-   "piezas": 13
+   "piezas": 7
   },
   {
-   "archivo": "chunk_02.json",
+   "archivo": "chunk_01.json",
    "nombre": "CiudadD_0_7",
    "centro": [
     -1696,
@@ -59,77 +49,67 @@
    "piezas": 15
   },
   {
-   "archivo": "chunk_03.json",
+   "archivo": "chunk_02.json",
    "nombre": "CiudadD_0_8",
    "centro": [
     -1696,
     0,
     352
    ],
-   "piezas": 9
+   "piezas": 7
   },
   {
-   "archivo": "chunk_04.json",
-   "nombre": "CiudadD_0_9",
-   "centro": [
-    -1696,
-    0,
-    608
-   ],
-   "piezas": 1
-  },
-  {
-   "archivo": "chunk_05.json",
+   "archivo": "chunk_03.json",
    "nombre": "CiudadD_10_1",
    "centro": [
     864,
     0,
     -1440
    ],
-   "piezas": 3
+   "piezas": 5
   },
   {
-   "archivo": "chunk_06.json",
+   "archivo": "chunk_04.json",
    "nombre": "CiudadD_10_10",
    "centro": [
     864,
     0,
     864
    ],
-   "piezas": 185
+   "piezas": 140
   },
   {
-   "archivo": "chunk_07.json",
+   "archivo": "chunk_05.json",
    "nombre": "CiudadD_10_11",
    "centro": [
     864,
     0,
     1120
    ],
-   "piezas": 109
+   "piezas": 70
   },
   {
-   "archivo": "chunk_08.json",
+   "archivo": "chunk_06.json",
    "nombre": "CiudadD_10_12",
    "centro": [
     864,
     0,
     1376
    ],
-   "piezas": 4
+   "piezas": 17
   },
   {
-   "archivo": "chunk_09.json",
+   "archivo": "chunk_07.json",
    "nombre": "CiudadD_10_2",
    "centro": [
     864,
     0,
     -1184
    ],
-   "piezas": 99
+   "piezas": 104
   },
   {
-   "archivo": "chunk_10.json",
+   "archivo": "chunk_08.json",
    "nombre": "CiudadD_10_3",
    "centro": [
     864,
@@ -139,67 +119,67 @@
    "piezas": 91
   },
   {
-   "archivo": "chunk_11.json",
+   "archivo": "chunk_09.json",
    "nombre": "CiudadD_10_4",
    "centro": [
     864,
     0,
     -672
    ],
-   "piezas": 203
+   "piezas": 259
   },
   {
-   "archivo": "chunk_12.json",
+   "archivo": "chunk_10.json",
    "nombre": "CiudadD_10_5",
    "centro": [
     864,
     0,
     -416
    ],
-   "piezas": 248
+   "piezas": 286
   },
   {
-   "archivo": "chunk_13.json",
+   "archivo": "chunk_11.json",
    "nombre": "CiudadD_10_6",
    "centro": [
     864,
     0,
     -160
    ],
-   "piezas": 301
+   "piezas": 213
   },
   {
-   "archivo": "chunk_14.json",
+   "archivo": "chunk_12.json",
    "nombre": "CiudadD_10_7",
    "centro": [
     864,
     0,
     96
    ],
-   "piezas": 47
+   "piezas": 73
   },
   {
-   "archivo": "chunk_15.json",
+   "archivo": "chunk_13.json",
    "nombre": "CiudadD_10_8",
    "centro": [
     864,
     0,
     352
    ],
-   "piezas": 103
+   "piezas": 123
   },
   {
-   "archivo": "chunk_16.json",
+   "archivo": "chunk_14.json",
    "nombre": "CiudadD_10_9",
    "centro": [
     864,
     0,
     608
    ],
-   "piezas": 202
+   "piezas": 194
   },
   {
-   "archivo": "chunk_17.json",
+   "archivo": "chunk_15.json",
    "nombre": "CiudadD_11_1",
    "centro": [
     1120,
@@ -209,27 +189,27 @@
    "piezas": 4
   },
   {
-   "archivo": "chunk_18.json",
+   "archivo": "chunk_16.json",
    "nombre": "CiudadD_11_10",
    "centro": [
     1120,
     0,
     864
    ],
-   "piezas": 153
+   "piezas": 175
   },
   {
-   "archivo": "chunk_19.json",
+   "archivo": "chunk_17.json",
    "nombre": "CiudadD_11_11",
    "centro": [
     1120,
     0,
     1120
    ],
-   "piezas": 11
+   "piezas": 12
   },
   {
-   "archivo": "chunk_20.json",
+   "archivo": "chunk_18.json",
    "nombre": "CiudadD_11_12",
    "centro": [
     1120,
@@ -239,107 +219,107 @@
    "piezas": 4
   },
   {
-   "archivo": "chunk_21.json",
+   "archivo": "chunk_19.json",
    "nombre": "CiudadD_11_2",
    "centro": [
     1120,
     0,
     -1184
    ],
-   "piezas": 28
+   "piezas": 26
   },
   {
-   "archivo": "chunk_22.json",
+   "archivo": "chunk_20.json",
    "nombre": "CiudadD_11_3",
    "centro": [
     1120,
     0,
     -928
    ],
-   "piezas": 49
+   "piezas": 42
   },
   {
-   "archivo": "chunk_23.json",
+   "archivo": "chunk_21.json",
    "nombre": "CiudadD_11_4",
    "centro": [
     1120,
     0,
     -672
    ],
-   "piezas": 122
+   "piezas": 123
   },
   {
-   "archivo": "chunk_24.json",
+   "archivo": "chunk_22.json",
    "nombre": "CiudadD_11_5",
    "centro": [
     1120,
     0,
     -416
    ],
-   "piezas": 139
+   "piezas": 183
   },
   {
-   "archivo": "chunk_25.json",
+   "archivo": "chunk_23.json",
    "nombre": "CiudadD_11_6",
    "centro": [
     1120,
     0,
     -160
    ],
-   "piezas": 279
+   "piezas": 247
   },
   {
-   "archivo": "chunk_26.json",
+   "archivo": "chunk_24.json",
    "nombre": "CiudadD_11_7",
    "centro": [
     1120,
     0,
     96
    ],
-   "piezas": 134
+   "piezas": 113
   },
   {
-   "archivo": "chunk_27.json",
+   "archivo": "chunk_25.json",
    "nombre": "CiudadD_11_8",
    "centro": [
     1120,
     0,
     352
    ],
-   "piezas": 124
+   "piezas": 141
   },
   {
-   "archivo": "chunk_28.json",
+   "archivo": "chunk_26.json",
    "nombre": "CiudadD_11_9",
    "centro": [
     1120,
     0,
     608
    ],
-   "piezas": 293
+   "piezas": 272
   },
   {
-   "archivo": "chunk_29.json",
+   "archivo": "chunk_27.json",
    "nombre": "CiudadD_12_10",
    "centro": [
     1376,
     0,
     864
    ],
-   "piezas": 16
+   "piezas": 57
   },
   {
-   "archivo": "chunk_30.json",
+   "archivo": "chunk_28.json",
    "nombre": "CiudadD_12_11",
    "centro": [
     1376,
     0,
     1120
    ],
-   "piezas": 5
+   "piezas": 1
   },
   {
-   "archivo": "chunk_31.json",
+   "archivo": "chunk_29.json",
    "nombre": "CiudadD_12_3",
    "centro": [
     1376,
@@ -349,67 +329,67 @@
    "piezas": 4
   },
   {
-   "archivo": "chunk_32.json",
+   "archivo": "chunk_30.json",
    "nombre": "CiudadD_12_4",
    "centro": [
     1376,
     0,
     -672
    ],
-   "piezas": 7
+   "piezas": 10
   },
   {
-   "archivo": "chunk_33.json",
+   "archivo": "chunk_31.json",
    "nombre": "CiudadD_12_5",
    "centro": [
     1376,
     0,
     -416
    ],
-   "piezas": 35
+   "piezas": 43
   },
   {
-   "archivo": "chunk_34.json",
+   "archivo": "chunk_32.json",
    "nombre": "CiudadD_12_6",
    "centro": [
     1376,
     0,
     -160
    ],
-   "piezas": 309
+   "piezas": 344
   },
   {
-   "archivo": "chunk_35.json",
+   "archivo": "chunk_33.json",
    "nombre": "CiudadD_12_7",
    "centro": [
     1376,
     0,
     96
    ],
-   "piezas": 29
+   "piezas": 124
   },
   {
-   "archivo": "chunk_36.json",
+   "archivo": "chunk_34.json",
    "nombre": "CiudadD_12_8",
    "centro": [
     1376,
     0,
     352
    ],
-   "piezas": 113
+   "piezas": 141
   },
   {
-   "archivo": "chunk_37.json",
+   "archivo": "chunk_35.json",
    "nombre": "CiudadD_12_9",
    "centro": [
     1376,
     0,
     608
    ],
-   "piezas": 149
+   "piezas": 143
   },
   {
-   "archivo": "chunk_38.json",
+   "archivo": "chunk_36.json",
    "nombre": "CiudadD_13_10",
    "centro": [
     1632,
@@ -419,27 +399,17 @@
    "piezas": 9
   },
   {
-   "archivo": "chunk_39.json",
-   "nombre": "CiudadD_13_5",
-   "centro": [
-    1632,
-    0,
-    -416
-   ],
-   "piezas": 2
-  },
-  {
-   "archivo": "chunk_40.json",
+   "archivo": "chunk_37.json",
    "nombre": "CiudadD_13_6",
    "centro": [
     1632,
     0,
     -160
    ],
-   "piezas": 7
+   "piezas": 35
   },
   {
-   "archivo": "chunk_41.json",
+   "archivo": "chunk_38.json",
    "nombre": "CiudadD_13_7",
    "centro": [
     1632,
@@ -449,27 +419,27 @@
    "piezas": 8
   },
   {
-   "archivo": "chunk_42.json",
+   "archivo": "chunk_39.json",
    "nombre": "CiudadD_13_8",
    "centro": [
     1632,
     0,
     352
    ],
-   "piezas": 18
+   "piezas": 19
   },
   {
-   "archivo": "chunk_43.json",
+   "archivo": "chunk_40.json",
    "nombre": "CiudadD_13_9",
    "centro": [
     1632,
     0,
     608
    ],
-   "piezas": 23
+   "piezas": 11
   },
   {
-   "archivo": "chunk_44.json",
+   "archivo": "chunk_41.json",
    "nombre": "CiudadD_14_6",
    "centro": [
     1888,
@@ -479,97 +449,87 @@
    "piezas": 1
   },
   {
-   "archivo": "chunk_45.json",
+   "archivo": "chunk_42.json",
    "nombre": "CiudadD_1_10",
    "centro": [
     -1440,
     0,
     864
    ],
-   "piezas": 81
+   "piezas": 97
   },
   {
-   "archivo": "chunk_46.json",
+   "archivo": "chunk_43.json",
    "nombre": "CiudadD_1_11",
    "centro": [
     -1440,
     0,
     1120
    ],
-   "piezas": 5
+   "piezas": 1
   },
   {
-   "archivo": "chunk_47.json",
-   "nombre": "CiudadD_1_3",
-   "centro": [
-    -1440,
-    0,
-    -928
-   ],
-   "piezas": 2
-  },
-  {
-   "archivo": "chunk_48.json",
+   "archivo": "chunk_44.json",
    "nombre": "CiudadD_1_4",
    "centro": [
     -1440,
     0,
     -672
    ],
-   "piezas": 6
+   "piezas": 5
   },
   {
-   "archivo": "chunk_49.json",
+   "archivo": "chunk_45.json",
    "nombre": "CiudadD_1_5",
    "centro": [
     -1440,
     0,
     -416
    ],
-   "piezas": 16
+   "piezas": 15
   },
   {
-   "archivo": "chunk_50.json",
+   "archivo": "chunk_46.json",
    "nombre": "CiudadD_1_6",
    "centro": [
     -1440,
     0,
     -160
    ],
-   "piezas": 191
+   "piezas": 146
   },
   {
-   "archivo": "chunk_51.json",
+   "archivo": "chunk_47.json",
    "nombre": "CiudadD_1_7",
    "centro": [
     -1440,
     0,
     96
    ],
-   "piezas": 35
+   "piezas": 39
   },
   {
-   "archivo": "chunk_52.json",
+   "archivo": "chunk_48.json",
    "nombre": "CiudadD_1_8",
    "centro": [
     -1440,
     0,
     352
    ],
-   "piezas": 25
+   "piezas": 43
   },
   {
-   "archivo": "chunk_53.json",
+   "archivo": "chunk_49.json",
    "nombre": "CiudadD_1_9",
    "centro": [
     -1440,
     0,
     608
    ],
-   "piezas": 98
+   "piezas": 146
   },
   {
-   "archivo": "chunk_54.json",
+   "archivo": "chunk_50.json",
    "nombre": "CiudadD_2_1",
    "centro": [
     -1184,
@@ -579,37 +539,27 @@
    "piezas": 4
   },
   {
-   "archivo": "chunk_55.json",
+   "archivo": "chunk_51.json",
    "nombre": "CiudadD_2_10",
    "centro": [
     -1184,
     0,
     864
    ],
-   "piezas": 223
+   "piezas": 108
   },
   {
-   "archivo": "chunk_56.json",
+   "archivo": "chunk_52.json",
    "nombre": "CiudadD_2_11",
    "centro": [
     -1184,
     0,
     1120
    ],
-   "piezas": 20
+   "piezas": 45
   },
   {
-   "archivo": "chunk_57.json",
-   "nombre": "CiudadD_2_12",
-   "centro": [
-    -1184,
-    0,
-    1376
-   ],
-   "piezas": 1
-  },
-  {
-   "archivo": "chunk_58.json",
+   "archivo": "chunk_53.json",
    "nombre": "CiudadD_2_2",
    "centro": [
     -1184,
@@ -619,77 +569,77 @@
    "piezas": 1
   },
   {
-   "archivo": "chunk_59.json",
+   "archivo": "chunk_54.json",
    "nombre": "CiudadD_2_3",
    "centro": [
     -1184,
     0,
     -928
    ],
-   "piezas": 7
+   "piezas": 12
   },
   {
-   "archivo": "chunk_60.json",
+   "archivo": "chunk_55.json",
    "nombre": "CiudadD_2_4",
    "centro": [
     -1184,
     0,
     -672
    ],
-   "piezas": 155
+   "piezas": 115
   },
   {
-   "archivo": "chunk_61.json",
+   "archivo": "chunk_56.json",
    "nombre": "CiudadD_2_5",
    "centro": [
     -1184,
     0,
     -416
    ],
-   "piezas": 154
+   "piezas": 85
   },
   {
-   "archivo": "chunk_62.json",
+   "archivo": "chunk_57.json",
    "nombre": "CiudadD_2_6",
    "centro": [
     -1184,
     0,
     -160
    ],
-   "piezas": 116
+   "piezas": 157
   },
   {
-   "archivo": "chunk_63.json",
+   "archivo": "chunk_58.json",
    "nombre": "CiudadD_2_7",
    "centro": [
     -1184,
     0,
     96
    ],
-   "piezas": 54
+   "piezas": 55
   },
   {
-   "archivo": "chunk_64.json",
+   "archivo": "chunk_59.json",
    "nombre": "CiudadD_2_8",
    "centro": [
     -1184,
     0,
     352
    ],
-   "piezas": 239
+   "piezas": 341
   },
   {
-   "archivo": "chunk_65.json",
+   "archivo": "chunk_60.json",
    "nombre": "CiudadD_2_9",
    "centro": [
     -1184,
     0,
     608
    ],
-   "piezas": 242
+   "piezas": 278
   },
   {
-   "archivo": "chunk_66.json",
+   "archivo": "chunk_61.json",
    "nombre": "CiudadD_3_1",
    "centro": [
     -928,
@@ -699,717 +649,717 @@
    "piezas": 1
   },
   {
-   "archivo": "chunk_67.json",
+   "archivo": "chunk_62.json",
    "nombre": "CiudadD_3_10",
    "centro": [
     -928,
     0,
     864
    ],
-   "piezas": 151
+   "piezas": 126
   },
   {
-   "archivo": "chunk_68.json",
+   "archivo": "chunk_63.json",
    "nombre": "CiudadD_3_11",
    "centro": [
     -928,
     0,
     1120
    ],
-   "piezas": 241
+   "piezas": 177
   },
   {
-   "archivo": "chunk_69.json",
+   "archivo": "chunk_64.json",
    "nombre": "CiudadD_3_12",
    "centro": [
     -928,
     0,
     1376
    ],
-   "piezas": 6
+   "piezas": 8
   },
   {
-   "archivo": "chunk_70.json",
+   "archivo": "chunk_65.json",
    "nombre": "CiudadD_3_2",
    "centro": [
     -928,
     0,
     -1184
    ],
-   "piezas": 79
+   "piezas": 90
   },
   {
-   "archivo": "chunk_71.json",
+   "archivo": "chunk_66.json",
    "nombre": "CiudadD_3_3",
    "centro": [
     -928,
     0,
     -928
    ],
-   "piezas": 167
+   "piezas": 140
   },
   {
-   "archivo": "chunk_72.json",
+   "archivo": "chunk_67.json",
    "nombre": "CiudadD_3_4",
    "centro": [
     -928,
     0,
     -672
    ],
-   "piezas": 48
+   "piezas": 41
   },
   {
-   "archivo": "chunk_73.json",
+   "archivo": "chunk_68.json",
    "nombre": "CiudadD_3_5",
    "centro": [
     -928,
     0,
     -416
    ],
-   "piezas": 212
+   "piezas": 225
   },
   {
-   "archivo": "chunk_74.json",
+   "archivo": "chunk_69.json",
    "nombre": "CiudadD_3_6",
    "centro": [
     -928,
     0,
     -160
    ],
-   "piezas": 154
+   "piezas": 193
   },
   {
-   "archivo": "chunk_75.json",
+   "archivo": "chunk_70.json",
    "nombre": "CiudadD_3_7",
    "centro": [
     -928,
     0,
     96
    ],
-   "piezas": 82
+   "piezas": 72
   },
   {
-   "archivo": "chunk_76.json",
+   "archivo": "chunk_71.json",
    "nombre": "CiudadD_3_8",
    "centro": [
     -928,
     0,
     352
    ],
-   "piezas": 285
+   "piezas": 320
   },
   {
-   "archivo": "chunk_77.json",
+   "archivo": "chunk_72.json",
    "nombre": "CiudadD_3_9",
    "centro": [
     -928,
     0,
     608
    ],
-   "piezas": 340
+   "piezas": 356
   },
   {
-   "archivo": "chunk_78.json",
+   "archivo": "chunk_73.json",
    "nombre": "CiudadD_4_1",
    "centro": [
     -672,
     0,
     -1440
    ],
-   "piezas": 19
+   "piezas": 15
   },
   {
-   "archivo": "chunk_79.json",
+   "archivo": "chunk_74.json",
    "nombre": "CiudadD_4_10",
    "centro": [
     -672,
     0,
     864
    ],
-   "piezas": 140
+   "piezas": 137
   },
   {
-   "archivo": "chunk_80.json",
+   "archivo": "chunk_75.json",
    "nombre": "CiudadD_4_11",
    "centro": [
     -672,
     0,
     1120
    ],
-   "piezas": 201
+   "piezas": 156
   },
   {
-   "archivo": "chunk_81.json",
+   "archivo": "chunk_76.json",
    "nombre": "CiudadD_4_12",
    "centro": [
     -672,
     0,
     1376
    ],
-   "piezas": 1
+   "piezas": 4
   },
   {
-   "archivo": "chunk_82.json",
+   "archivo": "chunk_77.json",
    "nombre": "CiudadD_4_2",
    "centro": [
     -672,
     0,
     -1184
    ],
-   "piezas": 38
+   "piezas": 55
   },
   {
-   "archivo": "chunk_83.json",
+   "archivo": "chunk_78.json",
    "nombre": "CiudadD_4_3",
    "centro": [
     -672,
     0,
     -928
    ],
-   "piezas": 165
+   "piezas": 149
   },
   {
-   "archivo": "chunk_84.json",
+   "archivo": "chunk_79.json",
    "nombre": "CiudadD_4_4",
    "centro": [
     -672,
     0,
     -672
    ],
-   "piezas": 135
+   "piezas": 93
   },
   {
-   "archivo": "chunk_85.json",
+   "archivo": "chunk_80.json",
    "nombre": "CiudadD_4_5",
    "centro": [
     -672,
     0,
     -416
    ],
-   "piezas": 202
+   "piezas": 218
   },
   {
-   "archivo": "chunk_86.json",
+   "archivo": "chunk_81.json",
    "nombre": "CiudadD_4_6",
    "centro": [
     -672,
     0,
     -160
    ],
-   "piezas": 134
+   "piezas": 182
   },
   {
-   "archivo": "chunk_87.json",
+   "archivo": "chunk_82.json",
    "nombre": "CiudadD_4_7",
    "centro": [
     -672,
     0,
     96
    ],
-   "piezas": 110
+   "piezas": 118
   },
   {
-   "archivo": "chunk_88.json",
+   "archivo": "chunk_83.json",
    "nombre": "CiudadD_4_8",
    "centro": [
     -672,
     0,
     352
    ],
-   "piezas": 232
+   "piezas": 248
   },
   {
-   "archivo": "chunk_89.json",
+   "archivo": "chunk_84.json",
    "nombre": "CiudadD_4_9",
    "centro": [
     -672,
     0,
     608
    ],
-   "piezas": 274
+   "piezas": 321
   },
   {
-   "archivo": "chunk_90.json",
+   "archivo": "chunk_85.json",
    "nombre": "CiudadD_5_1",
    "centro": [
     -416,
     0,
     -1440
    ],
-   "piezas": 36
+   "piezas": 40
   },
   {
-   "archivo": "chunk_91.json",
+   "archivo": "chunk_86.json",
    "nombre": "CiudadD_5_10",
    "centro": [
     -416,
     0,
     864
    ],
-   "piezas": 184
+   "piezas": 155
   },
   {
-   "archivo": "chunk_92.json",
+   "archivo": "chunk_87.json",
    "nombre": "CiudadD_5_11",
    "centro": [
     -416,
     0,
     1120
    ],
-   "piezas": 151
+   "piezas": 93
   },
   {
-   "archivo": "chunk_93.json",
+   "archivo": "chunk_88.json",
    "nombre": "CiudadD_5_12",
    "centro": [
     -416,
     0,
     1376
    ],
-   "piezas": 16
+   "piezas": 11
   },
   {
-   "archivo": "chunk_94.json",
+   "archivo": "chunk_89.json",
    "nombre": "CiudadD_5_2",
    "centro": [
     -416,
     0,
     -1184
    ],
-   "piezas": 331
+   "piezas": 424
   },
   {
-   "archivo": "chunk_95.json",
+   "archivo": "chunk_90.json",
    "nombre": "CiudadD_5_3",
    "centro": [
     -416,
     0,
     -928
    ],
-   "piezas": 327
+   "piezas": 232
   },
   {
-   "archivo": "chunk_96.json",
+   "archivo": "chunk_91.json",
    "nombre": "CiudadD_5_4",
    "centro": [
     -416,
     0,
     -672
    ],
-   "piezas": 145
+   "piezas": 220
   },
   {
-   "archivo": "chunk_97.json",
+   "archivo": "chunk_92.json",
    "nombre": "CiudadD_5_5",
    "centro": [
     -416,
     0,
     -416
    ],
-   "piezas": 177
+   "piezas": 154
   },
   {
-   "archivo": "chunk_98.json",
+   "archivo": "chunk_93.json",
    "nombre": "CiudadD_5_6",
    "centro": [
     -416,
     0,
     -160
    ],
-   "piezas": 158
+   "piezas": 127
   },
   {
-   "archivo": "chunk_99.json",
+   "archivo": "chunk_94.json",
    "nombre": "CiudadD_5_7",
    "centro": [
     -416,
     0,
     96
    ],
-   "piezas": 103
+   "piezas": 95
   },
   {
-   "archivo": "chunk_100.json",
+   "archivo": "chunk_95.json",
    "nombre": "CiudadD_5_8",
    "centro": [
     -416,
     0,
     352
    ],
-   "piezas": 180
+   "piezas": 211
   },
   {
-   "archivo": "chunk_101.json",
+   "archivo": "chunk_96.json",
    "nombre": "CiudadD_5_9",
    "centro": [
     -416,
     0,
     608
    ],
-   "piezas": 81
+   "piezas": 118
   },
   {
-   "archivo": "chunk_102.json",
+   "archivo": "chunk_97.json",
    "nombre": "CiudadD_6_0",
    "centro": [
     -160,
     0,
     -1696
    ],
-   "piezas": 2
+   "piezas": 1
   },
   {
-   "archivo": "chunk_103.json",
+   "archivo": "chunk_98.json",
    "nombre": "CiudadD_6_1",
    "centro": [
     -160,
     0,
     -1440
    ],
-   "piezas": 179
+   "piezas": 93
   },
   {
-   "archivo": "chunk_104.json",
+   "archivo": "chunk_99.json",
    "nombre": "CiudadD_6_10",
    "centro": [
     -160,
     0,
     864
    ],
-   "piezas": 94
+   "piezas": 116
   },
   {
-   "archivo": "chunk_105.json",
+   "archivo": "chunk_100.json",
    "nombre": "CiudadD_6_11",
    "centro": [
     -160,
     0,
     1120
    ],
-   "piezas": 152
+   "piezas": 120
   },
   {
-   "archivo": "chunk_106.json",
+   "archivo": "chunk_101.json",
    "nombre": "CiudadD_6_12",
    "centro": [
     -160,
     0,
     1376
    ],
-   "piezas": 11
+   "piezas": 14
   },
   {
-   "archivo": "chunk_107.json",
+   "archivo": "chunk_102.json",
    "nombre": "CiudadD_6_2",
    "centro": [
     -160,
     0,
     -1184
    ],
-   "piezas": 281
+   "piezas": 255
   },
   {
-   "archivo": "chunk_108.json",
+   "archivo": "chunk_103.json",
    "nombre": "CiudadD_6_3",
    "centro": [
     -160,
     0,
     -928
    ],
-   "piezas": 276
+   "piezas": 243
   },
   {
-   "archivo": "chunk_109.json",
+   "archivo": "chunk_104.json",
    "nombre": "CiudadD_6_4",
    "centro": [
     -160,
     0,
     -672
    ],
-   "piezas": 157
+   "piezas": 162
   },
   {
-   "archivo": "chunk_110.json",
+   "archivo": "chunk_105.json",
    "nombre": "CiudadD_6_5",
    "centro": [
     -160,
     0,
     -416
    ],
-   "piezas": 115
+   "piezas": 111
   },
   {
-   "archivo": "chunk_111.json",
+   "archivo": "chunk_106.json",
    "nombre": "CiudadD_6_6",
    "centro": [
     -160,
     0,
     -160
    ],
-   "piezas": 191
+   "piezas": 224
   },
   {
-   "archivo": "chunk_112.json",
+   "archivo": "chunk_107.json",
    "nombre": "CiudadD_6_7",
    "centro": [
     -160,
     0,
     96
    ],
-   "piezas": 79
+   "piezas": 93
   },
   {
-   "archivo": "chunk_113.json",
+   "archivo": "chunk_108.json",
    "nombre": "CiudadD_6_8",
    "centro": [
     -160,
     0,
     352
    ],
-   "piezas": 137
+   "piezas": 162
   },
   {
-   "archivo": "chunk_114.json",
+   "archivo": "chunk_109.json",
    "nombre": "CiudadD_6_9",
    "centro": [
     -160,
     0,
     608
    ],
-   "piezas": 299
+   "piezas": 239
   },
   {
-   "archivo": "chunk_115.json",
+   "archivo": "chunk_110.json",
    "nombre": "CiudadD_7_0",
    "centro": [
     96,
     0,
     -1696
    ],
-   "piezas": 3
+   "piezas": 2
   },
   {
-   "archivo": "chunk_116.json",
+   "archivo": "chunk_111.json",
    "nombre": "CiudadD_7_1",
    "centro": [
     96,
     0,
     -1440
    ],
-   "piezas": 239
+   "piezas": 100
   },
   {
-   "archivo": "chunk_117.json",
+   "archivo": "chunk_112.json",
    "nombre": "CiudadD_7_10",
    "centro": [
     96,
     0,
     864
    ],
-   "piezas": 114
+   "piezas": 111
   },
   {
-   "archivo": "chunk_118.json",
+   "archivo": "chunk_113.json",
    "nombre": "CiudadD_7_11",
    "centro": [
     96,
     0,
     1120
    ],
-   "piezas": 159
+   "piezas": 120
   },
   {
-   "archivo": "chunk_119.json",
+   "archivo": "chunk_114.json",
    "nombre": "CiudadD_7_12",
    "centro": [
     96,
     0,
     1376
    ],
-   "piezas": 16
+   "piezas": 20
   },
   {
-   "archivo": "chunk_120.json",
+   "archivo": "chunk_115.json",
    "nombre": "CiudadD_7_2",
    "centro": [
     96,
     0,
     -1184
    ],
-   "piezas": 209
+   "piezas": 241
   },
   {
-   "archivo": "chunk_121.json",
+   "archivo": "chunk_116.json",
    "nombre": "CiudadD_7_3",
    "centro": [
     96,
     0,
     -928
    ],
-   "piezas": 199
+   "piezas": 201
   },
   {
-   "archivo": "chunk_122.json",
+   "archivo": "chunk_117.json",
    "nombre": "CiudadD_7_4",
    "centro": [
     96,
     0,
     -672
    ],
-   "piezas": 202
+   "piezas": 166
   },
   {
-   "archivo": "chunk_123.json",
+   "archivo": "chunk_118.json",
    "nombre": "CiudadD_7_5",
    "centro": [
     96,
     0,
     -416
    ],
-   "piezas": 191
+   "piezas": 173
   },
   {
-   "archivo": "chunk_124.json",
+   "archivo": "chunk_119.json",
    "nombre": "CiudadD_7_6",
    "centro": [
     96,
     0,
     -160
    ],
-   "piezas": 110
+   "piezas": 119
   },
   {
-   "archivo": "chunk_125.json",
+   "archivo": "chunk_120.json",
    "nombre": "CiudadD_7_7",
    "centro": [
     96,
     0,
     96
    ],
-   "piezas": 94
+   "piezas": 80
   },
   {
-   "archivo": "chunk_126.json",
+   "archivo": "chunk_121.json",
    "nombre": "CiudadD_7_8",
    "centro": [
     96,
     0,
     352
    ],
-   "piezas": 97
+   "piezas": 112
   },
   {
-   "archivo": "chunk_127.json",
+   "archivo": "chunk_122.json",
    "nombre": "CiudadD_7_9",
    "centro": [
     96,
     0,
     608
    ],
-   "piezas": 160
+   "piezas": 105
   },
   {
-   "archivo": "chunk_128.json",
+   "archivo": "chunk_123.json",
    "nombre": "CiudadD_8_1",
    "centro": [
     352,
     0,
     -1440
    ],
-   "piezas": 142
+   "piezas": 152
   },
   {
-   "archivo": "chunk_129.json",
+   "archivo": "chunk_124.json",
    "nombre": "CiudadD_8_10",
    "centro": [
     352,
     0,
     864
    ],
-   "piezas": 112
+   "piezas": 119
   },
   {
-   "archivo": "chunk_130.json",
+   "archivo": "chunk_125.json",
    "nombre": "CiudadD_8_11",
    "centro": [
     352,
     0,
     1120
    ],
-   "piezas": 28
+   "piezas": 69
   },
   {
-   "archivo": "chunk_131.json",
+   "archivo": "chunk_126.json",
    "nombre": "CiudadD_8_12",
    "centro": [
     352,
     0,
     1376
    ],
-   "piezas": 13
+   "piezas": 7
   },
   {
-   "archivo": "chunk_132.json",
+   "archivo": "chunk_127.json",
    "nombre": "CiudadD_8_2",
    "centro": [
     352,
     0,
     -1184
    ],
-   "piezas": 225
+   "piezas": 145
   },
   {
-   "archivo": "chunk_133.json",
+   "archivo": "chunk_128.json",
    "nombre": "CiudadD_8_3",
    "centro": [
     352,
     0,
     -928
    ],
-   "piezas": 116
+   "piezas": 148
   },
   {
-   "archivo": "chunk_134.json",
+   "archivo": "chunk_129.json",
    "nombre": "CiudadD_8_4",
    "centro": [
     352,
     0,
     -672
    ],
-   "piezas": 238
+   "piezas": 223
   },
   {
-   "archivo": "chunk_135.json",
+   "archivo": "chunk_130.json",
    "nombre": "CiudadD_8_5",
    "centro": [
     352,
     0,
     -416
    ],
-   "piezas": 220
+   "piezas": 183
   },
   {
-   "archivo": "chunk_136.json",
+   "archivo": "chunk_131.json",
    "nombre": "CiudadD_8_6",
    "centro": [
     352,
     0,
     -160
    ],
-   "piezas": 107
+   "piezas": 118
   },
   {
-   "archivo": "chunk_137.json",
+   "archivo": "chunk_132.json",
    "nombre": "CiudadD_8_7",
    "centro": [
     352,
     0,
     96
    ],
-   "piezas": 37
+   "piezas": 159
   },
   {
-   "archivo": "chunk_138.json",
+   "archivo": "chunk_133.json",
    "nombre": "CiudadD_8_8",
    "centro": [
     352,
@@ -1419,7 +1369,7 @@
    "piezas": 13
   },
   {
-   "archivo": "chunk_139.json",
+   "archivo": "chunk_134.json",
    "nombre": "CiudadD_8_9",
    "centro": [
     352,
@@ -1429,7 +1379,7 @@
    "piezas": 9
   },
   {
-   "archivo": "chunk_140.json",
+   "archivo": "chunk_135.json",
    "nombre": "CiudadD_9_1",
    "centro": [
     608,
@@ -1439,97 +1389,97 @@
    "piezas": 29
   },
   {
-   "archivo": "chunk_141.json",
+   "archivo": "chunk_136.json",
    "nombre": "CiudadD_9_10",
    "centro": [
     608,
     0,
     864
    ],
-   "piezas": 123
+   "piezas": 132
   },
   {
-   "archivo": "chunk_142.json",
+   "archivo": "chunk_137.json",
    "nombre": "CiudadD_9_11",
    "centro": [
     608,
     0,
     1120
    ],
-   "piezas": 105
+   "piezas": 92
   },
   {
-   "archivo": "chunk_143.json",
+   "archivo": "chunk_138.json",
    "nombre": "CiudadD_9_12",
    "centro": [
     608,
     0,
     1376
    ],
-   "piezas": 3
+   "piezas": 22
   },
   {
-   "archivo": "chunk_144.json",
+   "archivo": "chunk_139.json",
    "nombre": "CiudadD_9_2",
    "centro": [
     608,
     0,
     -1184
    ],
-   "piezas": 163
+   "piezas": 199
   },
   {
-   "archivo": "chunk_145.json",
+   "archivo": "chunk_140.json",
    "nombre": "CiudadD_9_3",
    "centro": [
     608,
     0,
     -928
    ],
-   "piezas": 195
+   "piezas": 186
   },
   {
-   "archivo": "chunk_146.json",
+   "archivo": "chunk_141.json",
    "nombre": "CiudadD_9_4",
    "centro": [
     608,
     0,
     -672
    ],
-   "piezas": 321
+   "piezas": 287
   },
   {
-   "archivo": "chunk_147.json",
+   "archivo": "chunk_142.json",
    "nombre": "CiudadD_9_5",
    "centro": [
     608,
     0,
     -416
    ],
-   "piezas": 457
+   "piezas": 355
   },
   {
-   "archivo": "chunk_148.json",
+   "archivo": "chunk_143.json",
    "nombre": "CiudadD_9_6",
    "centro": [
     608,
     0,
     -160
    ],
-   "piezas": 225
+   "piezas": 168
   },
   {
-   "archivo": "chunk_149.json",
+   "archivo": "chunk_144.json",
    "nombre": "CiudadD_9_7",
    "centro": [
     608,
     0,
     96
    ],
-   "piezas": 1
+   "piezas": 25
   },
   {
-   "archivo": "chunk_150.json",
+   "archivo": "chunk_145.json",
    "nombre": "CiudadD_9_8",
    "centro": [
     608,
@@ -1539,7 +1489,7 @@
    "piezas": 4
   },
   {
-   "archivo": "chunk_151.json",
+   "archivo": "chunk_146.json",
    "nombre": "CiudadD_9_9",
    "centro": [
     608,
@@ -1554,7 +1504,7 @@
    "pos": [
     -1820,
     12,
-    -36
+    -28
    ],
    "nota": "punto A: la entrada de la muralla"
   },
@@ -1562,20 +1512,20 @@
    {
     "nombre": "Refugio 1",
     "pos": [
-     -845.018,
+     -845.042,
      12,
-     -135.27
+     -130.667
     ],
     "casa": "casa"
    },
    {
     "nombre": "Refugio 2",
     "pos": [
-     -178.266,
+     -182.328,
      12,
-     217.107
+     221.386
     ],
-    "casa": "oficinas"
+    "casa": "tienda"
    }
   ],
   "plaza": {
@@ -1589,13 +1539,13 @@
   }
  },
  "estadisticas": {
-  "casas": 99,
-  "tiendas": 43,
-  "oficinas": 19,
-  "condominios": 37,
-  "centroComercial": 1,
-  "patios": 98,
-  "almacenes": 1,
+  "casas": 53,
+  "tiendas": 26,
+  "oficinas": 9,
+  "condominios": 40,
+  "centroComercial": 3,
+  "patios": 70,
+  "almacenes": 7,
   "derribos": 3,
   "pasajes": 6,
   "especiales": {
@@ -1607,30 +1557,30 @@
    "lago": 1
   },
   "avenidaCentral": 1,
-  "estacionamientos": 17,
-  "rejasCalle": 15,
-  "rejasCierran": 5,
-  "garajes": 20,
-  "salidasEmergencia": 59,
-  "entradasRotas": 25,
+  "estacionamientos": 13,
+  "rejasCalle": 10,
+  "rejasCierran": 0,
+  "garajes": 28,
+  "salidasEmergencia": 55,
+  "entradasRotas": 24,
   "autopistas": 2,
   "crucesArreglados": 0,
-  "esquinasArregladas": 707,
-  "sueltas": 60,
-  "cuartosUnidos": 6,
+  "esquinasArregladas": 847,
+  "sueltas": 54,
+  "cuartosUnidos": 3,
   "avenidas": 3,
   "accesosArreglados": 0,
-  "cuartos": 840,
+  "cuartos": 591,
   "refugios": 2,
-  "parques": 5,
+  "parques": 6,
   "plazaCeldas": 3432,
-  "puertas": 1916,
-  "ventanasCerradas": 662,
-  "ventanasRotas": 139,
-  "rejas": 2553,
-  "portones": 348,
-  "mediana": 936,
-  "tramosDiagonales": 7263,
-  "ruta": 889
+  "puertas": 1508,
+  "ventanasCerradas": 865,
+  "ventanasRotas": 176,
+  "rejas": 2879,
+  "portones": 278,
+  "mediana": 1645,
+  "tramosDiagonales": 6960,
+  "ruta": 892
  }
 }

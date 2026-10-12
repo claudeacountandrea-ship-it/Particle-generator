@@ -14,10 +14,13 @@ Está separado del generador de mazmorras (`editor/`), que no se tocó. Tiene tr
   - **Calles con jerarquía**: calzada para autos (calles de 6 → 4 de calzada + veredas; avenidas desde el borde hasta la
     plaza, más anchas y con **mediana**), **veredas** pegadas a cada manzana (con bordillo), y las calles de menos de 3 de
     ancho son **pasajes peatonales** (personas y bicis).
-  - **Anchos de vía (vehículos)**: un carril mide al menos 4 de ancho (3 en diagonal, equivalente) y una calle normal lleva
-    2 carriles: **10 de ancho = 8 de calzada + 1 de vereda por lado** (escala ×4 + 1 de ensanche). Anillo de 10; autopistas y
-    avenida central de **2 carriles por sentido con mediana** (18). Ningún tramo de calzada queda con menos de 3: lo más
-    angosto pasa a vereda. Las veredas siguen las diagonales sin escalones.
+  - **Proporciones** (1 cuadro = 2 m arcade, todo ~1,5× más grande que lo real): un **auto mide 2** de ancho y un
+    **carril 3** (el carril es más ancho que el auto). Calle normal: **8 = 6 de calzada (un carril por sentido) + 1 de vereda
+    por lado**. Anillo de 8; autopistas y avenida central de **2 carriles por sentido con mediana** (16). Ningún tramo de
+    calzada queda con menos de 3. Las veredas siguen las diagonales sin escalones ni dientes de sierra.
+  - **Cuartos donde entra un auto**: al menos 5 de ancho, de unos 30 a 45 cuadros (5×6 a 6×8).
+  - **Barrios**: la ciudad se reparte en barrios con nombre (Los Álamos, San Telmo, La Loma…); cada uno tiene su estilo
+    (casas sueltas o adosadas, tamaño de casa y de cuartos, tono de fachada y de techo) y sus casas se parecen entre sí.
   - **Edificios especiales = recintos propios**: cada uno en su terreno cercado, separado de las casas, con **estacionamiento
     al frente que llega a la calle**, portón de 4 del estacionamiento al terreno y el edificio de planta limpia en el medio.
   - **Borde**: el anillo de asfalto y las autopistas llevan **vereda a ambos lados**. Una **avenida-autopista** de 12
@@ -63,7 +66,7 @@ Está separado del generador de mazmorras (`editor/`), que no se tocó. Tiene tr
 - `ciudad.js`: modo cuadrícula y la tabla `MEDIDAS` que usan los dos modos.
 - `index.html`: el visor. Elige modo, semilla y tamaño, y mira la ruta A→B.
 - `exportar.js`: escribe las piezas para TruWorlds.
-- `export/ciudad_semilla_7/`: **la ciudad del motor** (n=12, ~17.000 piezas).
+- `export/ciudad_semilla_7/`: **la ciudad del motor** (n=12, ~17.000 piezas; si hace falta menos, se pueden saltar los techos).
 - `export/diagonal_semilla_7/`: ciudad diagonal ya exportada (19×19, **5.468 piezas, 25 chunks, máx. 391**).
 - `export/cuadricula_semilla_7/`: ciudad en cuadrícula ya exportada (150×110 celdas, 2.413 piezas).
 
