@@ -111,7 +111,7 @@
     // suelo de calle bajo toda la ciudad, pisos de las casas encima, escombros en los huecos
     for (const g of greedy((x, y) => anyIn(x, y) ? 1 : null)) add('Calle', 'Block', [X(g.x + g.w / 2), -0.5, Z(g.y + g.h / 2)], [g.w * C, 1, g.h * C], '#3d4045', 'SmoothSurface', null, g.x + g.w / 2, g.y + g.h / 2);
     for (const g of greedy(fullRoom)) { const h = c.houses.get(g.k), [cl, mt] = h.refuge ? ['#c9a43a', 'Wood'] : FLOOR[h.type] || FLOOR.casa; add('Piso', 'Block', [X(g.x + g.w / 2), -0.3, Z(g.y + g.h / 2)], [g.w * C, 1, g.h * C], cl, mt, null, g.x + g.w / 2, g.y + g.h / 2); }
-    for (const [kd, nm, cl, mt] of [['plaza', 'Plaza', '#b9b09c', 'Marble'], ['parque', 'Parque', '#5f8a3e', 'Grass'], ['patio', 'Patio', '#7d8f4e', 'Grass'], ['vereda', 'Vereda', '#a7a39b', 'SmoothSurface'], ['parking', 'Estacionamiento', '#55585e', 'SmoothSurface'], ['agua', 'Agua', '#3d7fb3', 'SmoothSurface'], ['juegos', 'Juegos', '#93c463', 'Grass'], ['pasaje', 'Pasaje', '#8a7d6a', 'Gravel']]) for (const g of greedy((x, y) => { const ls = cellLabels(x, y); return ls.some(l => c.kindOf(l) === kd) ? 1 : null; })) add(nm, 'Block', [X(g.x + g.w / 2), -0.3, Z(g.y + g.h / 2)], [g.w * C, 1, g.h * C], cl, mt, null, g.x + g.w / 2, g.y + g.h / 2);
+    for (const [kd, nm, cl, mt] of [['plaza', 'Plaza', '#b9b09c', 'Marble'], ['parque', 'Parque', '#5f8a3e', 'Grass'], ['patio', 'Patio', '#7d8f4e', 'Grass'], ['vereda', 'Vereda', '#a7a39b', 'SmoothSurface'], ['parking', 'Estacionamiento', '#55585e', 'SmoothSurface'], ['agua', 'Agua', '#3d7fb3', 'SmoothSurface'], ['rotonda', 'Rotonda', '#6fa34a', 'Grass'], ['cantero', 'Cantero', '#7cb35a', 'Grass'], ['juegos', 'Juegos', '#93c463', 'Grass'], ['pasaje', 'Pasaje', '#8a7d6a', 'Gravel']]) for (const g of greedy((x, y) => { const ls = cellLabels(x, y); return ls.some(l => c.kindOf(l) === kd) ? 1 : null; })) add(nm, 'Block', [X(g.x + g.w / 2), -0.3, Z(g.y + g.h / 2)], [g.w * C, 1, g.h * C], cl, mt, null, g.x + g.w / 2, g.y + g.h / 2);
     for (const g of greedy((x, y) => { const ls = cellLabels(x, y); return ls.every(l => c.kindOf(l) === 'pillar') ? 1 : null; })) add('Ruina', 'Block', [X(g.x + g.w / 2), WALL_H / 4, Z(g.y + g.h / 2)], [g.w * C, WALL_H / 2, g.h * C], '#4a4038', 'Gravel', null, g.x + g.w / 2, g.y + g.h / 2);
     if (o.roofs !== false) for (const g of greedy((x, y) => { const l = fullRoom(x, y); return l && l !== c.houseOf(c.bossL) ? l : null; })) {
       const h = c.houses.get(g.k); add('Techo', 'Block', [X(g.x + g.w / 2), WALL_H + 0.5, Z(g.y + g.h / 2)], [g.w * C + TH, 1, g.h * C + TH], h.refuge ? '#d4a017' : (root.CiudadTone ? root.CiudadTone.houseTone(h, h.roofTint || ROOF[h.type] || ROOF.casa) : ROOF[h.type]), 'SmoothSurface', null, g.x + g.w / 2, g.y + g.h / 2);
@@ -145,6 +145,9 @@
     // objetos: tachos de basura y juegos de plaza
     for (const ob of c.objetos || []) { const sc2 = C / 8;
       if (ob.tipo === 'tacho') add('TachoBasura', 'Cylinder', [X(ob.x), 2.4 * sc2, Z(ob.y)], [4.8 * sc2, 2.4 * sc2, 2.4 * sc2], '#2e5e3a', 'Plastic', [0, 0, 90], ob.x, ob.y);
+      else if (ob.tipo === 'arbol') { add('Tronco', 'Cylinder', [X(ob.x), 4 * sc2, Z(ob.y)], [8 * sc2, 1.6 * sc2, 1.6 * sc2], '#5b4330', 'Wood', [0, 0, 90], ob.x, ob.y); add('Copa', 'Ball', [X(ob.x), 10 * sc2, Z(ob.y)], [9 * sc2, 9 * sc2, 9 * sc2], '#3f6b2f', 'Grass', null, ob.x, ob.y); }
+      else if (ob.tipo === 'banca') add('Banca', 'Block', [X(ob.x), 1 * sc2, Z(ob.y)], [6 * sc2, 2 * sc2, 2 * sc2], '#7a5a3a', 'Wood', null, ob.x, ob.y);
+      else if (ob.tipo === 'fuente') add('FuenteCentro', 'Cylinder', [X(ob.x), 3 * sc2, Z(ob.y)], [6 * sc2, 4 * sc2, 4 * sc2], '#b9c4cc', 'Marble', [0, 0, 90], ob.x, ob.y);
       else if (ob.tipo === 'tobogan') add('Tobogan', 'Wedge', [X(ob.x), 3 * sc2, Z(ob.y)], [3 * sc2, 6 * sc2, 10 * sc2], '#e04f4f', 'Plastic', null, ob.x, ob.y);
       else if (ob.tipo === 'columpio') add('Columpio', 'Block', [X(ob.x), 4 * sc2, Z(ob.y)], [10 * sc2, 8 * sc2, 1 * sc2], '#3f7fd9', 'Metal', null, ob.x, ob.y);
       else add('Arenero', 'Block', [X(ob.x), 0.3 * sc2, Z(ob.y)], [8 * sc2, 0.6 * sc2, 8 * sc2], '#e8d28a', 'Sand', null, ob.x, ob.y); }
@@ -167,7 +170,7 @@
   }
 
   // ---------- dibujo para el visor
-  const COLS = { calle: '#45494f', vereda: '#9a958c', pasaje: '#7a6d5c', out: '#2f3d26', ruina: '#3a332c', casa: '#c9a77c', tienda: '#b9c4cc', edificio: '#a39d93', oficinas: '#8fa3b8', condominio: '#d3b98f', comercial: '#e6e1d6', almacen: '#8d8a83', parking: '#585c63', escuela: '#e8c26a', hospital: '#e9eef2', policia: '#5b7bb0', bomberos: '#c9574a', militar: '#7a8250', carcel: '#77736e', agua: '#3d7fb3', juegos: '#93c463', mercado: '#b6ad98', entrada: '#7f9150', refugio: '#e8b23a', plaza: '#b6ad98', parque: '#5d8a3f', patio: '#7f9a4c' };
+  const COLS = { calle: '#45494f', vereda: '#9a958c', pasaje: '#7a6d5c', out: '#2f3d26', ruina: '#3a332c', casa: '#c9a77c', tienda: '#b9c4cc', edificio: '#a39d93', oficinas: '#8fa3b8', condominio: '#d3b98f', comercial: '#e6e1d6', almacen: '#8d8a83', parking: '#585c63', escuela: '#e8c26a', rotonda: '#6fa34a', cantero: '#7cb35a', hospital: '#e9eef2', policia: '#5b7bb0', bomberos: '#c9574a', militar: '#7a8250', carcel: '#77736e', agua: '#3d7fb3', juegos: '#93c463', mercado: '#b6ad98', entrada: '#7f9150', refugio: '#e8b23a', plaza: '#b6ad98', parque: '#5d8a3f', patio: '#7f9a4c' };
   // cada casa con su propio tono (variación del color de su tipo), para distinguir casas vecinas
   const shade = (hex, f) => { const v = parseInt(hex.slice(1), 16), ch = sh => Math.max(0, Math.min(255, Math.round(((v >> sh) & 255) * f))); return '#' + [16, 8, 0].map(sh => ch(sh).toString(16).padStart(2, '0')).join(''); };
   const houseTone = (h, base) => shade(base, (h.tint ? 0.88 : 0.8) + ((h.id * 2654435761 >>> 0) % 1000) / 1000 * (h.tint ? 0.24 : 0.4)); // en un barrio, tonos parecidos
@@ -212,6 +215,9 @@
           g.strokeStyle = `hsl(${(hh * 137.508) % 360},85%,58%)`; g.beginPath(); g.moveTo((sg.a[0] - nx / ln * o2) * s, (sg.a[1] - ny / ln * o2) * s); g.lineTo((sg.b[0] - nx / ln * o2) * s, (sg.b[1] - ny / ln * o2) * s); g.stroke(); } } }
     // objetos: tachos de basura y juegos
     for (const ob of c.objetos || []) { const px = ob.x * s, py = ob.y * s, r = Math.max(1.5, s * 0.35);
+      if (ob.tipo === 'arbol') { g.fillStyle = '#2f6b2a'; g.beginPath(); g.arc(px, py, s * 1.4, 0, 7); g.fill(); continue; }
+      if (ob.tipo === 'banca') { g.fillStyle = '#7a5a3a'; g.fillRect(px - s * 0.8, py - s * 0.25, s * 1.6, s * 0.5); continue; }
+      if (ob.tipo === 'fuente') { g.strokeStyle = '#d8e8f0'; g.lineWidth = Math.max(1, s * 0.3); g.beginPath(); g.arc(px, py, s * ob.r * 0.45, 0, 7); g.stroke(); continue; }
       if (ob.tipo === 'tacho') { g.fillStyle = '#2e5e3a'; g.fillRect(px - r, py - r, 2 * r, 2 * r); g.fillStyle = '#1b2b1f'; g.fillRect(px - r, py - r, 2 * r, r * 0.6); }
       else { g.fillStyle = ob.tipo === 'tobogan' ? '#e04f4f' : ob.tipo === 'columpio' ? '#3f7fd9' : '#e8d28a'; g.beginPath(); g.arc(px, py, r * 2.2, 0, 7); g.fill(); } }
     // nombres de los barrios (al alejar)

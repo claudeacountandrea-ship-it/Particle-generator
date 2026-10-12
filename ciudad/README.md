@@ -19,8 +19,14 @@ Está separado del generador de mazmorras (`editor/`), que no se tocó. Tiene tr
     por lado**. Anillo de 8; autopistas y avenida central de **2 carriles por sentido con mediana** (16). Ningún tramo de
     calzada queda con menos de 3. Las veredas siguen las diagonales sin escalones ni dientes de sierra.
   - **Cuartos donde entra un auto**: al menos 5 de ancho, de unos 30 a 45 cuadros (5×6 a 6×8).
-  - **Barrios**: la ciudad se reparte en barrios con nombre (Los Álamos, San Telmo, La Loma…); cada uno tiene su estilo
-    (casas sueltas o adosadas, tamaño de casa y de cuartos, tono de fachada y de techo) y sus casas se parecen entre sí.
+  - **Barrios**: cada barrio es una región entre **vías principales** (anillo, autopistas, avenidas radiales, avenida
+    central, anillo de la plaza), que son su límite. Cada uno tiene nombre y estilo (casas sueltas o adosadas, tamaño de casa
+    y de cuartos, tono de fachada y techo) y sus casas se parecen entre sí.
+  - **Rotondas (óvalos)** donde se cruzan vías principales: el cruce se abre en un octógono con una isla de pasto.
+  - **Plaza con diseño**: fuente octogonal al centro, anillo para caminar, senderos en cruz y 4 canteros de pasto con las
+    esquinas biseladas, árboles y bancas; alrededor, el césped con reja y la pista.
+  - **Centro comercial como recinto**: terreno propio con estacionamiento grande hacia la calle y planta en pesa limpia
+    (tiendas ancla en las puntas, pasillo, locales de 5 a los dos lados, entrada al medio y **patio de comidas**).
   - **Edificios especiales = recintos propios**: cada uno en su terreno cercado, separado de las casas, con **estacionamiento
     al frente que llega a la calle**, portón de 4 del estacionamiento al terreno y el edificio de planta limpia en el medio.
   - **Borde**: el anillo de asfalto y las autopistas llevan **vereda a ambos lados**. Una **avenida-autopista** de 12
@@ -110,8 +116,8 @@ Los pisos y techos de las salas en diagonal se arman con rectángulos y dejan si
 | `VentanaCerrada` | Vidrio que no se abre; las ventanas rotas no tienen vidrio y se pueden trepar |
 | `Reja` | Metal, de 2 m de alto |
 | `Muro` | Muro alto de base militar y cárcel |
-| `TachoBasura`, `Tobogan`, `Columpio`, `Arenero` | Objetos de pasajes y juegos |
-| `Agua`, `Juegos`, `Estacionamiento` | Suelos especiales |
+| `TachoBasura`, `Tobogan`, `Columpio`, `Arenero`, `Banca`, `FuenteCentro` | Objetos de pasajes, juegos y plaza |
+| `Agua`, `Juegos`, `Estacionamiento`, `Rotonda`, `Cantero` | Suelos especiales |
 | `Techo` | Uno por bloque de casa. Si no quieres techos, sáltalos por nombre |
 | `Auto`, `AutoCabina` | Autos abandonados y choques |
 | `Tronco`, `Copa`, `Fuente`, `FuenteAgua` | Árboles y fuentes |
