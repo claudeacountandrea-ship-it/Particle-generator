@@ -1,1 +1,1 @@
-{"name":"CiudadD_2_2","center":[-1184,0,-1184],"parts":[{"name":"Vereda","shape":"Block","pos":[-1084,-0.3,-1108],"size":[8,1,456],"rot":[0,0,0],"color":[0.655,0.639,0.608],"material":"SmoothSurface"},{"name":"Reja","shape":"Block","pos":[-1084,4,-1200],"size":[8.8,8,0.8],"rot":[0,0,0],"color":[0.435,0.459,0.486],"material":"Metal"}]}
+{"name":"CiudadD_2_2","center":[-1184,0,-1184],"parts":[{"name":"Vereda","shape":"Block","pos":[-1084,-0.3,-1108],"size":[8,1,456],"rot":[0,0,0],"color":[0.655,0.639,0.608],"material":"SmoothSurface"}]}

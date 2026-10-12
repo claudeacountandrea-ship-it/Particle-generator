@@ -1,13 +1,14 @@
 // Exporta una ciudad a piezas TruWorlds (formato A: JSON por chunk).
 // Uso: node ciudad/exportar.js --semilla=7 [--modo=ciudad --n=12 | --modo=diagonal --n=19 | --modo=cuadricula --tamano=150x110]
+//      [--ligera] sin pisos de arriba ni piso de color dentro de las casas (menos piezas); [--pisos=no] [--pisoInterior=no] [--techos=no]
 // Sale en ciudad/export/<modo>_semilla_<n>/: index.json (resumen, spawns, lista de chunks) y chunk_XX.json (piezas).
 const fs = require('fs'), path = require('path');
 require('./ciudad.js'); require('./mazmorra_base.js'); require('./ciudad_diagonal.js'); require('./motor_ciudad.js');
 const args = Object.fromEntries(process.argv.slice(2).map(a => a.replace(/^--/, '').split('=')));
 const seed = +(args.semilla ?? 7), modo = args.modo ?? 'ciudad', diag = modo !== 'cuadricula', motor = modo === 'ciudad';
 const [w, h] = diag ? [+(args.n ?? (motor ? 12 : 19)), 0] : (args.tamano ?? '150x110').split('x').map(Number);
-const map = motor ? MotorCiudad.generate({ seed, n: w }) : diag ? CiudadDiagonal.generate({ seed, n: w }) : Ciudad.generate({ seed, w, h }), out = diag ? CiudadDiagonal.toParts(map) : Ciudad.toParts(map);
-const dir = path.join(__dirname, 'export', `${motor ? 'ciudad' : diag ? 'diagonal' : 'cuadricula'}_semilla_${seed}`);
+const map = motor ? MotorCiudad.generate({ seed, n: w }) : diag ? CiudadDiagonal.generate({ seed, n: w }) : Ciudad.generate({ seed, w, h }), ligera = 'ligera' in args, opts = { pisos: !ligera && args.pisos !== 'no', pisoInterior: !ligera && args.pisoInterior !== 'no', roofs: args.techos !== 'no' }, out = diag ? CiudadDiagonal.toParts(map, opts) : Ciudad.toParts(map);
+const dir = path.join(__dirname, 'export', `${motor ? 'ciudad' : diag ? 'diagonal' : 'cuadricula'}_semilla_${seed}${ligera ? '_ligera' : ''}`);
 fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
 const list = out.chunks.map((c, k) => {
   const file = `chunk_${String(k).padStart(2, '0')}.json`;

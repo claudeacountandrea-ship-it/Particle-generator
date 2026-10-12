@@ -110,11 +110,18 @@
     const ROOF = { escuela: '#b5652e', hospital: '#f2f4f6', policia: '#2f4a78', bomberos: '#a3322a', militar: '#5d6440', carcel: '#55524e', casa: '#8c4a3a', tienda: '#5a6470', edificio: '#4e4a46', oficinas: '#3f4a57', condominio: '#7a5a48', comercial: '#e0ddd6', almacen: '#6d6f73', entrada: '#6d6f73' };
     // suelo de calle bajo toda la ciudad, pisos de las casas encima, escombros en los huecos
     for (const g of greedy((x, y) => anyIn(x, y) ? 1 : null)) add('Calle', 'Block', [X(g.x + g.w / 2), -0.5, Z(g.y + g.h / 2)], [g.w * C, 1, g.h * C], '#3d4045', 'SmoothSurface', null, g.x + g.w / 2, g.y + g.h / 2);
-    for (const g of greedy(fullRoom)) { const h = c.houses.get(g.k), [cl, mt] = h.refuge ? ['#c9a43a', 'Wood'] : FLOOR[h.type] || FLOOR.casa; add('Piso', 'Block', [X(g.x + g.w / 2), -0.3, Z(g.y + g.h / 2)], [g.w * C, 1, g.h * C], cl, mt, null, g.x + g.w / 2, g.y + g.h / 2); }
+    const look = new Map(), lookOf = hid => { const h = c.houses.get(hid); return h.refuge ? 'refugio' : FLOOR[h.type] ? h.type : 'casa'; }; // casas vecinas del mismo tipo comparten pieza
+    if (o.pisoInterior !== false) for (const g of greedy((x, y) => { const hh = fullRoom(x, y); return hh ? lookOf(hh) : null; })) { const [cl, mt] = g.k === 'refugio' ? ['#c9a43a', 'Wood'] : FLOOR[g.k]; add('Piso', 'Block', [X(g.x + g.w / 2), -0.3, Z(g.y + g.h / 2)], [g.w * C, 1, g.h * C], cl, mt, null, g.x + g.w / 2, g.y + g.h / 2); }
     for (const [kd, nm, cl, mt] of [['plaza', 'Plaza', '#b9b09c', 'Marble'], ['parque', 'Parque', '#5f8a3e', 'Grass'], ['patio', 'Patio', '#7d8f4e', 'Grass'], ['vereda', 'Vereda', '#a7a39b', 'SmoothSurface'], ['parking', 'Estacionamiento', '#55585e', 'SmoothSurface'], ['agua', 'Agua', '#3d7fb3', 'SmoothSurface'], ['rotonda', 'Rotonda', '#6fa34a', 'Grass'], ['cantero', 'Cantero', '#7cb35a', 'Grass'], ['juegos', 'Juegos', '#93c463', 'Grass'], ['pasaje', 'Pasaje', '#8a7d6a', 'Gravel']]) for (const g of greedy((x, y) => { const ls = cellLabels(x, y); return ls.some(l => c.kindOf(l) === kd) ? 1 : null; })) add(nm, 'Block', [X(g.x + g.w / 2), -0.3, Z(g.y + g.h / 2)], [g.w * C, 1, g.h * C], cl, mt, null, g.x + g.w / 2, g.y + g.h / 2);
     for (const g of greedy((x, y) => { const ls = cellLabels(x, y); return ls.every(l => c.kindOf(l) === 'pillar') ? 1 : null; })) add('Ruina', 'Block', [X(g.x + g.w / 2), WALL_H / 4, Z(g.y + g.h / 2)], [g.w * C, WALL_H / 2, g.h * C], '#4a4038', 'Gravel', null, g.x + g.w / 2, g.y + g.h / 2);
-    if (o.roofs !== false) for (const g of greedy((x, y) => { const l = fullRoom(x, y); return l && l !== c.houseOf(c.bossL) ? l : null; })) {
-      const h = c.houses.get(g.k); add('Techo', 'Block', [X(g.x + g.w / 2), WALL_H + 0.5, Z(g.y + g.h / 2)], [g.w * C + TH, 1, g.h * C + TH], h.refuge ? '#d4a017' : (root.CiudadTone ? root.CiudadTone.houseTone(h, h.roofTint || ROOF[h.type] || ROOF.casa) : ROOF[h.type]), 'SmoothSurface', null, g.x + g.w / 2, g.y + g.h / 2);
+    // pisos de arriba: losa con el hueco de la escalera; el techo de cada edificio a su altura (y su salida si tiene puentes)
+    const pisos = o.pisos !== false && c.pisos ? c.pisos : [], stairAt = new Map();
+    for (const e of c.escaleras || []) for (let b = 0; b < e.h; b++) for (let a = 0; a < e.w; a++) stairAt.set((e.y + b) * C4 + e.x + a, e);
+    for (const P of pisos) for (const g of greedy((x, y) => { const hh = fullRoom(x, y); return hh && (c.houses.get(hh).pisos || 1) >= P.piso && !stairAt.has(y * C4 + x) ? lookOf(hh) : null; })) {
+      const [cl, mt] = g.k === 'refugio' ? ['#c9a43a', 'Wood'] : FLOOR[g.k]; add('Losa', 'Block', [X(g.x + g.w / 2), (P.piso - 1) * WALL_H + 0.5, Z(g.y + g.h / 2)], [g.w * C + TH, 1, g.h * C + TH], cl, mt, null, g.x + g.w / 2, g.y + g.h / 2); }
+    const roofKey = new Map(), roofOf = hid => { const h = c.houses.get(hid), kk = (h.refuge ? 'R' : (h.roofTint || ROOF[h.type] || ROOF.casa)) + '|' + (pisos.length ? h.pisos || 1 : 1); if (!roofKey.has(kk)) roofKey.set(kk, hid); return kk; }; // un techo por color de barrio y altura
+    if (o.roofs !== false) for (const g0 of greedy((x, y) => { const l = fullRoom(x, y); const e = stairAt.get(y * C4 + x); return l && l !== c.houseOf(c.bossL) && !(e && e.techo && pisos.length) ? roofOf(l) : null; })) {
+      const g = { ...g0, k: roofKey.get(g0.k) }, h = c.houses.get(g.k); add('Techo', 'Block', [X(g.x + g.w / 2), (o.pisos === false ? 1 : h.pisos || 1) * WALL_H + 0.5, Z(g.y + g.h / 2)], [g.w * C + TH, 1, g.h * C + TH], h.refuge ? '#d4a017' : (root.CiudadTone ? root.CiudadTone.houseTone(h, h.roofTint || ROOF[h.type] || ROOF.casa) : ROOF[h.type]), 'SmoothSurface', null, g.x + g.w / 2, g.y + g.h / 2);
     }
     // bordes: tramos rectos (también diagonales) fusionados en una pieza por capa
     const LAYERS = [
@@ -128,19 +135,36 @@
       { name: 'Muro', test: s => s.cls === 'muro', y0: 0, y1: WALL_H * 1.25, th: TH * 1.5, color: '#4a3d35', mat: 'Brick' },
       { name: 'Reja', test: s => s.cls === 'reja', y0: 0, y1: FENCE_H, th: TH * 0.4, color: '#6f757c', mat: 'Metal' },
     ];
-    const lines = new Map();
-    for (const s of c.segs) { const key = s.dir + ':' + s.line; if (!lines.has(key)) lines.set(key, []); lines.get(key).push(s); }
+    const UPPER = new Set(['Pared', 'Dintel', 'VentanaArriba']);
+    LAYERS.push({ name: 'VentanaArriba', test: s => s.cls.startsWith('ventana'), y0: SILL, y1: DOOR_H, th: TH * 1.3, color: '#9cc9e6', mat: 'SmoothSurface', solo: 'arriba' }); // arriba la ventana es un vidrio sobre la pared entera
+    const levels = [{ y: 0, segs: c.segs, name: '' }, ...pisos.map(P => ({ y: (P.piso - 1) * WALL_H, segs: P.segs, name: 'P' + P.piso }))];
+    for (const lv of levels) { const lines = new Map();
+    for (const s of lv.segs) { const key = s.dir + ':' + s.line; if (!lines.has(key)) lines.set(key, []); lines.get(key).push(s); }
     for (const L of LAYERS) for (const segs of lines.values()) {
-      const on = segs.filter(L.test).sort((a, b) => a.pos - b.pos);
+      if (lv.y ? !UPPER.has(L.name) : L.solo) continue;
+      const test = lv.y && L.name === 'Pared' ? s => WALLISH.has(s.cls) : lv.y && L.name === 'Dintel' ? s => s.cls === 'puerta' : L.test;
+      const on = segs.filter(test).sort((a, b) => a.pos - b.pos);
       for (let i = 0; i < on.length;) {
         let j = i; while (j + 1 < on.length && on[j + 1].pos === on[j].pos + 1) j++;
         const s0 = on[i], s1 = on[j], dir = s0.dir, diag = dir[0] === 'd';
         const pts = [s0.a, s0.b, s1.a, s1.b], sx = pts.map(p => p[0]), sy = pts.map(p => p[1]);
         const x0 = Math.min(...sx), x1 = Math.max(...sx), y0 = Math.min(...sy), y1 = Math.max(...sy), n = j - i + 1, cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
         const len = n * C * (diag ? Math.SQRT2 : 1) + L.th, ry = dir === 'h' ? 0 : dir === 'v' ? 90 : dir === 'd1' ? -45 : 45;
-        add(L.name, 'Block', [X(cx), (L.y0 + L.y1) / 2, Z(cy)], [len, L.y1 - L.y0, L.th], L.color, L.mat, [0, ry, 0], cx, cy);
+        add(L.name + lv.name, 'Block', [X(cx), lv.y + (L.y0 + L.y1) / 2, Z(cy)], [len, L.y1 - L.y0, L.th], L.color, L.mat, [0, ry, 0], cx, cy);
         i = j + 1;
       }
+    } }
+    // escaleras: una rampa (Wedge) por tramo, la parte baja hacia la entrada; la de caracol con su eje; puentes y tablas de techo a techo
+    if (pisos.length) {
+      for (const e of c.escaleras || []) { const cx = e.x + e.w / 2, cy = e.y + e.h / 2, top = e.pisos - 1 + (e.techo ? 1 : 0), ns = e.entrada === 'N' || e.entrada === 'S';
+        const ry = { N: 0, S: 180, E: -90, O: 90 }[e.entrada];
+        for (let f = 0; f < top; f++) add(e.forma === 'caracol' ? 'EscaleraCaracol' : 'Escalera', 'Wedge', [X(cx), f * WALL_H + WALL_H / 2 + 0.5, Z(cy)], [(ns ? e.w : e.h) * C * 0.9, WALL_H, (ns ? e.h : e.w) * C * 0.9], '#8a6a48', 'Wood', [0, ry, 0], cx, cy);
+        if (e.forma === 'caracol') add('EscaleraEje', 'Cylinder', [X(cx), top * WALL_H / 2, Z(cy)], [top * WALL_H, C * 0.4, C * 0.4], '#5b4330', 'Wood', [0, 0, 90], cx, cy); }
+      for (const b of c.puentes || []) { const hor = b.y1 === b.y2, ya = (b.pisosA || 1) * WALL_H + 1, yb = (b.pisosB || 1) * WALL_H + 1, run = (hor ? b.x2 - b.x1 : b.y2 - b.y1) * C, len = Math.hypot(run, yb - ya) + TH * 2;
+        const tilt = Math.atan2(yb - ya, run) * 180 / Math.PI, cx = (b.x1 + b.x2) / 2, cy = (b.y1 + b.y2) / 2, wd = b.ancho * C * (b.tipo === 'puente' ? 0.6 : 0.4);
+        const nm = b.tipo === 'puente' ? 'PuenteTecho' : 'TablaTecho', cl = b.tipo === 'puente' ? '#9a6a3a' : '#b58a58', y0 = (ya + yb) / 2;
+        add(nm, 'Block', [X(cx), y0, Z(cy)], hor ? [len, 1, wd] : [wd, 1, len], cl, 'Wood', hor ? [0, 0, +tilt.toFixed(2)] : [+(-tilt).toFixed(2), 0, 0], cx, cy);
+        if (b.tipo === 'puente') for (const sd of [-1, 1]) add('Baranda', 'Block', [X(cx) + (hor ? 0 : sd * wd / 2), y0 + k, Z(cy) + (hor ? sd * wd / 2 : 0)], hor ? [len, 2 * k, 0.4] : [0.4, 2 * k, len], '#6b4a2a', 'Wood', hor ? [0, 0, +tilt.toFixed(2)] : [+(-tilt).toFixed(2), 0, 0], cx, cy); }
     }
     // objetos: tachos de basura y juegos de plaza
     for (const ob of c.objetos || []) { const sc2 = C / 8;
@@ -181,15 +205,23 @@
       if (kd === 'out') col = COLS.out; else if (kd === 'corr') col = COLS.calle; else if (kd === 'pillar') col = COLS.ruina; else if (COLS[kd] && kd !== 'room') col = COLS[kd];
       else { const h = c.houses.get(c.houseOf(l)); col = !h ? COLS.casa : h.refuge ? COLS.refugio : houseTone(h, h.tint || COLS[h.type] || COLS.casa); }
       colCache.set(l, col); return col; };
+    // vista por piso: lo que no llega a ese piso queda oscuro; en los techos cada edificio con el color de su techo
+    const piso = opt.piso === 'techo' ? 99 : +(opt.piso || 1), pisoOf = l => { if (c.kindOf(l) !== 'room') return 0; const h = c.houses.get(c.houseOf(l)); return h ? h.pisos || 1 : 1; };
+    const ROOFC = { casa: '#8c4a3a', condominio: '#7a5a48', tienda: '#5a6470', oficinas: '#3f4a57', comercial: '#e0ddd6', almacen: '#6d6f73', hospital: '#f2f4f6', policia: '#2f4a78', bomberos: '#a3322a', escuela: '#b5652e', militar: '#5d6440', carcel: '#55524e' };
+    const baseCol = colorOf, dimCache = new Map();
+    const colorAt = piso === 1 ? baseCol : l => { let col = dimCache.get(l); if (col) return col; const p2 = pisoOf(l);
+      if (piso === 99 && p2) { const h = c.houses.get(c.houseOf(l)); col = houseTone(h, h.roofTint || ROOFC[h.type] || ROOFC.casa); }
+      else col = p2 >= piso ? baseCol(l) : shade(baseCol(l), 0.35);
+      dimCache.set(l, col); return col; };
     // nítido: cada celda se pinta entera y, si está partida, la otra mitad encima (sin costuras entre triángulos)
     const tri = (pts, col) => { g.fillStyle = col; g.beginPath(); g.moveTo(pts[0][0] * s, pts[0][1] * s); for (let k2 = 1; k2 < pts.length; k2++) g.lineTo(pts[k2][0] * s, pts[k2][1] * s); g.closePath(); g.fill(); };
     const pk = new Map();
     for (let y = 0; y < H - 1; y++) for (let x = 0; x < C4; x++) {
       const i = (y * C4 + x) * 4, N = q[i], E = q[i + 1], S2 = q[i + 2], O = q[i + 3];
-      g.fillStyle = colorOf(N); g.fillRect(x * s - 0.25, y * s - 0.25, s + 0.5, s + 0.5);
-      if (N === E && S2 === O && N !== S2) tri([[x, y + 1], [x + 1, y + 1], [x, y]], colorOf(S2)), tri([[x + 1, y + 1], [x, y], [x + 1, y]], colorOf(N));
-      else if (N === O && S2 === E && N !== S2) tri([[x + 1, y], [x + 1, y + 1], [x, y + 1]], colorOf(S2));
-      else if (!(N === E && E === S2 && S2 === O)) { const C5 = [[0.5, 0], [1, 0.5], [0.5, 1], [0, 0.5]]; [E, S2, O].forEach((l, k2) => { const kq = k2 + 1, A2 = [[x, y], [x + 1, y], [x + 1, y + 1], [x, y + 1]]; tri([A2[kq], A2[(kq + 1) % 4], [x + 0.5, y + 0.5]], colorOf(l)); }); }
+      g.fillStyle = colorAt(N); g.fillRect(x * s - 0.25, y * s - 0.25, s + 0.5, s + 0.5);
+      if (N === E && S2 === O && N !== S2) tri([[x, y + 1], [x + 1, y + 1], [x, y]], colorAt(S2)), tri([[x + 1, y + 1], [x, y], [x + 1, y]], colorAt(N));
+      else if (N === O && S2 === E && N !== S2) tri([[x + 1, y], [x + 1, y + 1], [x, y + 1]], colorAt(S2));
+      else if (!(N === E && E === S2 && S2 === O)) { [E, S2, O].forEach((l, k2) => { const kq = k2 + 1, A2 = [[x, y], [x + 1, y], [x + 1, y + 1], [x, y + 1]]; tri([A2[kq], A2[(kq + 1) % 4], [x + 0.5, y + 0.5]], colorAt(l)); }); }
       if (c.kindOf(N) === 'parking') { let a = pk.get(N); if (!a) pk.set(N, a = [0, 0, 0]); a[0] += x + 0.5; a[1] += y + 0.5; a[2]++; }
     }
     if (opt.route) { g.fillStyle = 'rgba(95,211,232,.55)'; for (const [x, y] of c.routeCells) g.fillRect(x * s + s * .2, y * s + s * .2, s * .6, s * .6); }
@@ -198,7 +230,8 @@
       puerta: ['#c0782f', .24], muro: ['#2a211c', .55], garaje: ['#d9d4c7', .3, [.35, .12]], hueco: ['#ff8a1f', .2, [.12, .25]], bordillo: ['#b9b4aa', .08], mediana: ['#e3c75a', .18, [.6, .3]], entrada: ['#7fe08a', .3, [.1, .3]], ventana: ['#8ecae6', .2], ventanaRota: ['#ff8a1f', .26, [.2, .15]], reja: ['#c5ccd3', .16, [.25, .2]], porton: ['#7fe08a', .16, [.08, .3]],
     };
     g.lineCap = 'round';
-    for (const sg of c.segs) {
+    const segList = piso === 1 ? c.segs : piso === 99 ? [] : (c.pisos && c.pisos[piso - 2] ? c.pisos[piso - 2].segs : []);
+    for (const sg of segList) {
       const st = ST[sg.cls]; if (!st) continue;
       if (sg.cls === 'ventana') { g.strokeStyle = '#121416'; g.lineWidth = Math.max(1.5, s * .32); g.setLineDash([]); g.beginPath(); g.moveTo(sg.a[0] * s, sg.a[1] * s); g.lineTo(sg.b[0] * s, sg.b[1] * s); g.stroke(); }
       g.strokeStyle = st[0]; g.lineWidth = Math.max(1, s * st[1]); g.setLineDash(st[2] ? st[2].map(v => v * s) : []);
@@ -220,6 +253,15 @@
       if (ob.tipo === 'fuente') { g.strokeStyle = '#d8e8f0'; g.lineWidth = Math.max(1, s * 0.3); g.beginPath(); g.arc(px, py, s * ob.r * 0.45, 0, 7); g.stroke(); continue; }
       if (ob.tipo === 'tacho') { g.fillStyle = '#2e5e3a'; g.fillRect(px - r, py - r, 2 * r, 2 * r); g.fillStyle = '#1b2b1f'; g.fillRect(px - r, py - r, 2 * r, r * 0.6); }
       else { g.fillStyle = ob.tipo === 'tobogan' ? '#e04f4f' : ob.tipo === 'columpio' ? '#3f7fd9' : '#e8d28a'; g.beginPath(); g.arc(px, py, r * 2.2, 0, 7); g.fill(); } }
+    // escaleras (área y entrada) y puentes entre techos
+    for (const e of c.escaleras || []) { if (piso !== 99 ? e.pisos < piso || e.pisos < 2 && piso === 1 && !e.techo : !e.techo) continue;
+      g.fillStyle = piso === 99 ? '#2a2420' : '#e8d9b0'; g.fillRect(e.x * s, e.y * s, e.w * s, e.h * s); g.strokeStyle = '#3a2a18'; g.lineWidth = Math.max(1, s * 0.15); g.strokeRect(e.x * s, e.y * s, e.w * s, e.h * s);
+      if (e.forma === 'caracol') { g.beginPath(); const cx2 = (e.x + e.w / 2) * s, cy2 = (e.y + e.h / 2) * s; for (let a = 0; a < 12.5; a += 0.3) { const r2 = a / 12.5 * s * 0.9; g.lineTo(cx2 + Math.cos(a) * r2, cy2 + Math.sin(a) * r2); } g.stroke(); }
+      else { const hor = e.w > e.h; for (let t2 = 1; t2 < 6; t2++) { g.beginPath(); if (hor) { g.moveTo((e.x + e.w * t2 / 6) * s, e.y * s); g.lineTo((e.x + e.w * t2 / 6) * s, (e.y + e.h) * s); } else { g.moveTo(e.x * s, (e.y + e.h * t2 / 6) * s); g.lineTo((e.x + e.w) * s, (e.y + e.h * t2 / 6) * s); } g.stroke(); } }
+      const [ex, ey] = { N: [e.x + e.w / 2, e.y], S: [e.x + e.w / 2, e.y + e.h], E: [e.x + e.w, e.y + e.h / 2], O: [e.x, e.y + e.h / 2] }[e.entrada]; g.fillStyle = '#7fe08a'; g.beginPath(); g.arc(ex * s, ey * s, Math.max(2, s * 0.35), 0, 7); g.fill(); }
+    if (piso === 99 || opt.puentes) for (const b of c.puentes || []) { const hor = b.y1 === b.y2, w2 = b.ancho / 2;
+      g.fillStyle = b.tipo === 'puente' ? '#b07a3e' : '#c99a5c'; if (hor) g.fillRect(b.x1 * s, (b.y1 - w2 * 0.6) * s, (b.x2 - b.x1) * s, w2 * 1.2 * s); else g.fillRect((b.x1 - w2 * 0.6) * s, b.y1 * s, w2 * 1.2 * s, (b.y2 - b.y1) * s);
+      g.strokeStyle = '#4a3018'; g.lineWidth = Math.max(1, s * 0.1); for (let t2 = 0; t2 <= (hor ? b.x2 - b.x1 : b.y2 - b.y1) * 2; t2++) { g.beginPath(); if (hor) { const xx = (b.x1 + t2 / 2) * s; g.moveTo(xx, (b.y1 - w2 * 0.6) * s); g.lineTo(xx, (b.y1 + w2 * 0.6) * s); } else { const yy = (b.y1 + t2 / 2) * s; g.moveTo((b.x1 - w2 * 0.6) * s, yy); g.lineTo((b.x1 + w2 * 0.6) * s, yy); } g.stroke(); } }
     // nombres de los barrios (al alejar)
     if (opt.barrios && c.barrios && s < 6) { g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `800 ${Math.max(12, Math.round(s * 7))}px Saira Condensed, sans-serif`;
       for (const b of c.barrios) { g.lineWidth = 4; g.strokeStyle = 'rgba(0,0,0,.55)'; g.strokeText(b.nombre.toUpperCase(), b.cx * s, b.cy * s); g.fillStyle = 'rgba(255,240,200,.95)'; g.fillText(b.nombre.toUpperCase(), b.cx * s, b.cy * s); } }
@@ -229,7 +271,7 @@
       for (const h of c.houses.values()) { const tg = TAG[h.type]; if (!tg) continue; g.lineWidth = Math.max(2, s * 0.5); g.strokeStyle = 'rgba(0,0,0,.65)'; g.strokeText(tg, h.cx * s, h.cy * s); g.fillStyle = h.type === 'hospital' ? '#ff5a5a' : '#fff'; g.fillText(tg, h.cx * s, h.cy * s); } }
     // nombre de cada cuarto al acercar
     if (opt.labels && c.roomInfo && s >= 7) { g.font = `700 ${Math.max(9, Math.round(s * 0.95))}px Atkinson Hyperlegible, sans-serif`; g.fillStyle = 'rgba(20,18,14,.8)';
-      for (const r of c.roomInfo) if (r.role && r.area >= 9) g.fillText(r.role, r.cx * s, r.cy * s); }
+      for (const r of c.roomInfo) { const role = piso === 1 ? r.role : piso === 99 ? '' : (r.arriba || [])[piso - 2]; if (role && r.area >= 9) g.fillText(role, r.cx * s, r.cy * s); } }
     const mark = (h, t) => { if (!h) return; const r = Math.max(9, s * 2.4); g.fillStyle = t === 'A' ? '#7fe08a' : '#e8b23a'; g.beginPath(); g.arc(h.cx * s, h.cy * s, r, 0, 7); g.fill(); g.strokeStyle = '#111'; g.lineWidth = 2; g.stroke(); g.fillStyle = '#111'; g.font = `800 ${Math.round(r * 1.2)}px Saira Condensed, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(t, h.cx * s, h.cy * s + 1); };
     mark(c.A ? { cx: c.A[0], cy: c.A[1] } : c.houses.get(c.houseOf(c.startL)), 'A');
     let k = 0; for (const h of c.houses.values()) if (h.refuge) mark(h, h.final ? 'B' : 'R' + (++k));

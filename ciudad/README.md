@@ -72,7 +72,8 @@ Está separado del generador de mazmorras (`editor/`), que no se tocó. Tiene tr
 - `ciudad.js`: modo cuadrícula y la tabla `MEDIDAS` que usan los dos modos.
 - `index.html`: el visor. Elige modo, semilla y tamaño, y mira la ruta A→B.
 - `exportar.js`: escribe las piezas para TruWorlds.
-- `export/ciudad_semilla_7/`: **la ciudad del motor** (n=12, ~17.000 piezas; si hace falta menos, se pueden saltar los techos).
+- `export/ciudad_semilla_7/`: **la ciudad del motor con pisos** (n=12, ~25.000 piezas: plantas de arriba, escaleras y puentes entre techos).
+- `export/ciudad_semilla_7_ligera/`: la misma ciudad **sin plantas de arriba ni piso de color dentro de las casas** (~15.100 piezas, para quedar cerca del tope de 15.000).
 - `export/diagonal_semilla_7/`: ciudad diagonal ya exportada (19×19, **5.468 piezas, 25 chunks, máx. 391**).
 - `export/cuadricula_semilla_7/`: ciudad en cuadrícula ya exportada (150×110 celdas, 2.413 piezas).
 
@@ -81,12 +82,12 @@ Está separado del generador de mazmorras (`editor/`), que no se tocó. Tiene tr
 1. Lee `ciudad/export/ciudad_semilla_7/index.json` (o `diagonal_semilla_7` / `cuadricula_semilla_7`): tiene el total de piezas, la lista de chunks con su centro y cantidad, los spawns y las medidas.
 2. Construye cada `chunk_XX.json` en una llamada. Cada chunk tiene `{name, center, parts}`, y cada pieza es
    `{name, shape, pos, size, rot, color, material}`:
-   - `shape` es Block, Ball o Cylinder;
+   - `shape` es Block, Ball, Cylinder o Wedge (las escaleras y el tobogán);
    - `pos` y `size` están en studs;
    - `rot` va en grados, en orden Y,X,Z;
    - `color` es RGB de 0 a 1;
    - `material` es uno de: SmoothSurface, Wood, Marble, Grass, Gravel, Brick, Metal, Glow.
-   Los chunks tienen como máximo 800 piezas; en la semilla 7 el mayor tiene 228.
+   Los chunks tienen como máximo 800 piezas; en la semilla 7 el mayor tiene 764 (303 en la ligera).
 3. Las posiciones son absolutas en el mundo: el mapa está centrado en el origen, con Y hacia arriba y el norte del mapa mirando a -Z. El `center` de cada chunk sirve solo como referencia; no hace falta mover nada.
 4. El suelo son piezas (calles, plazas, patios, pisos) de 1 stud de grueso con la cara de arriba en y = 0.
 
@@ -118,11 +119,34 @@ Los pisos y techos de las salas en diagonal se arman con rectángulos y dejan si
 | `Muro` | Muro alto de base militar y cárcel |
 | `TachoBasura`, `Tobogan`, `Columpio`, `Arenero`, `Banca`, `FuenteCentro` | Objetos de pasajes, juegos y plaza |
 | `Agua`, `Juegos`, `Estacionamiento`, `Rotonda`, `Cantero` | Suelos especiales |
-| `Techo` | Uno por bloque de casa. Si no quieres techos, sáltalos por nombre |
+| `Techo` | Techo de cada edificio, a la altura de su último piso. Si no quieres techos, sáltalos por nombre |
+| `Losa` | Piso de las plantas de arriba (con el hueco de la escalera) |
+| `ParedP2`, `DintelP2`, `VentanaArribaP2` (y `P3`, `P4`) | Paredes de las plantas de arriba; arriba la ventana es un vidrio sobre la pared entera |
+| `Escalera`, `EscaleraCaracol`, `EscaleraEje` | Una rampa (Wedge) por piso, con la parte baja hacia la entrada; la de caracol lleva un eje. Si la rampa sale al revés, gira 180° en Y |
+| `TablaTecho`, `PuenteTecho`, `Baranda` | Tablas (1 a 3 celdas) y puentes (4 a 8) de techo a techo; si los techos tienen distinta altura van inclinados |
 | `Auto`, `AutoCabina` | Autos abandonados y choques |
 | `Tronco`, `Copa`, `Fuente`, `FuenteAgua` | Árboles y fuentes |
 
 Las puertas son huecos en la pared, sin hoja.
+
+## Cuartos, pisos, escaleras y puentes (modo ciudad)
+- **Tamaño de cada cuarto según su uso** (tabla `PROG` en `motor_ciudad.js`): la sala pesa 2 (la más grande, da a la calle y
+  tiene la puerta principal), el garaje 1,4, la cocina 1,05 (hacia el patio, con la puerta de atrás), el dormitorio 1 y el baño
+  0,4 (el más chico de los privados; puede tener 3 de ancho). Medido en la semilla 7: la sala sale ~1,6 veces el cuarto más
+  grande que le sigue, y el baño ~0,6 de la cocina o un dormitorio.
+- **Pisos**: casa 1 o 2 (2 si tiene menos de 4 cuartos abajo; más seguido en el centro), condominio 2 a 4 (un departamento
+  por piso, con la misma planta), oficinas 2 o 3, tienda 1 o 2, centro comercial 2 o 3, hospital, escuela, comisaría y
+  bomberos 2, base militar, cárcel y almacén 1. Las plantas de arriba repiten las paredes de la de abajo (así cumplen las
+  mismas reglas de la rejilla); las puertas a la calle pasan a ventanas y los tramos largos ciegos ganan ventanas.
+- **Usos arriba**: en una casa, dormitorio principal, dormitorios, baño y el hall donde llega la escalera; un condominio repite
+  el departamento; los edificios repiten sus usos (los garajes pasan a oficinas o habitaciones).
+- **Escaleras**: solo el área y su entrada. Caracol de 2×2 en casas, condominios y tiendas; recta de 2×3 en los edificios
+  grandes. Van en el mismo lugar en todos los pisos, pegadas a una pared, sin tapar puertas, en la sala, el hall, el pasillo o
+  la recepción. Datos en `escaleras` (x, y, w, h, entrada N/E/S/O, pisos, techo).
+- **Puentes entre techos**: entre edificios a 1–8 celdas sobre suelo libre (patios, pasajes, calles angostas), 2 celdas de
+  ancho, como mucho 2 por edificio (3 en los grandes). Un edificio con puente tiene escalera hasta el techo. Datos en
+  `puentes` (x1, y1, x2, y2, tipo tabla/puente, casaA, casaB, pisosA, pisosB).
+- **Visor**: el selector «Piso» muestra la calle, los pisos 2 a 4 (lo que no llega queda oscuro) y los techos con los puentes.
 
 ## Medidas arcade (fáciles de cambiar)
 Las medidas no son realistas, son de juego: números redondos en metros de Blender (1 m = 4 studs), pensados para un
@@ -142,6 +166,8 @@ Con estas medidas se cumple lo de TruWorlds: puertas de 8 studs o más, techos d
 ## Regenerar
 ```
 node ciudad/exportar.js --semilla=7 --n=12                          # ciudad (n: 10, 12, 14 o 16 = enorme)
+node ciudad/exportar.js --semilla=7 --ligera                        # sin plantas de arriba ni piso interior (~15.000 piezas)
+                                                                    # sueltos: --pisos=no  --pisoInterior=no  --techos=no
 node ciudad/exportar.js --semilla=7 --modo=diagonal --n=19          # mazmorra pintada
 node ciudad/exportar.js --semilla=7 --modo=cuadricula --tamano=150x110
 ```
