@@ -355,12 +355,29 @@
         const anc = Math.round(Math.max(6, (e[L][1] - e[L][0]) * sc * 0.18) / sc), s1 = cutAt(set, diag, L, e[L][0] + anc, 3), s2 = s1 && cutAt(s1[1], diag, L, e[L][1] - anc, 3); if (!s2) return null;
         const mid = s2[0], pe = extOf(mid, diag)[P], pm = Math.round((pe[0] + pe[1]) / 2), h2 = Math.round(2 / sc);
         const a1 = cutAt(mid, diag, P, pm - h2, 2), a2 = a1 && cutAt(a1[1], diag, P, pm + h2, 2); if (!a2) return null;
-        const A = strips(a1[0], diag, L, 5, 12), Bs = strips(a2[1], diag, L, 5, 12), ma = A.length >> 1, mb = Bs.length >> 1;
+        const A = strips(a1[0], diag, L, 7, 16), Bs = strips(a2[1], diag, L, 7, 16), ma = A.length >> 1, mb = Bs.length >> 1;
         put(s1[0], 'tienda ancla'); put(s2[1], 'tienda ancla'); put(a2[0].concat(A.length > 2 ? A[ma] : []), 'pasillo'); // la entrada al medio es parte del pasillo
         A.forEach((c2, k2) => { if (A.length <= 2 || k2 !== ma) put(c2, 'local'); });
         Bs.forEach((c2, k2) => { if (Bs.length > 2 && (k2 === mb || k2 === mb - 1)) return; put(c2, 'local'); }); if (Bs.length > 2) put(Bs[mb - 1].concat(Bs[mb]), 'patio de comidas');
         return { rooms, roles, hub: 2 }; }
+      if (kind === 'mansion') { // simétrica: hall y salón al medio, dos alas iguales a los lados
+        const e = extOf(set, diag), L = (e[0][1] - e[0][0]) >= (e[1][1] - e[1][0]) ? 0 : 1, P = 1 - L, sc = diag ? Math.SQRT1_2 : 1, wL = (e[L][1] - e[L][0]) * sc, dP = (e[P][1] - e[P][0]) * sc;
+        if (wL < 16 || dP < 10) return null; const ww = Math.max(Math.round(5 / sc), Math.round(wL * 0.3 / sc));
+        const c1 = cutAt(set, diag, L, e[L][0] + ww, 2), c2 = c1 && cutAt(c1[1], diag, L, e[L][1] - ww, 2); if (!c2) return null;
+        const c3 = cutAt(c2[0], diag, P, e[P][0] + Math.round(dP * 0.45 / sc), 1); if (!c3) return null;
+        put(c3[0], 'hall'); put(c3[1], 'salón');
+        const n3 = dP >= 20 ? 3 : 2, wing = (w, names) => { let cur = w; const ps = []; for (let k2 = 1; k2 < n3; k2++) { const r = cutAt(cur, diag, P, e[P][0] + Math.round(dP * k2 / n3 / sc), 1); if (!r) break; ps.push(r[0]); cur = r[1]; } ps.push(cur); ps.forEach((r2, k2) => put(r2, names[k2])); };
+        wing(c1[0], n3 === 3 ? ['comedor', 'cocina', 'baño'] : ['comedor', 'cocina']); wing(c2[1], n3 === 3 ? ['biblioteca', 'sala de juegos', 'baño'] : ['biblioteca', 'baño']);
+        return { rooms, roles, hub: 0 }; }
       if (kind === 'escuela') { const b = bandsOf(set, diag, [Math.min(FR, 6), CO]); if (!b) return null; const [d1, rc, en] = front3(b.out[0], diag, b.L, 7);
+        // patio de recreo al medio con las aulas alrededor (a los dos lados y al fondo); la dirección adelante da al recreo
+        { const b2 = bandsOf(set, diag, [Math.min(FR, 6)]), back = b2 && b2.out[1], eb = back && extOf(back, diag), wL = back ? (eb[b.L][1] - eb[b.L][0]) * b.sc : 0, dP = back ? (eb[b.P][1] - eb[b.P][0]) * b.sc : 0, aw = 6;
+          if (back && b2.L === b.L && wL >= 2 * aw + 10 && dP >= aw + 7) { const [f1, f2, f3] = front3(b2.out[0], diag, b.L, 7); rooms.length = 0; roles.length = 0; put(f1, 'dirección'); put(f2, 'recepción'); put(f3, 'enfermería');
+            const c1 = cutAt(back, diag, b.L, eb[b.L][0] + Math.round(aw / b.sc), 2), c2 = c1 && cutAt(c1[1], diag, b.L, eb[b.L][1] - Math.round(aw / b.sc), 2);
+            const mid = c2 && c2[0], em = mid && extOf(mid, diag), c3 = mid && cutAt(mid, diag, b.P, em[b.P][1] - Math.round(aw / b.sc), 2);
+            if (c3) { const colA = strips(c1[0], diag, b.P, 7, 14), colB = strips(c2[1], diag, b.P, 7, 14), row = strips(c3[1], diag, b.L, 8, 16);
+              put(c3[0], 'patio de recreo'); colA.forEach(r2 => put(r2, 'aula')); row.forEach((r2, k2) => put(r2, k2 === row.length - 1 && row.length > 2 ? 'gimnasio' : 'aula')); colB.forEach((r2, k2) => put(r2, k2 === colB.length - 1 ? 'baños' : 'aula'));
+              return { rooms, roles, hub: roles.indexOf('patio de recreo') }; } } }
         put(d1, 'dirección'); put(rc, 'recepción'); put(en, 'enfermería'); put(b.out[1], 'pasillo');
         const au = strips(b.out[2], diag, b.L, 7, 14); au.forEach((c2, k2) => put(c2, k2 === au.length - 1 ? 'gimnasio' : 'aula'));
         return { rooms, roles, hub: roles.indexOf('pasillo') }; }
@@ -370,7 +387,7 @@
     const roadNb = i => { let r = false; nb(i, j => { if (t[j] === 1 || t[j] === 6 || t[j] === 7) r = true; }); return r; };
     // programa de una casa: cada cuarto con su peso de área (la sala es la más grande y da a la calle, el baño es la mitad
     // de un dormitorio, la cocina como un dormitorio y hacia el patio); el corte cae donde reparte el área según los pesos
-    const PROG = { sala: [2, 30, 2], garaje: [1.4, 30, 1], cocina: [1.05, 22, -1], dormitorio: [1, 22, 0], baño: [0.4, 12, -0.5], estudio: [0.8, 18, 0] }; // [peso, área mínima, cuánto quiere la calle]
+    const PROG = { sala: [2, 36, 2], garaje: [1.4, 32, 1], cocina: [1.05, 26, -1], dormitorio: [1, 26, 0], baño: [0.4, 14, -0.5], estudio: [0.8, 20, 0] }; // [peso, área mínima, cuánto quiere la calle]
     const casaProg = nR => { const p = ['sala', 'cocina', 'baño']; if (nR >= 5) p.push('garaje'); while (p.length < nR) p.push(p.length === 6 ? 'baño' : 'dormitorio'); return p; };
     const cutFrac = (set, f, minA, minB, diag, minT, tA = minT, tB = minT) => {
       stamp++; let xs0 = 1e9, xs1 = -1, ys0 = 1e9, ys1 = -1;
@@ -404,7 +421,7 @@
       return [...splitW(A2, gA, diag, minT, fp), ...splitW(B2, gB, diag, minT, fp)];
     };
     const erode = (set, steps) => { let cur = set; for (let s2 = 0; s2 < steps; s2++) { stamp++; for (const i of cur) mk[i] = stamp; cur = cur.filter(i => { const c = i >> 2, k = i & 3, x = c % C, y = (c / C) | 0; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (!inQ(x + dx, y + dy, k)) return false; return true; }); } return cur; };
-    let nextH = 1, nMalls = 0, nPark = 0;
+    let nextH = 1, nMalls = 0, nPark = 0, nMans = 0;
     const roleOf = new Map(); // uso de cada cuarto: sala, cocina, garaje, dormitorio, baño, local...
     const addHouse = (type, zone, rooms, patio, hub = -1, roles = null) => {
       const hid = nextH++, all = rooms.flat(), [hx, hy] = centerOf(all), h = { id: hid, type, zone, cx: hx, cy: hy, area: all.length / 4, rooms: new Set(), patio: 0, refuge: false };
@@ -441,7 +458,7 @@
     const barrios = [], byComp = new Map();
     { const cnt = new Map(); for (const x of bz) { const cp = bComp[x.b[0] >> 2]; cnt.set(cp, (cnt.get(cp) || 0) + 1); }
       for (const [cp, k2] of [...cnt.entries()].sort((p, r2) => r2[1] - p[1])) { if (cp < 0) continue; const id = barrios.length, tn = TINTS[id % TINTS.length];
-        const b = { id, nombre: NOMBRES[id % NOMBRES.length], cx: 0, cy: 0, suelta: [0.15, 0.4, 0.7, 0.9][rnd(0, 3)], nR: [[3, 4], [3, 5], [4, 5], [4, 6]][rnd(0, 3)], per: [[28, 34], [30, 38], [34, 42]][rnd(0, 2)], tint: tn[0], roof: tn[1], n: 0, sx: 0, sy: 0 };
+        const b = { id, nombre: NOMBRES[id % NOMBRES.length], cx: 0, cy: 0, suelta: [0.15, 0.4, 0.7, 0.9][rnd(0, 3)], nR: [[3, 4], [3, 5], [4, 5], [4, 6]][rnd(0, 3)], per: [[34, 40], [38, 46], [42, 50]][rnd(0, 2)], tint: tn[0], roof: tn[1], n: 0, sx: 0, sy: 0 };
         if (k2 >= 2 || !barrios.length) { barrios.push(b); byComp.set(cp, b); } } }
     const barrioOf = set => { const [x, y] = centerOf(set); let b2 = byComp.get(bComp[set[0] >> 2]); if (!b2) { let bd = 1e9; for (const b of barrios) { const d = b.n ? Math.hypot(b.sx / b.n - x, b.sy / b.n - y) : 1e9; if (d < bd) { bd = d; b2 = b; } } b2 = b2 || barrios[0]; } b2.n++; b2.sx += x; b2.sy += y; return b2; };
     const roleMap = (roles, m2) => roles.map(r => m2[r] || r);
@@ -480,6 +497,10 @@
         const h = addHouse(sp, zone, rooms, core.length ? mem.filter(i => !inC.has(i)) : null, -1, rooms.map((_, k2) => k2 === 0 ? 'recepción' : 'sala')); h.campus = !!core.length; h.recinto = sp === 'militar' || sp === 'carcel'; continue;
       }
       if (!sp && zone === 'centro' && area > 700 && nMalls < 2 && chance(0.3)) { const ml = mallLayout(mem, diag) || mallLayout(mem, !diag); if (ml) { addHouse('comercial', zone, ml.rooms, null, ml.hub, roleMap(ml.roles, { localB: 'local' })); nMalls++; continue; } }
+      if (zone === 'suburbio' && area >= 480 && area <= 1800 && nMans < (n >= 14 ? 3 : 2) && chance(0.4)) { // mansión en medio de su jardín
+        let ok2 = false; for (const dg of [diag, !diag]) { const rect = rectIn(erode(mem, 2), dg); if (!rect || rect.length / 4 < 200) continue; const tp = template('mansion', rect, dg); if (!tp) continue;
+          const inR = new Set(rect), h = addHouse('mansion', zone, tp.rooms, mem.filter(i => !inR.has(i)), tp.hub, tp.roles); h.style = 'suelta'; nMans++; ok2 = true; break; }
+        if (ok2) continue; }
       if (zone === 'suburbio' && area > 420 && chance(0.2)) { addHouse('almacen', zone, splitN(mem, rnd(2, 3), area / 4, diag), null); continue; }
       const lotMin = zone === 'centro' ? 100 : zone === 'medio' ? 170 : 140; // lotes más grandes: cuartos donde entra un auto
       const front = [], orphan = [];
@@ -514,7 +535,8 @@
         }
         yard.push(...extra[k]);
         let lvs, roles = null;
-        if (type === 'casa' || type === 'condominio') { const rq = lot.filter(roadNb), fp = rq.length ? centerOf(rq) : null, pr = splitW(house, casaProg(nR), diag, 4, fp); lvs = pr.map(x => x[0]); roles = pr.map(x => x[1]);
+        if (type === 'casa' || type === 'condominio') { const wsum = k2 => casaProg(k2).reduce((a2, r) => a2 + PROG[r][0], 0); while (nR > 3 && house.length / 4 / wsum(nR) < per * 0.8) nR--; // cuartos grandes: menos cuartos si no entran (el resto va arriba)
+          const rq = lot.filter(roadNb), fp = rq.length ? centerOf(rq) : null, pr = splitW(house, casaProg(nR), diag, 4, fp); lvs = pr.map(x => x[0]); roles = pr.map(x => x[1]);
           if (lvs.length < 3) { const alt = splitN(house, Math.max(3, nR), 16, diag, 4); if (alt.length > lvs.length) { // forma rara: partición común y usos por tamaño
             const ord = alt.map((x, k2) => k2).sort((p, r2) => alt[r2].length - alt[p].length), pg = casaProg(alt.length).filter(r => r !== 'baño' && r !== 'sala'); lvs = alt; roles = [];
             ord.forEach((k2, j) => { roles[k2] = j === 0 ? 'sala' : j === ord.length - 1 ? 'baño' : pg[j - 1] || 'dormitorio'; }); } } } // programa: sala grande, baño chico
@@ -608,6 +630,18 @@
       }
       return changed;
     };
+    // veredas sin esquinas de 90°: la esquina de una celda de vereda (o de calle/campo pegado a la vereda) se bisela a 45°
+    { const SOFT = new Set(['vereda', 'corr', 'out', 'pasaje', 'parque']), snap = q.slice(); let nBis = 0;
+      const U = (x, y) => { if (x < 0 || y < 0 || x >= C || y >= Rr) return -1; const i = (y * C + x) * 4, l = snap[i]; return snap[i + 1] === l && snap[i + 2] === l && snap[i + 3] === l ? l : -1; };
+      for (let y = 1; y < Rr - 1; y++) for (let x = 1; x < C - 1; x++) {
+        const X0 = U(x, y); if (X0 < 0 || !SOFT.has(kindOf(X0))) continue;
+        // [lado1, lado2, diagonal, opuesto1, opuesto2, cuartos que cambian]: N=0 E=1 S=2 O=3
+        for (const [a, b, d, oa, ob, ks] of [[[0, -1], [1, 0], [1, -1], [0, 1], [-1, 0], [0, 1]], [[1, 0], [0, 1], [1, 1], [-1, 0], [0, -1], [1, 2]], [[0, 1], [-1, 0], [-1, 1], [0, -1], [1, 0], [2, 3]], [[-1, 0], [0, -1], [-1, -1], [1, 0], [0, 1], [3, 0]]]) {
+          const Y0 = U(x + a[0], y + a[1]); if (Y0 < 0 || Y0 === X0 || !SOFT.has(kindOf(Y0)) || U(x + b[0], y + b[1]) !== Y0 || U(x + d[0], y + d[1]) !== Y0) continue;
+          if (U(x + oa[0], y + oa[1]) !== X0 || U(x + ob[0], y + ob[1]) !== X0) continue;
+          if (!(kindOf(X0) === 'vereda' || kindOf(Y0) === 'vereda')) continue;
+          const i = (y * C + x) * 4; if (q[i] !== X0 || q[i + 1] !== X0 || q[i + 2] !== X0 || q[i + 3] !== X0) continue;
+          for (const k of ks) q[i + k] = Y0; nBis++; break; } } }
     normalize();
     for (let round = 0; round < (o.reparar ?? 8); round++) {
       build();
@@ -687,7 +721,7 @@
         else { openMid(fr, 'puerta', h.type === 'almacen' || h.type === 'comercial' ? 3 : 2, true); if (h.type === 'tienda' && street[1]) openMid(street[1], 'puerta', 2); }
         h.front = outL(fr.a) ? fr.b : fr.a;
       } else if (h.patio) { // casa suelta: la puerta principal sale de la sala al jardín
-        const sr = rs.filter(r => (r.a === h.patio || r.b === h.patio) && houseOf(r.a === h.patio ? r.b : r.a) === h.id && kindOf(r.a === h.patio ? r.b : r.a) === 'room' && r.segs.length >= 3).sort((p, r2) => (roleOf.get(r2.a === h.patio ? r2.b : r2.a) === 'sala') - (roleOf.get(p.a === h.patio ? p.b : p.a) === 'sala') || r2.segs.length - p.segs.length)[0];
+        const sr = rs.filter(r => (r.a === h.patio || r.b === h.patio) && houseOf(r.a === h.patio ? r.b : r.a) === h.id && kindOf(r.a === h.patio ? r.b : r.a) === 'room' && r.segs.length >= 3).sort((p, r2) => (['sala', 'hall'].includes(roleOf.get(r2.a === h.patio ? r2.b : r2.a))) - (['sala', 'hall'].includes(roleOf.get(p.a === h.patio ? p.b : p.a))) || r2.segs.length - p.segs.length)[0];
         if (sr) { openMid(sr, 'puerta', 2, true); h.front = sr.a === h.patio ? sr.b : sr.a; }
       }
       // portones de vehículos de los edificios: garaje policial, urgencias (ambulancias), cocheras de bomberos
@@ -718,8 +752,11 @@
       const pairs = mezcla([...best.values()], R), seen = new Set([h.hub || h.front || [...h.rooms][0]]), used = new Set();
       let grew = true; while (grew) { grew = false; for (const r of pairs.sort((p, r2) => r2.segs.length - p.segs.length)) if (seen.has(r.a) !== seen.has(r.b)) { openMid(r, 'puerta', r.segs.length >= 4 ? 2 : 1, true); seen.add(r.a); seen.add(r.b); used.add(r); grew = true; } }
       for (const r of pairs) if (!used.has(r) && r.segs.length >= 5 && chance(0.15)) openMid(r, 'puerta');
+      // centro comercial: los locales se abren enteros al pasillo (vidriera abierta, sin pared); escuela: el recreo abierto al pasillo
+      if (h.type === 'comercial' || h.type === 'escuela') for (const r of inner) { const ra = roleOf.get(r.a), rb = roleOf.get(r.b), other = ra === 'pasillo' ? rb : rb === 'pasillo' ? ra : null;
+        if (other && (h.type === 'comercial' ? ['local', 'patio de comidas', 'tienda ancla'].includes(other) : other === 'patio de recreo') && r.segs.length >= 4) openMid(r, 'puerta', r.segs.length - 2, true); }
       // ventanas: en las paredes que dan a calle, plaza o parque, nunca en la punta ni junto a una puerta
-      const pOpen = { casa: 0.18, tienda: 0.3, oficinas: 0.12, condominio: 0.14, comercial: 0.2, almacen: 0.08 }[h.type];
+      const pOpen = { mansion: 0.1, casa: 0.18, tienda: 0.3, oficinas: 0.12, condominio: 0.14, comercial: 0.2, almacen: 0.08 }[h.type];
       for (const r of rs) {
         if (kindOf(r.a) === 'patio' && kindOf(r.b) === 'patio') continue;
         if (!r.segs.every(s => s.cls === 'exterior' || s.cls === 'puerta') || r.segs.length < 3) continue;
@@ -865,7 +902,7 @@
     for (const h of houses.values()) {
       const big = h.rooms.size;
       h.pisos = h.type === 'casa' ? (big < 4 || chance({ centro: 0.7, medio: 0.5 }[h.zone] ?? 0.3) ? 2 : 1) // casa chica: el resto de cuartos arriba
-        : h.type === 'condominio' ? rnd(2, 4) : h.type === 'oficinas' ? rnd(2, 3) : h.type === 'tienda' ? (chance(0.4) ? 2 : 1) : h.type === 'comercial' ? rnd(2, 3)
+        : h.type === 'condominio' ? rnd(2, 4) : h.type === 'mansion' ? 2 : h.type === 'oficinas' ? rnd(2, 3) : h.type === 'tienda' ? (chance(0.4) ? 2 : 1) : h.type === 'comercial' ? rnd(2, 3)
         : ['hospital', 'escuela', 'policia', 'bomberos'].includes(h.type) ? 2 : 1;
     }
     // puentes y tablas entre techos de edificios cercanos (más caminos cuando las calles están cerradas)
@@ -892,10 +929,13 @@
       const PREF = ['pasillo', 'hall', 'sala', 'recepción', 'guardia', 'dirección', 'local', 'oficina', 'estar'];
       for (const h of houses.values()) {
         if (h.pisos < 2 && !h.techo) continue;
-        const recta = h.campus || h.type === 'comercial' || h.type === 'oficinas', dims = recta ? [[2, 3], [3, 2], [2, 2]] : [[2, 2]];
+        const big = h.campus || h.type === 'comercial' || h.type === 'oficinas' || h.type === 'mansion';
+        // en U (dos tramos con descanso, 4×4), recta larga (2×4, 2×5 en edificios) y, si no entra nada, caracol 2×2
+        const dims = big ? [['U', 4, 4], ['recta', 2, 5], ['recta', 5, 2], ['recta', 2, 4], ['recta', 4, 2], ['caracol', 2, 2]]
+          : chance(0.5) ? [['U', 4, 4], ['recta', 2, 4], ['recta', 4, 2], ['caracol', 2, 2]] : [['recta', 2, 4], ['recta', 4, 2], ['U', 4, 4], ['caracol', 2, 2]];
         const rooms = [...h.rooms].sort((p, r2) => { const a = PREF.indexOf(roleOf.get(p)), b = PREF.indexOf(roleOf.get(r2)); return (a < 0 ? 99 : a) - (b < 0 ? 99 : b); });
         let got = null;
-        for (const l of rooms) { for (const [w, hh] of dims) {
+        for (const l of rooms) { for (const [forma, w, hh] of dims) {
           let bs = -1;
           for (let y = 1; y + hh < Rr; y++) for (let x = 1; x + w < C; x++) {
             let ok = true; for (let b = 0; b < hh && ok; b++) for (let a = 0; a < w; a++) if (cellL[(y + b) * C + x + a] !== l) { ok = false; break; } if (!ok) continue;
@@ -904,13 +944,14 @@
               let free = 0, door = false; for (let t2 = 0; t2 < n2; t2++) { const cx = dx ? (dx > 0 ? x + w : x - 1) : x + t2, cy = dy ? (dy > 0 ? y + hh : y - 1) : y + t2;
                 if (cellL[cy * C + cx] === l) free++; else { const sg = segMap.get(dir === 'h' ? 'h' + (x + t2) + ',' + line : 'v' + line + ',' + (y + t2)); if (sg && DOORISH.has(sg.cls)) door = true; } }
               return { si, free: free === n2, wall: free === 0, door }; });
-            if (sides.some(s3 => s3.door)) continue; const ent = sides.find(s3 => s3.free && sides[(s3.si + 2) % 4].wall) || sides.find(s3 => s3.free); if (!ent) continue;
-            const sc = sides.filter(s3 => s3.wall).length * 2 + (sides[(ent.si + 2) % 4].wall ? 1 : 0); if (sc > bs) { bs = sc; got = { x, y, w, h: hh, l, entrada: 'NESO'[ent.si] }; }
+            if (sides.some(s3 => s3.door)) continue; const okS = s3 => forma !== 'recta' || (w < hh ? s3.si % 2 === 0 : s3.si % 2 === 1); // la recta entra por un lado corto
+            const ent = sides.find(s3 => okS(s3) && s3.free && sides[(s3.si + 2) % 4].wall) || sides.find(s3 => okS(s3) && s3.free); if (!ent) continue;
+            const sc = sides.filter(s3 => s3.wall).length * 2 + (sides[(ent.si + 2) % 4].wall ? 1 : 0); if (sc > bs) { bs = sc; got = { x, y, w, h: hh, l, forma, entrada: 'NESO'[ent.si] }; }
           }
           if (got) break; } if (got) break; }
         if (!got) continue;
         h.escalera = escaleras.length;
-        escaleras.push({ tipo: 'escalera', forma: got.w === got.h ? 'caracol' : 'recta', x: got.x, y: got.y, w: got.w, h: got.h, entrada: got.entrada, casa: h.id, cuarto: got.l, pisos: h.pisos, techo: !!h.techo });
+        escaleras.push({ tipo: 'escalera', forma: got.forma, x: got.x, y: got.y, w: got.w, h: got.h, entrada: got.entrada, casa: h.id, cuarto: got.l, pisos: h.pisos, techo: !!h.techo });
       } }
     // plantas de arriba: mismas paredes; entre casas más bajas la medianera pasa a pared exterior con ventanas
     const maxPisos = Math.max(1, ...[...houses.values()].map(h => h.pisos)), pisos = [];
@@ -921,7 +962,7 @@
       const dormUp = l => { const k2 = priv.indexOf(l); return k2 === 0 ? 'dormitorio principal' : k2 >= 3 && k2 === priv.length - 1 ? 'estudio' : 'dormitorio'; };
       for (const l of h.rooms) { const r0 = roleOf.get(l) || '', up = [];
         for (let k = 2; k <= h.pisos; k++) up.push(l === st && h.type !== 'condominio' ? (h.campus || h.type === 'comercial' ? 'pasillo' : 'hall') // donde llega la escalera
-          : h.type === 'casa' ? (r0 === 'baño' ? 'baño' : dormUp(l))
+          : h.type === 'casa' || h.type === 'mansion' ? (r0 === 'baño' ? 'baño' : dormUp(l))
           : h.type === 'condominio' ? r0 // departamento repetido piso por piso
           : h.type === 'oficinas' || h.type === 'tienda' ? (r0 === 'baño' ? 'baño' : 'oficina')
           : ['garaje', 'cochera', 'garaje policial', 'urgencias', 'patio de presos'].includes(r0) ? (h.type === 'hospital' ? 'habitación' : 'oficina') : r0);
@@ -942,7 +983,7 @@
     const count = c => segs.filter(s => s.cls === c).length, hs = [...houses.values()];
     const stats = {
       casas: hs.filter(h => h.type === 'casa').length, tiendas: hs.filter(h => h.type === 'tienda').length, oficinas: hs.filter(h => h.type === 'oficinas').length, condominios: hs.filter(h => h.type === 'condominio').length,
-      centroComercial: hs.filter(h => h.type === 'comercial').length, patios: hs.filter(h => h.patio).length, almacenes: hs.filter(h => h.type === 'almacen').length, derribos: nDemol, rotondas: nRot, barrios: barrios.length, pasajes: nPas, especiales: nSpecial, avenidaCentral: nBlvd, estacionamientos: nPark, rejasCalle: nBarr, rejasCierran: nBarrFull, garajes: nGar, salidasEmergencia: nEmerg, entradasRotas: nHueco, autopistas: nHwy, crucesArreglados: nFixX, esquinasArregladas: nFixW, sueltas: hs.filter(h => h.style === 'suelta').length, cuartosUnidos: nMerge, avenidas: nAv, accesosArreglados: nFix,
+      centroComercial: hs.filter(h => h.type === 'comercial').length, mansiones: nMans, patios: hs.filter(h => h.patio).length, almacenes: hs.filter(h => h.type === 'almacen').length, derribos: nDemol, rotondas: nRot, barrios: barrios.length, pasajes: nPas, especiales: nSpecial, avenidaCentral: nBlvd, estacionamientos: nPark, rejasCalle: nBarr, rejasCierran: nBarrFull, garajes: nGar, salidasEmergencia: nEmerg, entradasRotas: nHueco, autopistas: nHwy, crucesArreglados: nFixX, esquinasArregladas: nFixW, sueltas: hs.filter(h => h.style === 'suelta').length, cuartosUnidos: nMerge, avenidas: nAv, accesosArreglados: nFix,
       cuartos: hs.reduce((a, h) => a + h.rooms.size, 0), refugios: refuges.length, parques: kinds.filter(k => k === 'parque').length, plazaCeldas: plaza ? Math.round(plaza.area) : 0,
       puertas: count('puerta'), ventanasCerradas: count('ventana'), ventanasRotas: count('ventanaRota'), rejas: count('reja'), portones: count('porton'), mediana: nMed,
       tramosDiagonales: segs.filter(s => s.dir[0] === 'd').length, ruta: route ? route.cost : null,

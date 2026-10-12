@@ -73,7 +73,7 @@ Está separado del generador de mazmorras (`editor/`), que no se tocó. Tiene tr
 - `index.html`: el visor. Elige modo, semilla y tamaño, y mira la ruta A→B.
 - `exportar.js`: escribe las piezas para TruWorlds.
 - `export/ciudad_semilla_7/`: **la ciudad del motor con pisos** (n=12, ~25.000 piezas: plantas de arriba, escaleras y puentes entre techos).
-- `export/ciudad_semilla_7_ligera/`: la misma ciudad **sin plantas de arriba ni piso de color dentro de las casas** (~15.100 piezas, para quedar cerca del tope de 15.000).
+- `export/ciudad_semilla_7_ligera/`: la misma ciudad **sin plantas de arriba ni piso de color dentro de las casas** (~14.600 piezas, bajo el tope de 15.000).
 - `export/diagonal_semilla_7/`: ciudad diagonal ya exportada (19×19, **5.468 piezas, 25 chunks, máx. 391**).
 - `export/cuadricula_semilla_7/`: ciudad en cuadrícula ya exportada (150×110 celdas, 2.413 piezas).
 
@@ -122,7 +122,7 @@ Los pisos y techos de las salas en diagonal se arman con rectángulos y dejan si
 | `Techo` | Techo de cada edificio, a la altura de su último piso. Si no quieres techos, sáltalos por nombre |
 | `Losa` | Piso de las plantas de arriba (con el hueco de la escalera) |
 | `ParedP2`, `DintelP2`, `VentanaArribaP2` (y `P3`, `P4`) | Paredes de las plantas de arriba; arriba la ventana es un vidrio sobre la pared entera |
-| `Escalera`, `EscaleraCaracol`, `EscaleraEje` | Una rampa (Wedge) por piso, con la parte baja hacia la entrada; la de caracol lleva un eje. Si la rampa sale al revés, gira 180° en Y |
+| `Escalera`, `EscaleraU`, `Descanso`, `EscaleraCaracol`, `EscaleraEje` | Una rampa (Wedge) por piso (dos de medio piso y un descanso en la U), con la parte baja hacia la entrada; la de caracol lleva un eje. Si la rampa sale al revés, gira 180° en Y |
 | `TablaTecho`, `PuenteTecho`, `Baranda` | Tablas (1 a 3 celdas) y puentes (4 a 8) de techo a techo; si los techos tienen distinta altura van inclinados |
 | `Auto`, `AutoCabina` | Autos abandonados y choques |
 | `Tronco`, `Copa`, `Fuente`, `FuenteAgua` | Árboles y fuentes |
@@ -140,13 +140,20 @@ Las puertas son huecos en la pared, sin hoja.
   mismas reglas de la rejilla); las puertas a la calle pasan a ventanas y los tramos largos ciegos ganan ventanas.
 - **Usos arriba**: en una casa, dormitorio principal, dormitorios, baño y el hall donde llega la escalera; un condominio repite
   el departamento; los edificios repiten sus usos (los garajes pasan a oficinas o habitaciones).
-- **Escaleras**: solo el área y su entrada. Caracol de 2×2 en casas, condominios y tiendas; recta de 2×3 en los edificios
-  grandes. Van en el mismo lugar en todos los pisos, pegadas a una pared, sin tapar puertas, en la sala, el hall, el pasillo o
+- **Escaleras**: solo el área y su entrada. Recta de 2×4 (2×5 en edificios grandes) que entra por un lado corto, o en U de
+  4×4 (dos tramos de medio piso con descanso al fondo); caracol de 2×2 solo si no entra otra. Van en el mismo lugar en todos los pisos, pegadas a una pared, sin tapar puertas, en la sala, el hall, el pasillo o
   la recepción. Datos en `escaleras` (x, y, w, h, entrada N/E/S/O, pisos, techo).
 - **Puentes entre techos**: entre edificios a 1–8 celdas sobre suelo libre (patios, pasajes, calles angostas), 2 celdas de
   ancho, como mucho 2 por edificio (3 en los grandes). Un edificio con puente tiene escalera hasta el techo. Datos en
   `puentes` (x1, y1, x2, y2, tipo tabla/puente, casaA, casaB, pisosA, pisosB).
-- **Visor**: el selector «Piso» muestra la calle, los pisos 2 a 4 (lo que no llega queda oscuro) y los techos con los puentes.
+- **Escuela**: dirección, recepción y enfermería al frente; el patio de recreo (pasto, sin techo) al medio con las aulas
+  alrededor (dos lados y el fondo), gimnasio y baños.
+- **Centro comercial**: locales más grandes y abiertos enteros al pasillo (sin pared delante); los anaqueles van después.
+- **Mansiones**: en el suburbio, en medio de su jardín cercado, simétricas: hall y salón al centro, un ala con comedor y cocina y
+  otra con biblioteca y sala de juegos; 2 pisos con dormitorios arriba.
+- **Veredas**: las esquinas de 90° de las veredas (con la calle, el campo o un parque) se biselan a 45°.
+- **Visor**: «Contornos» rodea cada lote (casa + jardín) y cada parque, juegos o lago; «Tipo de edificio» escribe casa,
+  condominio, tienda u oficinas con sus pisos (por ejemplo «condominio 3P»). El selector «Piso» muestra la calle, los pisos 2 a 4 (lo que no llega queda oscuro) y los techos con los puentes.
 
 ## Medidas arcade (fáciles de cambiar)
 Las medidas no son realistas, son de juego: números redondos en metros de Blender (1 m = 4 studs), pensados para un
