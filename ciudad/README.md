@@ -167,7 +167,8 @@ Las puertas son huecos en la pared, sin hoja.
 - **Decoración**: las islas de los óvalos y las islas verdes quedan marcadas (estrella en el visor, `spawns.decoracion` en
   `index.json`) para poner ahí una estatua, un letrero o un árbol.
 - **Islas verdes**: donde la calzada sobra (muy ancha en todas direcciones) se pone una isla octogonal de pasto.
-- **Estacionamientos**: la vereda de delante pasa a ser calzada: entrada grande de autos desde la pista.
+- **Estacionamientos**: la vereda manda: también rodea los estacionamientos y cada uno abre una sola entrada de autos de
+  ~7 celdas en el medio de su frente a la calle (nunca recortando la vereda de una casa o un jardín).
 - **Anchos mínimos**: un lote de menos de 6 de ancho no es casa ni oficina: queda de área verde (letreros, decoración). Un
   cuarto más de 2,6 veces largo que ancho se parte en dos (sala y comedor, cocina y lavandería, dos dormitorios).
 - **Condominios**: pasillo desde la calle hacia adentro con departamentos (sala y dormitorio) a los dos lados, o a un lado si

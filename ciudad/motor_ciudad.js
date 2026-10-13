@@ -674,9 +674,6 @@
       }
       return changed;
     };
-    // estacionamientos: la vereda delante pasa a ser calzada (entrada grande de autos que conecta con la pista)
-    { const PK = new Uint8Array(NQ); for (let i = 0; i < NQ; i++) if (kindOf(q[i]) === 'parking') PK[i] = 1; const G2 = grow(PK, 2), RD = new Uint8Array(NQ); for (let i = 0; i < NQ; i++) if (q[i] === ROAD) RD[i] = 1; const NR = grow(RD, 2);
-      for (let i = 0; i < NQ; i++) if (G2[i] && NR[i] && q[i] === VEREDA) { q[i] = ROAD; nEntP++; } }
     // sierra de medias celdas: al crecer una forma con diagonales, sus lados rectos quedan como una pila de medias celdas iguales
     // (vertical u horizontal); esas celdas pasan a ser enteras (vereda si una mitad es vereda)
     const sierra = () => { const SOFT0 = new Set(['vereda', 'corr', 'out', 'pasaje', 'parque', 'parking']), sig = c => { const i = c * 4, N = q[i], E = q[i + 1], S = q[i + 2], O = q[i + 3]; if (N === E && S === O && N !== S) return 'a' + N + ',' + S; if (N === O && S === E && N !== S) return 'b' + N + ',' + S; return null; };
@@ -754,9 +751,20 @@
     }
     // vereda asegurada: los lotes, la reparación de esquinas y los óvalos mueven bordes después de trazar las veredas; al final,
     // todo edificio, jardín o parque que quede pegado a la calzada recupera su vereda (1 celda), y se vuelve a limpiar y biselar
-    const asegurarVereda = () => { const B = new Uint8Array(NQ); for (let i = 0; i < NQ; i++) { const k = kindOf(q[i]); if (k === 'room' || k === 'patio' || k === 'parque' || k === 'juegos') B[i] = 1; }
+    const asegurarVereda = () => { const B = new Uint8Array(NQ); for (let i = 0; i < NQ; i++) { const k = kindOf(q[i]); if (k === 'room' || k === 'patio' || k === 'parque' || k === 'juegos' || k === 'parking') B[i] = 1; }
       const V = grow(B, 1); let n2 = 0; for (let i = 0; i < NQ; i++) if (V[i] && q[i] === ROAD) { q[i] = VEREDA; n2++; } return n2; };
-    nVerAseg = asegurarVereda(); normalize(); sierra(); bisel(); sierra(); normalize(); // la reparación de esquinas también puede dejar sierra en las veredas
+    // entrada de autos: la vereda rodea también los estacionamientos y cada uno abre una sola entrada de ~7 celdas, en el medio
+    // de su frente a la calzada (la vereda es más importante: el estacionamiento no se la come entera)
+    const entradasAutos = () => { const cellHas = (c, pred) => [0, 1, 2, 3].some(k => pred(q[c * 4 + k])); const byP = new Map();
+      for (let y = 1; y < Rr - 1; y++) for (let x = 1; x < C - 1; x++) { const c = y * C + x; if (!cellHas(c, l => l === VEREDA)) continue; let pk = 0, rd = false;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const c2 = c + dy * C + dx; for (let k = 0; k < 4; k++) { const l = q[c2 * 4 + k]; if (kindOf(l) === 'parking') pk = l; if (l === ROAD) rd = true; } }
+        if (pk && rd) { if (!byP.has(pk)) byP.set(pk, []); byP.get(pk).push([x, y]); } }
+      for (const cs of byP.values()) { if (cs.length < 3) continue; const mx = cs.reduce((a, p) => a + p[0], 0) / cs.length, my = cs.reduce((a, p) => a + p[1], 0) / cs.length;
+        const [cx, cy] = cs.slice().sort((p, r2) => Math.hypot(p[0] - mx, p[1] - my) - Math.hypot(r2[0] - mx, r2[1] - my))[0];
+        const nearHouse = (x, y) => { for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) for (let k = 0; k < 4; k++) { const kd = kindOf(q[((y + dy) * C + x + dx) * 4 + k]); if (kd === 'room' || kd === 'patio' || kd === 'parque' || kd === 'juegos') return true; } return false; };
+        for (const [x, y] of cs) { if (Math.max(Math.abs(x - cx), Math.abs(y - cy)) > 3 || nearHouse(x, y)) continue; for (let k = 0; k < 4; k++) if (q[(y * C + x) * 4 + k] === VEREDA) q[(y * C + x) * 4 + k] = ROAD; } // solo la franja entre el estacionamiento y la calle
+        nEntP++; } };
+    nVerAseg = asegurarVereda(); normalize(); entradasAutos(); normalize(); sierra(); bisel(); sierra(); normalize(); // la reparación de esquinas también puede dejar sierra en las veredas
     // consistencia: cada cuarto que quedó en el mapa pertenece a una casa existente
     { const present = new Map(); for (let i = 0; i < NQ; i++) { const l = q[i]; if (kinds[l] === 'room') { if (!present.has(l)) present.set(l, []); present.get(l).push(i); } }
       for (const h of houses.values()) h.rooms = new Set([...h.rooms].filter(l => present.has(l)));
