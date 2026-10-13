@@ -131,6 +131,15 @@ Los pisos y techos de las salas en diagonal se arman con rectángulos y dejan si
 
 Las puertas son huecos en la pared, sin hoja.
 
+## Trazado por etapas (modo ciudad)
+1. **Silueta**: la de la mazmorra (con su contorno simétrico).
+2. **Barrios**: la silueta se parte con cortes rectos o a 45°; cada corte es una avenida (16 de ancho los primeros, 12 los
+   siguientes) y a veces se desvía (un tramo a 45° y sigue corrida). En los cruces de avenidas van los óvalos.
+3. **Calles**: dentro de cada barrio siguen las calles orgánicas de la mazmorra (su esencia). Con `trazado: 'cuadricula'` los
+   barrios (menos el del centro) tienen una cuadrícula irregular (separación variable, quiebres y cruces en T); con
+   `trazado: 'mazmorra'` se usa el trazado anterior sin avenidas de barrio.
+4. Después: manzanas, lotes, casas, veredas, pisos, etc., como antes.
+
 ## Cuartos, pisos, escaleras y puentes (modo ciudad)
 - **Tamaño de cada cuarto según su uso** (tabla `PROG` en `motor_ciudad.js`): la sala pesa 2 (la más grande, da a la calle y
   tiene la puerta principal), el garaje 1,4, la cocina 1,05 (hacia el patio, con la puerta de atrás), el dormitorio 1 y el baño

@@ -52,6 +52,7 @@
     if (o.contorno !== false) { const MIR = [0, 3, 2, 1], nt = new Uint8Array(t); for (let y = 0; y < Rr; y++) for (let x = 0; x < C; x++) for (let k = 0; k < 4; k++) if (t[(y * C + C - 1 - x) * 4 + MIR[k]] === 0) nt[(y * C + x) * 4 + k] = 0; t = nt; }
     // crecer una máscara celdas enteras (el mismo cuarto en las 8 vecinas): las diagonales siguen limpias
     const grow = (mask, steps) => { let cur = mask; for (let s2 = 0; s2 < steps; s2++) { const nx = new Uint8Array(cur); for (let y = 0; y < Rr; y++) for (let x = 0; x < C; x++) for (let k = 0; k < 4; k++) { const i = (y * C + x) * 4 + k; if (cur[i]) continue; g: for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const xx = x + dx, yy = y + dy; if (xx >= 0 && yy >= 0 && xx < C && yy < Rr && cur[(yy * C + xx) * 4 + k]) { nx[i] = 1; break g; } } } cur = nx; } return cur; };
+    const cityQ = t.map(v => v ? 1 : 0); // silueta de la ciudad (antes del anillo)
     // la ciudad termina en un anillo de asfalto (6) y de ahí salen autopistas (8, con mediana) hasta el borde: hacia otra ciudad
     let nHwy = 0; const major = new Uint8Array(C * Rr), ringM = new Uint8Array(C * Rr), hwyM = new Uint8Array(C * Rr), artM = new Uint8Array(C * Rr), avM = new Uint8Array(C * Rr); // vías principales: separan barrios
     { const city = t.map(v => v ? 1 : 0), ring = grow(city, 8); // anillo de 8: 6 de calzada y veredas
@@ -62,6 +63,58 @@
         for (let y = 0; y < Rr; y++) for (let x = 0; x < C; x++) {
           const along = dx ? (x - cx) * dx : (y - cy) * dy, across = dx ? y - (cy + off) : x - (cx + off);
           if (along > 0 && across >= -8 && across < 8) /* autopista: 2 carriles de 3 por sentido + mediana + veredas = 16 */ for (let k = 0; k < 4; k++) { const i = (y * C + x) * 4 + k; if (!t[i]) { t[i] = 1; major[y * C + x] = 1; hwyM[y * C + x] = 1; } } } } }
+    // TRAZADO POR ETAPAS (o.trazado !== 'mazmorra'): 1) la silueta es la de la mazmorra; 2) la silueta se parte en barrios con
+    // cortes rectos o a 45° y cada corte es una avenida (16 de ancho los primeros, 12 los siguientes); 3) el barrio del centro
+    // conserva las calles orgánicas de la mazmorra (casco antiguo, con la plaza); 4) cada otro barrio tiene su cuadrícula de
+    // calles de 8 (recta o diagonal), con manzanas del tamaño de su tipo. Después siguen las etapas de siempre (veredas, lotes...)
+    const porBarrios = o.trazado !== 'mazmorra'; let nBarriosT = 0; const crossPts = []; // cruces entre avenidas de barrios (para óvalos)
+    if (porBarrios) {
+      const fv = (i, dg) => { const c = i >> 2, px = c % C + CEN[i & 3][0], py = ((c / C) | 0) + CEN[i & 3][1]; return dg ? [px + py, px - py] : [px, py]; }, scF = dg => dg ? Math.SQRT1_2 : 1;
+      const city = []; for (let i = 0; i < NQ; i++) if (cityQ[i]) city.push(i);
+      let pxs = 0, pys = 0, pn = 0; for (let i = 0; i < NQ; i++) if (t[i] === 2) { const c = i >> 2; pxs += c % C; pys += (c / C) | 0; pn++; }
+      const pc = pn ? [pxs / pn, pys / pn] : [C / 2, Rr / 2], target = o.barrioArea ?? 9000, art = new Uint8Array(NQ), artId = new Int32Array(NQ), leaves = []; let nCut = 0;
+      const split = (set, depth) => {
+        if (set.length / 4 < target * 1.7 || depth > 7) { if (set.length) leaves.push(set); return; }
+        let best = null; for (const dg of [false, true]) for (const ax of [0, 1]) { let lo = 1e9, hi = -1e9; for (const i of set) { const f = fv(i, dg)[ax]; if (f < lo) lo = f; if (f > hi) hi = f; }
+          const sc2 = (hi - lo) * scF(dg) * (dg ? 0.8 : 1) * (0.85 + R() * 0.3); if (!best || sc2 > best.s) best = { s: sc2, dg, ax, lo, hi }; }
+        const { dg, ax, lo, hi } = best, pos = Math.round(lo + (hi - lo) * (0.38 + R() * 0.24)), hw = Math.round((depth < 2 ? 8 : 6) / scF(dg)), A = [], B = [], id = ++nCut;
+        // la avenida no es una regla: a veces se desvía (un tramo a 45° y sigue corrida) para rodear algo
+        let glo = 1e9, ghi = -1e9; for (const i of set) { const g = fv(i, dg)[1 - ax]; if (g < glo) glo = g; if (g > ghi) ghi = g; }
+        const jog = chance(0.6) ? { g1: Math.round(glo + (ghi - glo) * (0.25 + R() * 0.5)), d: (chance(0.5) ? 1 : -1) * rnd(6, 16) } : null;
+        const posAt = g => { if (!jog || g <= jog.g1) return [pos, hw]; const k2 = Math.min(Math.abs(jog.d), Math.floor(g - jog.g1)); return [pos + Math.sign(jog.d) * k2, k2 < Math.abs(jog.d) ? Math.round(hw * 1.42) : hw]; };
+        for (const i of set) { const f = fv(i, dg), [p2, h2] = posAt(f[1 - ax]), a = f[ax]; if (a > p2 - h2 && a < p2 + h2) { art[i] = 1; artId[i] = id; } else (a < p2 ? A : B).push(i); }
+        split(A, depth + 1); split(B, depth + 1); };
+      split(city, 0);
+      // el barrio del centro: el que tiene la plaza (o el más cercano al centro)
+      const cen = leaves.map(s => { let sx = 0, sy = 0; for (const i of s) { const c = i >> 2; sx += c % C; sy += (c / C) | 0; } return [sx / s.length, sy / s.length]; });
+      let ci = 0, cd = 1e9; leaves.forEach((s, k) => { let hasP = false; for (const i of s) if (t[i] === 2) { hasP = true; break; } const d = hasP ? -1 : Math.hypot(cen[k][0] - pc[0], cen[k][1] - pc[1]); if (d < cd) { cd = d; ci = k; } });
+      const rMax2 = Math.max(...cen.map(p => Math.hypot(p[0] - pc[0], p[1] - pc[1])), 1);
+      // distancia (en celdas) a la avenida más cercana: una calle de barrio paralela y pegada a la avenida sobra
+      const dA = new Int32Array(C * Rr).fill(99), qa = []; for (let i = 0; i < NQ; i++) if (art[i] && dA[i >> 2]) { dA[i >> 2] = 0; qa.push(i >> 2); }
+      for (let h2 = 0; h2 < qa.length; h2++) { const c = qa[h2], x = c % C, y = (c / C) | 0; if (dA[c] >= 14) continue; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= C || ny >= Rr) continue; const j = ny * C + nx; if (dA[j] > dA[c] + 1) { dA[j] = dA[c] + 1; qa.push(j); } } }
+      leaves.forEach((s, k) => { nBarriosT++;
+        if (k === ci || o.trazado !== 'cuadricula') return; // calles de la mazmorra tal cual (la esencia); la cuadrícula es opcional
+        const r = Math.hypot(cen[k][0] - pc[0], cen[k][1] - pc[1]) / rMax2, dg = chance(0.35);
+        // manzanas: cerca del centro chicas (2 lotes de fondo), afuera alargadas; en el borde algunas grandes (industria, parque)
+        const P0 = r < 0.45 ? rnd(34, 38) : rnd(36, 42), P1 = r < 0.45 ? rnd(44, 54) : rnd(56, 76), w = Math.round(8 / scF(dg)), p0 = Math.round(P0 / scF(dg)), p1 = Math.round(P1 / scF(dg)), o0 = rnd(0, p0 - 1), o1 = rnd(0, p1 - 1), sw = chance(0.5);
+        // calles con separación irregular, algunas con un quiebre, y tramos que no siguen (cruces en T): nada de orden perfecto
+        let al = 1e9, ah = -1e9, bl = 1e9, bh = -1e9; for (const i of s) { const f = fv(i, dg), a = sw ? f[0] : f[1], b = sw ? f[1] : f[0]; if (a < al) al = a; if (a > ah) ah = a; if (b < bl) bl = b; if (b > bh) bh = b; }
+        const mkLines = (lo2, hi2, P, glo2, ghi2) => { const ls = []; let p2 = Math.floor(lo2) + rnd(Math.round(P * 0.3), P - 2); while (p2 < hi2) { ls.push({ p: p2, jog: chance(0.3) ? { g1: Math.round(glo2 + (ghi2 - glo2) * (0.2 + R() * 0.6)), d: (chance(0.5) ? 1 : -1) * rnd(3, 7) } : null }); p2 += P + rnd(-Math.round(P * 0.18), Math.round(P * 0.18)); } return ls; };
+        const LA = mkLines(al, ah, p0, bl, bh), LB = mkLines(bl, bh, p1, al, ah), cut = new Set(); LB.forEach((_, kb) => LA.forEach((__, ka) => { if (chance(0.2)) cut.add(kb + ':' + ka); }));
+        const inLine = (L, v, g) => { const k2 = L.jog && g > L.jog.g1 ? Math.min(Math.abs(L.jog.d), Math.floor(g - L.jog.g1)) : 0, p2 = L.p + (L.jog ? Math.sign(L.jog.d) * k2 : 0), ww = L.jog && k2 > 0 && k2 < Math.abs(L.jog.d) ? Math.round(w * 1.42) : w; return v >= p2 && v < p2 + ww; };
+        const lineOf = i => { const f = fv(i, dg), a = sw ? f[0] : f[1], b = sw ? f[1] : f[0]; const ka = LA.findIndex(L => inLine(L, a, b)), kb = LB.findIndex(L => inLine(L, b, a));
+          let seg = 0; while (seg < LA.length && LA[seg].p + w <= a) seg++; // entre qué calles 'a' cae este tramo de la calle 'b'
+          return [ka >= 0 ? 'a' + ka : null, kb >= 0 && !cut.has(kb + ':' + seg) ? 'b' + kb : null]; };
+        const st = new Map(); for (const i of s) for (const ln of lineOf(i)) if (ln) { let e = st.get(ln); if (!e) st.set(ln, e = [0, 0]); e[0]++; if (dA[i >> 2] < 10) e[1]++; }
+        const drop = new Set([...st].filter(([, e]) => e[1] / e[0] > 0.4).map(([ln]) => ln)); // la calle va pegada a la avenida casi todo su largo
+        for (const i of s) { const ls = lineOf(i).filter(ln => ln && !drop.has(ln)); t[i] = ls.length ? 1 : 3; orig[i] = 100000 + k; } });
+      for (let i = 0; i < NQ; i++) if (art[i]) { t[i] = 1; major[i >> 2] = 1; artM[i >> 2] = 1; }
+      // cruces de avenidas: donde se juntan bandas de dos cortes distintos
+      { const acc = new Map(); for (let y = 2; y < Rr - 2; y++) for (let x = 2; x < C - 2; x++) { const c0 = artId[(y * C + x) * 4]; if (!c0) continue; const ids = new Set();
+          for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const v = artId[((y + dy) * C + x + dx) * 4]; if (v) ids.add(v); }
+          if (ids.size >= 2) { const key = [...ids].sort((a2, b2) => a2 - b2).slice(0, 2).join(','); let a2 = acc.get(key); if (!a2) acc.set(key, a2 = [0, 0, 0]); a2[0] += x; a2[1] += y; a2[2]++; } }
+        for (const [, a2] of acc) if (a2[2] >= 6) crossPts.push([Math.round(a2[0] / a2[2]), Math.round(a2[1] / a2[2])]); }
+    }
     const typeAt = (tt, px, py) => { const cx = Math.floor(px), cy = Math.floor(py); if (cx < 0 || cy < 0 || cx >= C || cy >= Rr) return 0; return tt[(cy * C + cx) * 4 + quarterOf(px - cx, py - cy)]; };
     // 3) ensanche: la calle avanza `ens` celdas sobre casas y huecos
     const OFF = [-1, -0.5, 0, 0.5, 1];
@@ -85,7 +138,7 @@
       while (st.length) { const i = st.pop(); mem.push(i); nb(i, j => { if (id[j] < 0 && same(i, j)) { id[j] = cid; st.push(j); } }); } list.push(mem); } return { id, list }; };
     // casas chicas y huecos chicos se vuelven calle; huecos grandes, parques
     { const { list } = comps((i, j) => (t[i] === 3 || t[i] === 4) && t[j] === t[i] && orig[j] === orig[i]);
-      for (const mem of list) { const a = mem.length / 4, tp = t[mem[0]]; if ((tp === 3 && a < 60) || (tp === 4 && a < 80)) for (const i of mem) t[i] = 1; } }
+      for (const mem of list) { const a = mem.length / 4, tp = t[mem[0]]; if ((tp === 3 && a < 60) || (tp === 4 && a < 80)) for (const i of mem) t[i] = porBarrios && a >= 16 ? 4 : 1; } } // en barrios, un pedazo chico es una placita, no asfalto
     // calles sueltas: se unen a la red principal abriendo un paso de 2 celdas (nada queda encerrado)
     for (let it = 0; it < 40; it++) {
       const isR = i => t[i] === 1 || t[i] === 2, { id, list } = comps((i, j) => isR(i) && isR(j));
@@ -103,7 +156,7 @@
     // jerarquía de calles (como una ciudad que creció sola pero funciona): avenidas desde la muralla hasta la plaza,
     // más anchas y con mediana; el resto son calles de 4
     let nAv = 0;
-    { const isRd = c => [0, 1, 2, 3].every(k => t[c * 4 + k] === 1 || t[c * 4 + k] === 2), hasT = (c, v) => [0, 1, 2, 3].some(k => t[c * 4 + k] === v);
+    if (!porBarrios) { const isRd = c => [0, 1, 2, 3].every(k => t[c * 4 + k] === 1 || t[c * 4 + k] === 2), hasT = (c, v) => [0, 1, 2, 3].some(k => t[c * 4 + k] === v);
       const dist = new Int32Array(C * Rr).fill(-1), prev = new Int32Array(C * Rr).fill(-1), qq = [];
       for (let c = 0; c < C * Rr; c++) if (hasT(c, 2)) { dist[c] = 0; qq.push(c); }
       for (let h2 = 0; h2 < qq.length; h2++) { const c = qq[h2], x = c % C, y = (c / C) | 0; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= C || ny >= Rr) continue; const j = ny * C + nx; if (dist[j] < 0 && isRd(j)) { dist[j] = dist[c] + 1; prev[j] = c; qq.push(j); } } }
@@ -122,7 +175,7 @@
     let nBlvd = 0;
     { let x0 = 1e9, x1 = -1, y0 = 1e9, y1 = -1, cx0 = 1e9, cx1 = -1, cy0 = 1e9, cy1 = -1;
       for (let i = 0; i < NQ; i++) { const c = i >> 2, x = c % C, y = (c / C) | 0; if (t[i] === 2) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); } if (t[i]) { cx0 = Math.min(cx0, x); cx1 = Math.max(cx1, x); cy0 = Math.min(cy0, y); cy1 = Math.max(cy1, y); } }
-      if (x1 >= 0 && o.avenidaCentral !== false) { const horiz = cx1 - cx0 >= cy1 - cy0, side = chance(0.5), W2 = 16;
+      if (x1 >= 0 && o.avenidaCentral !== false && !porBarrios) { const horiz = cx1 - cx0 >= cy1 - cy0, side = chance(0.5), W2 = 16;
         const p0 = horiz ? (side ? y1 + 12 : y0 - 12 - W2) : (side ? x1 + 12 : x0 - 12 - W2);
         if (p0 > (horiz ? cy0 : cx0) + 10 && p0 + W2 < (horiz ? cy1 : cx1) - 10) { nBlvd = 1;
           for (let y = 0; y < Rr; y++) for (let x = 0; x < C; x++) { const v = horiz ? y : x; if (v < p0 || v >= p0 + W2) continue; for (let k = 0; k < 4; k++) { const i = (y * C + x) * 4 + k; if (t[i] === 3 || t[i] === 4) t[i] = 1; } major[y * C + x] = 1; avM[y * C + x] = 1; } } } }
@@ -141,6 +194,14 @@
       }
       t = nt;
     }
+    // puntas de manzana a 45° (cuadrícula diagonal contra avenida recta): la punta se corta y queda una cara plana
+    if (porBarrios) for (let pass = 0; pass < 4; pass++) { const nt = new Uint8Array(t), B3 = v => v === 3 || v === 4, F2 = (x, y, k) => x < 0 || y < 0 || x >= C || y >= Rr ? 0 : t[(y * C + x) * 4 + k];
+      for (let y = 1; y < Rr - 1; y++) for (let x = 1; x < C - 1; x++) { const i = (y * C + x) * 4, N = t[i], E = t[i + 1], S = t[i + 2], O = t[i + 3];
+        const outer = [[x, y - 1, 2], [x + 1, y, 3], [x, y + 1, 0], [x - 1, y, 1]]; // N, E, S, O: el cuarto vecino que mira hacia acá
+        if (N === E && E === S && S === O) { if (B3(N) && outer.filter(([xx, yy, k]) => B3(F2(xx, yy, k))).length <= 1) for (let k = 0; k < 4; k++) nt[i + k] = 1; continue; } // celda suelta en punta
+        let half = null; if (N === E && S === O && N !== S) half = B3(N) && S === 1 ? [0, 1] : B3(S) && N === 1 ? [2, 3] : null; else if (N === O && S === E && N !== S) half = B3(N) && S === 1 ? [0, 3] : B3(S) && N === 1 ? [1, 2] : null;
+        if (!half) continue; if (half.filter(k => B3(F2(...outer[k]))).length <= 1) for (let k = 0; k < 4; k++) nt[i + k] = 1; } // media celda en punta (toca manzana por un solo lado)
+      t = nt; }
     // la plaza siempre rodeada de césped (2) y después de pista (6)
     { const P = t.map(v => v === 2 ? 1 : 0), g2 = grow(P, 2), r8 = grow(g2, 8);
       for (let i = 0; i < NQ; i++) { if (t[i] === 0 || P[i]) continue; if (g2[i]) t[i] = 5; else if (r8[i]) { t[i] = 1; major[i >> 2] = 1; } }
@@ -170,7 +231,7 @@
     { const pts = []; const overlap = (A, B) => { const seen = new Uint8Array(C * Rr); for (let c = 0; c < C * Rr; c++) { if (!A[c] || !B[c] || seen[c]) continue; let sx = 0, sy = 0, k2 = 0; const st = [c]; seen[c] = 1;
           while (st.length) { const d = st.pop(), x = d % C, y = (d / C) | 0; sx += x; sy += y; k2++; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy, j = ny * C + nx; if (nx >= 0 && ny >= 0 && nx < C && ny < Rr && A[j] && B[j] && !seen[j]) { seen[j] = 1; st.push(j); } } }
           if (k2 >= 20) pts.push([Math.round(sx / k2), Math.round(sy / k2)]); } };
-      overlap(avM, artM); overlap(hwyM, ringM); overlap(artM, ringM);
+      overlap(avM, artM); overlap(hwyM, ringM); overlap(artM, ringM); pts.push(...crossPts);
       const chosen = []; for (const p of mezcla(pts, R)) if (chosen.length < (n >= 14 ? 5 : 4) && chosen.every(q2 => Math.hypot(q2[0] - p[0], q2[1] - p[1]) > 40)) chosen.push(p);
       // óvalo de verdad: isla de pasto de radio 5 y un anillo de 2 carriles (9 de ancho) alrededor; nunca pegado al campo
       for (const [cx, cy] of chosen) { let near = false; for (let y = cy - 16; y <= cy + 16 && !near; y++) for (let x = cx - 16; x <= cx + 16; x++) { if (x < 0 || y < 0 || x >= C || y >= Rr) { near = true; break; } const tt = [0, 1, 2, 3].map(k => t[(y * C + x) * 4 + k]); if (tt.some(v => v === 2 || v === 5) || (Math.abs(x - cx) < 12 && Math.abs(y - cy) < 12 && Math.abs(x - cx) + Math.abs(y - cy) < 16 && tt.includes(0))) { near = true; break; } }
@@ -533,7 +594,7 @@
         if (bk >= 0) extra[bk].push(...lot); else { const l = newLabel('parque', 0); for (const i of lot) q[i] = l; } }
       front.forEach((lot, k) => {
         // estacionamiento: se sacrifica algún lote del centro y del anillo medio
-        if (zone !== 'suburbio' && chance(zone === 'centro' ? 0.16 : 0.08)) { const l = newLabel('parking', 0); for (const i of [...lot, ...extra[k]]) q[i] = l; nPark++; return; }
+        if (zone !== 'suburbio' && chance(zone === 'centro' ? 0.1 : 0.05)) { const l = newLabel('parking', 0); for (const i of [...lot, ...extra[k]]) q[i] = l; nPark++; return; }
         // lote angosto (menos de 6 de ancho): no sirve para oficina ni casa; queda de área verde (letreros, decoración)
         { let th = 0, cur = lot; while (cur.length && th < 4) { cur = erode(cur, 1); th++; } if (th < 3) { const l = newLabel('parque', 0); for (const i of [...lot, ...extra[k]]) q[i] = l; nVerde++; return; } }
         const u = R(), type = zone === 'centro' ? (u < 0.55 ? 'tienda' : u < 0.72 ? 'comida' : 'oficinas') : zone === 'medio' ? (u < 0.5 ? 'condominio' : u < 0.58 ? 'comida' : 'casa') : 'casa';
@@ -676,8 +737,8 @@
     };
     // sierra de medias celdas: al crecer una forma con diagonales, sus lados rectos quedan como una pila de medias celdas iguales
     // (vertical u horizontal); esas celdas pasan a ser enteras (vereda si una mitad es vereda)
-    const sierra = () => { const SOFT0 = new Set(['vereda', 'corr', 'out', 'pasaje', 'parque', 'parking']), sig = c => { const i = c * 4, N = q[i], E = q[i + 1], S = q[i + 2], O = q[i + 3]; if (N === E && S === O && N !== S) return 'a' + N + ',' + S; if (N === O && S === E && N !== S) return 'b' + N + ',' + S; return null; };
-      const fix = []; for (let y = 1; y < Rr - 1; y++) for (let x = 1; x < C - 1; x++) { const c = y * C + x, g = sig(c); if (!g) continue; const i = c * 4; if (![q[i], q[i + 2]].every(l => SOFT0.has(kindOf(l)))) continue;
+    const sierra = (final = false) => { const SOFT0 = new Set(['vereda', 'corr', 'out', 'pasaje', 'parque', 'parking']), sig = c => { const i = c * 4, N = q[i], E = q[i + 1], S = q[i + 2], O = q[i + 3]; if (N === E && S === O && N !== S) return 'a' + N + ',' + S; if (N === O && S === E && N !== S) return 'b' + N + ',' + S; return null; };
+      const fix = []; for (let y = 1; y < Rr - 1; y++) for (let x = 1; x < C - 1; x++) { const c = y * C + x, g = sig(c); if (!g) continue; const i = c * 4; if (![q[i], q[i + 2]].every(l => SOFT0.has(kindOf(l))) && !(final && (q[i] === VEREDA || q[i + 2] === VEREDA))) continue; // al final también contra casas y jardines
         if (sig(c - C) === g || sig(c + C) === g || sig(c - 1) === g || sig(c + 1) === g) fix.push(c); }
       for (const c of fix) { const i = c * 4, A2 = q[i], B2 = q[i + 2], to = kindOf(A2) === 'vereda' ? A2 : kindOf(B2) === 'vereda' ? B2 : A2; for (let k = 0; k < 4; k++) q[i + k] = to; } };
     sierra();
@@ -764,7 +825,7 @@
         const nearHouse = (x, y) => { for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) for (let k = 0; k < 4; k++) { const kd = kindOf(q[((y + dy) * C + x + dx) * 4 + k]); if (kd === 'room' || kd === 'patio' || kd === 'parque' || kd === 'juegos') return true; } return false; };
         for (const [x, y] of cs) { if (Math.max(Math.abs(x - cx), Math.abs(y - cy)) > 3 || nearHouse(x, y)) continue; for (let k = 0; k < 4; k++) if (q[(y * C + x) * 4 + k] === VEREDA) q[(y * C + x) * 4 + k] = ROAD; } // solo la franja entre el estacionamiento y la calle
         nEntP++; } };
-    nVerAseg = asegurarVereda(); normalize(); entradasAutos(); normalize(); sierra(); bisel(); sierra(); normalize(); // la reparación de esquinas también puede dejar sierra en las veredas
+    nVerAseg = asegurarVereda(); normalize(); entradasAutos(); normalize(); sierra(); bisel(); sierra(true); normalize(); // la reparación de esquinas también puede dejar sierra en las veredas
     // consistencia: cada cuarto que quedó en el mapa pertenece a una casa existente
     { const present = new Map(); for (let i = 0; i < NQ; i++) { const l = q[i]; if (kinds[l] === 'room') { if (!present.has(l)) present.set(l, []); present.get(l).push(i); } }
       for (const h of houses.values()) h.rooms = new Set([...h.rooms].filter(l => present.has(l)));
