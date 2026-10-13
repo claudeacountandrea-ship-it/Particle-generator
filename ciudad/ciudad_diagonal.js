@@ -123,7 +123,16 @@
     for (const P of pisos) for (const g of greedy((x, y) => { const hh = fullRoom(x, y); return hh && (c.houses.get(hh).pisos || 1) >= P.piso && !stairAt.has(y * C4 + x) && !courtAt(x, y) ? lookOf(hh) : null; })) {
       const [cl, mt] = g.k === 'refugio' ? ['#c9a43a', 'Wood'] : FLOOR[g.k]; add('Losa', 'Block', [X(g.x + g.w / 2), (P.piso - 1) * WALL_H + 0.5, Z(g.y + g.h / 2)], [g.w * C + TH, 1, g.h * C + TH], cl, mt, null, g.x + g.w / 2, g.y + g.h / 2); }
     const roofKey = new Map(), roofOf = hid => { const h = c.houses.get(hid), kk = (h.refuge ? 'R' : (h.roofTint || ROOF[h.type] || ROOF.casa)) + '|' + (pisos.length ? h.pisos || 1 : 1); if (!roofKey.has(kk)) roofKey.set(kk, hid); return kk; }; // un techo por color de barrio y altura
-    if (o.roofs !== false) for (const g0 of greedy((x, y) => { const l = fullRoom(x, y); const e = stairAt.get(y * C4 + x); return l && l !== c.houseOf(c.bossL) && !(e && e.techo && pisos.length) && !courtAt(x, y) ? roofOf(l) : null; })) {
+    // techos de diseño propio (ciudad/disenos/techos/<tipo>.json): piezas relativas a una huella que se estiran a cada techo
+    const tplOf = h => o.techos ? o.techos[h.type] || o.techos.todos || null : null;
+    const putTpl = (tpl, h, g, y0) => { const W = g.w * C, D = g.h * C, [hw, hd] = tpl.huella, rot90 = (W >= D) !== (hw >= hd), sx = (rot90 ? D : W) / hw, sz = (rot90 ? W : D) / hd, sy = tpl.alto === 'fijo' ? 1 : Math.min(sx, sz), cx = g.x + g.w / 2, cy = g.y + g.h / 2;
+      const tone = root.CiudadTone ? root.CiudadTone.houseTone(h, h.roofTint || ROOF[h.type] || ROOF.casa) : ROOF.casa;
+      for (const p of tpl.partes) { let [px, py, pz] = p.pos, [a, b, cc] = p.size, [rx, ry, rz] = p.rot || [0, 0, 0]; px *= sx; pz *= sz; py *= sy; a *= (Math.round(ry / 90) % 2 ? sz : sx); cc *= (Math.round(ry / 90) % 2 ? sx : sz); b *= sy;
+        if (rot90) { [px, pz] = [-pz, px]; ry += 90; }
+        const col = p.color === 'techo' || !p.color ? tone : p.color;
+        add(p.name || 'TechoDiseño', p.shape || 'Block', [X(cx) + px, y0 + py, Z(cy) + pz], [a, b, cc], col, p.material || 'SmoothSurface', [rx, ry, rz], cx, cy); } };
+    if (o.roofs !== false) for (const g0 of greedy((x, y) => { const l = fullRoom(x, y); const e = stairAt.get(y * C4 + x); return l && l !== c.houseOf(c.bossL) && !(e && e.techo && pisos.length) && !courtAt(x, y) ? (tplOf(c.houses.get(l)) ? 'h' + l : roofOf(l)) : null; })) {
+      if (typeof g0.k === 'string' && g0.k[0] === 'h') { const h = c.houses.get(+g0.k.slice(1)); putTpl(tplOf(h), h, g0, (o.pisos === false ? 1 : h.pisos || 1) * WALL_H + 1); continue; }
       const g = { ...g0, k: roofKey.get(g0.k) }, h = c.houses.get(g.k); add('Techo', 'Block', [X(g.x + g.w / 2), (o.pisos === false ? 1 : h.pisos || 1) * WALL_H + 0.5, Z(g.y + g.h / 2)], [g.w * C + TH, 1, g.h * C + TH], h.refuge ? '#d4a017' : (root.CiudadTone ? root.CiudadTone.houseTone(h, h.roofTint || ROOF[h.type] || ROOF.casa) : ROOF[h.type]), 'SmoothSurface', null, g.x + g.w / 2, g.y + g.h / 2);
     }
     // bordes: tramos rectos (también diagonales) fusionados en una pieza por capa
@@ -187,6 +196,9 @@
     // marcas del piso: líneas entre carriles y flechas del sentido del tráfico (piezas planas blancas)
     if (c.trafico && o.marcas !== false) { for (const l of c.trafico.lineas) { const hor = l.y1 === l.y2, len = (hor ? l.x2 - l.x1 : l.y2 - l.y1) * C, cx = (l.x1 + l.x2) / 2, cy = (l.y1 + l.y2) / 2; add('LineaCarril', 'Block', [X(cx), 0.05, Z(cy)], hor ? [len, 0.1, 0.4] : [0.4, 0.1, len], '#f2f2f2', 'SmoothSurface', null, cx, cy); }
       for (const f of c.trafico.flechas) add('FlechaCarril', 'Block', [X(f.x), 0.05, Z(f.y)], [C * 1.6, 0.1, 0.6], '#f2f2f2', 'SmoothSurface', [0, +(-Math.atan2(f.dy, f.dx) * 180 / Math.PI).toFixed(1), 0], f.x, f.y); }
+    // zona chica (para probar): solo las piezas dentro de [x0, y0, ancho, alto] en celdas
+    if (o.zona) { const [zx, zy, zw, zh] = o.zona; for (let i = parts.length - 1; i >= 0; i--) { const [px, py] = parts[i]._c; if (px < zx || py < zy || px >= zx + zw || py >= zy + zh || (parts[i].name === 'Calle' && !o.zonaCalles)) parts.splice(i, 1); }
+      add('Calle', 'Block', [X(zx + zw / 2), -0.5, Z(zy + zh / 2)], [zw * C, 1, zh * C], '#3d4045', 'SmoothSurface', null, zx + zw / 2, zy + zh / 2); } // un solo suelo de calle para toda la zona
     // chunks
     const byKey = new Map();
     for (const p of parts) { const [cx, cy] = p._c, kk = Math.floor(cx / chunkCells) + '_' + Math.floor(cy / chunkCells); delete p._c; if (!byKey.has(kk)) byKey.set(kk, []); byKey.get(kk).push(p); }

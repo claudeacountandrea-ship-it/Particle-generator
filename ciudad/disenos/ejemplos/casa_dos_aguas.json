@@ -1,0 +1,10 @@
+{
+  "nombre": "Techo a dos aguas (ejemplo)",
+  "huella": [32, 24],
+  "alto": "proporcional",
+  "partes": [
+    { "name": "TechoAgua", "shape": "Wedge", "pos": [0, 4, -6], "size": [32, 8, 12], "rot": [0, 0, 0], "color": "techo", "material": "SmoothSurface" },
+    { "name": "TechoAgua", "shape": "Wedge", "pos": [0, 4, 6], "size": [32, 8, 12], "rot": [0, 180, 0], "color": "techo", "material": "SmoothSurface" },
+    { "name": "TechoCumbrera", "shape": "Cylinder", "pos": [0, 8, 0], "size": [32, 1, 1], "rot": [0, 0, 0], "color": "#5a3a2a", "material": "Wood" }
+  ]
+}

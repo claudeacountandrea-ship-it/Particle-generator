@@ -73,6 +73,8 @@ Está separado del generador de mazmorras (`editor/`), que no se tocó. Tiene tr
 - `index.html`: el visor. Elige modo, semilla y tamaño, y mira la ruta A→B.
 - `exportar.js`: escribe las piezas para TruWorlds.
 - `export/ciudad_semilla_7/`: **la ciudad del motor con pisos** (n=12, ~25.000 piezas: plantas de arriba, escaleras y puentes entre techos).
+- `export/ciudad_semilla_7_zona/`: **zona de prueba chica** (celdas 200,20 a 260,80; ~460 piezas) para mirar en TruWorlds y corregir rápido.
+- `disenos/`: techos de diseño propio con piezas de TruWorlds (Block, Wedge, Ball, Cylinder); ver `disenos/LEEME.md`.
 - `export/ciudad_semilla_7_ligera/`: la misma ciudad **sin plantas de arriba ni piso de color dentro de las casas** (~14.600 piezas, bajo el tope de 15.000).
 - `export/diagonal_semilla_7/`: ciudad diagonal ya exportada (19×19, **5.468 piezas, 25 chunks, máx. 391**).
 - `export/cuadricula_semilla_7/`: ciudad en cuadrícula ya exportada (150×110 celdas, 2.413 piezas).
