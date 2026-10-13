@@ -188,6 +188,11 @@ Las puertas son huecos en la pared, sin hoja.
 - **Casas sin partir**: si el lote tiene forma rara y no se puede partir, la casa es el núcleo (2 celdas hacia adentro) y el
   borde queda de jardín. Un cuarto suelto grande ya no se pega como anexo a la vecina: pasa a ser jardín (de la vecina o
   público). Un cuarto demasiado grande para su uso se parte en dos (la sala hasta 2,6 cuartos normales, el resto hasta 2).
+- **Cada construcción con su espacio**: algunas manzanas medianas del centro y del anillo medio son un solo lote con un
+  **supermercado** (sala de ventas, depósito y carga) o una **comida rápida** (comedor, cocina, baño) retirados de la calle,
+  con su estacionamiento adelante y su entrada de autos. La comida rápida chica (lote menor a 130) pasa a tienda.
+- **Base militar y cárcel**: una mini ciudad dentro del muro: el cuartel en un extremo del terreno y en el patio otros
+  edificios separados (barracas, comedor y cocina, hangar, taller; en la cárcel, pabellones, comedor y taller).
 - **Antejardín**: en la mitad de los barrios la casa se retira 3 de la vereda y se entra por un jardín al frente.
 - **Mercado** (1, o 2 en ciudades grandes): nave de puestos grande y depósito, frigorífico, baños y carga al fondo, con
   estacionamiento. **Comida rápida** en el centro y el anillo medio: comedor al frente, cocina y baño.
