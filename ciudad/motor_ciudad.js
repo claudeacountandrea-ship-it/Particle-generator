@@ -440,7 +440,7 @@
       return [...splitW(A2, gA, diag, minT, fp), ...splitW(B2, gB, diag, minT, fp)];
     };
     const erode = (set, steps) => { let cur = set; for (let s2 = 0; s2 < steps; s2++) { stamp++; for (const i of cur) mk[i] = stamp; cur = cur.filter(i => { const c = i >> 2, k = i & 3, x = c % C, y = (c / C) | 0; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (!inQ(x + dx, y + dy, k)) return false; return true; }); } return cur; };
-    let nextH = 1, nMalls = 0, nPark = 0, nMans = 0, nVerde = 0, nEntP = 0, nJardin = 0;
+    let nextH = 1, nMalls = 0, nPark = 0, nMans = 0, nVerde = 0, nEntP = 0, nJardin = 0, nVerAseg = 0;
     const roleOf = new Map(); // uso de cada cuarto: sala, cocina, garaje, dormitorio, baño, local...
     const addHouse = (type, zone, rooms, patio, hub = -1, roles = null) => {
       const hid = nextH++, all = rooms.flat(), [hx, hy] = centerOf(all), h = { id: hid, type, zone, cx: hx, cy: hy, area: all.length / 4, rooms: new Set(), patio: 0, refuge: false };
@@ -679,14 +679,14 @@
       for (let i = 0; i < NQ; i++) if (G2[i] && NR[i] && q[i] === VEREDA) { q[i] = ROAD; nEntP++; } }
     // sierra de medias celdas: al crecer una forma con diagonales, sus lados rectos quedan como una pila de medias celdas iguales
     // (vertical u horizontal); esas celdas pasan a ser enteras (vereda si una mitad es vereda)
-    const sierra = () => { const SOFT0 = new Set(['vereda', 'corr', 'out', 'pasaje', 'parque']), sig = c => { const i = c * 4, N = q[i], E = q[i + 1], S = q[i + 2], O = q[i + 3]; if (N === E && S === O && N !== S) return 'a' + N + ',' + S; if (N === O && S === E && N !== S) return 'b' + N + ',' + S; return null; };
+    const sierra = () => { const SOFT0 = new Set(['vereda', 'corr', 'out', 'pasaje', 'parque', 'parking']), sig = c => { const i = c * 4, N = q[i], E = q[i + 1], S = q[i + 2], O = q[i + 3]; if (N === E && S === O && N !== S) return 'a' + N + ',' + S; if (N === O && S === E && N !== S) return 'b' + N + ',' + S; return null; };
       const fix = []; for (let y = 1; y < Rr - 1; y++) for (let x = 1; x < C - 1; x++) { const c = y * C + x, g = sig(c); if (!g) continue; const i = c * 4; if (![q[i], q[i + 2]].every(l => SOFT0.has(kindOf(l)))) continue;
         if (sig(c - C) === g || sig(c + C) === g || sig(c - 1) === g || sig(c + 1) === g) fix.push(c); }
       for (const c of fix) { const i = c * 4, A2 = q[i], B2 = q[i + 2], to = kindOf(A2) === 'vereda' ? A2 : kindOf(B2) === 'vereda' ? B2 : A2; for (let k = 0; k < 4; k++) q[i + k] = to; } };
     sierra();
     // veredas sin esquinas de 90°: la esquina de una celda de vereda (o de calle/campo pegado a la vereda) se bisela a 45°;
     // dos pasadas: primero las puntas y después los rincones que quedan
-    for (let pass = 0; pass < 3; pass++) { const SOFT = new Set(['vereda', 'corr', 'out', 'pasaje', 'parque', 'rotonda']), snap = q.slice();
+    const bisel = () => { for (let pass = 0; pass < 3; pass++) { const SOFT = new Set(['vereda', 'corr', 'out', 'pasaje', 'parque', 'rotonda', 'parking']), snap = q.slice();
       const U = (x, y) => { if (x < 0 || y < 0 || x >= C || y >= Rr) return -1; const i = (y * C + x) * 4, l = snap[i]; return snap[i + 1] === l && snap[i + 2] === l && snap[i + 3] === l ? l : -1; };
       const F = (x, y, k) => x < 0 || y < 0 || x >= C || y >= Rr ? -1 : snap[(y * C + x) * 4 + k]; // el cuarto de la vecina que mira hacia esta celda
       for (let y = 1; y < Rr - 1; y++) for (let x = 1; x < C - 1; x++) {
@@ -704,7 +704,8 @@
             if (strip) continue; }
           if (kindOf(X0) === kindOf(Y0)) continue;
           const i = (y * C + x) * 4; if (q[i] !== X0 || q[i + 1] !== X0 || q[i + 2] !== X0 || q[i + 3] !== X0) continue;
-          for (const k of ks) q[i + k] = Y0; break; } } }
+          for (const k of ks) q[i + k] = Y0; break; } } } };
+    bisel();
     normalize();
     for (let round = 0; round < (o.reparar ?? 8); round++) {
       build();
@@ -751,7 +752,11 @@
       }
       for (let i = 0; i < NQ; i++) { const m2 = remap.get(q[i]); if (m2) q[i] = m2; }
     }
-    sierra(); normalize(); // la reparación de esquinas también puede dejar sierra en las veredas
+    // vereda asegurada: los lotes, la reparación de esquinas y los óvalos mueven bordes después de trazar las veredas; al final,
+    // todo edificio, jardín o parque que quede pegado a la calzada recupera su vereda (1 celda), y se vuelve a limpiar y biselar
+    const asegurarVereda = () => { const B = new Uint8Array(NQ); for (let i = 0; i < NQ; i++) { const k = kindOf(q[i]); if (k === 'room' || k === 'patio' || k === 'parque' || k === 'juegos') B[i] = 1; }
+      const V = grow(B, 1); let n2 = 0; for (let i = 0; i < NQ; i++) if (V[i] && q[i] === ROAD) { q[i] = VEREDA; n2++; } return n2; };
+    nVerAseg = asegurarVereda(); normalize(); sierra(); bisel(); sierra(); normalize(); // la reparación de esquinas también puede dejar sierra en las veredas
     // consistencia: cada cuarto que quedó en el mapa pertenece a una casa existente
     { const present = new Map(); for (let i = 0; i < NQ; i++) { const l = q[i]; if (kinds[l] === 'room') { if (!present.has(l)) present.set(l, []); present.get(l).push(i); } }
       for (const h of houses.values()) h.rooms = new Set([...h.rooms].filter(l => present.has(l)));

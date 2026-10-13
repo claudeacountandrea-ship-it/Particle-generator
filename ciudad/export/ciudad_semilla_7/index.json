@@ -26,7 +26,7 @@
    912
   ]
  },
- "totalPiezas": 26206,
+ "totalPiezas": 26608,
  "chunks": [
   {
    "archivo": "chunk_00.json",
@@ -76,7 +76,7 @@
     0,
     864
    ],
-   "piezas": 202
+   "piezas": 210
   },
   {
    "archivo": "chunk_05.json",
@@ -86,7 +86,7 @@
     0,
     1120
    ],
-   "piezas": 128
+   "piezas": 114
   },
   {
    "archivo": "chunk_06.json",
@@ -96,7 +96,7 @@
     0,
     1376
    ],
-   "piezas": 31
+   "piezas": 30
   },
   {
    "archivo": "chunk_07.json",
@@ -126,7 +126,7 @@
     0,
     -672
    ],
-   "piezas": 500
+   "piezas": 558
   },
   {
    "archivo": "chunk_10.json",
@@ -136,7 +136,7 @@
     0,
     -416
    ],
-   "piezas": 107
+   "piezas": 131
   },
   {
    "archivo": "chunk_11.json",
@@ -146,7 +146,7 @@
     0,
     -160
    ],
-   "piezas": 390
+   "piezas": 523
   },
   {
    "archivo": "chunk_12.json",
@@ -156,7 +156,7 @@
     0,
     96
    ],
-   "piezas": 129
+   "piezas": 138
   },
   {
    "archivo": "chunk_13.json",
@@ -166,7 +166,7 @@
     0,
     352
    ],
-   "piezas": 167
+   "piezas": 139
   },
   {
    "archivo": "chunk_14.json",
@@ -176,7 +176,7 @@
     0,
     608
    ],
-   "piezas": 266
+   "piezas": 220
   },
   {
    "archivo": "chunk_15.json",
@@ -196,7 +196,7 @@
     0,
     864
    ],
-   "piezas": 137
+   "piezas": 123
   },
   {
    "archivo": "chunk_17.json",
@@ -246,7 +246,7 @@
     0,
     -672
    ],
-   "piezas": 232
+   "piezas": 195
   },
   {
    "archivo": "chunk_22.json",
@@ -256,7 +256,7 @@
     0,
     -416
    ],
-   "piezas": 164
+   "piezas": 157
   },
   {
    "archivo": "chunk_23.json",
@@ -266,7 +266,7 @@
     0,
     -160
    ],
-   "piezas": 493
+   "piezas": 509
   },
   {
    "archivo": "chunk_24.json",
@@ -276,7 +276,7 @@
     0,
     96
    ],
-   "piezas": 231
+   "piezas": 308
   },
   {
    "archivo": "chunk_25.json",
@@ -286,7 +286,7 @@
     0,
     352
    ],
-   "piezas": 169
+   "piezas": 188
   },
   {
    "archivo": "chunk_26.json",
@@ -296,7 +296,7 @@
     0,
     608
    ],
-   "piezas": 430
+   "piezas": 419
   },
   {
    "archivo": "chunk_27.json",
@@ -306,7 +306,7 @@
     0,
     864
    ],
-   "piezas": 74
+   "piezas": 82
   },
   {
    "archivo": "chunk_28.json",
@@ -356,7 +356,7 @@
     0,
     -160
    ],
-   "piezas": 384
+   "piezas": 429
   },
   {
    "archivo": "chunk_33.json",
@@ -366,7 +366,7 @@
     0,
     96
    ],
-   "piezas": 26
+   "piezas": 35
   },
   {
    "archivo": "chunk_34.json",
@@ -376,7 +376,7 @@
     0,
     352
    ],
-   "piezas": 339
+   "piezas": 329
   },
   {
    "archivo": "chunk_35.json",
@@ -386,7 +386,7 @@
     0,
     608
    ],
-   "piezas": 288
+   "piezas": 342
   },
   {
    "archivo": "chunk_36.json",
@@ -406,7 +406,7 @@
     0,
     -160
    ],
-   "piezas": 20
+   "piezas": 25
   },
   {
    "archivo": "chunk_38.json",
@@ -466,7 +466,7 @@
     0,
     864
    ],
-   "piezas": 122
+   "piezas": 117
   },
   {
    "archivo": "chunk_44.json",
@@ -506,7 +506,7 @@
     0,
     -160
    ],
-   "piezas": 220
+   "piezas": 228
   },
   {
    "archivo": "chunk_48.json",
@@ -516,7 +516,7 @@
     0,
     96
    ],
-   "piezas": 87
+   "piezas": 90
   },
   {
    "archivo": "chunk_49.json",
@@ -526,7 +526,7 @@
     0,
     352
    ],
-   "piezas": 62
+   "piezas": 66
   },
   {
    "archivo": "chunk_50.json",
@@ -556,7 +556,7 @@
     0,
     864
    ],
-   "piezas": 102
+   "piezas": 101
   },
   {
    "archivo": "chunk_53.json",
@@ -566,7 +566,7 @@
     0,
     1120
    ],
-   "piezas": 43
+   "piezas": 41
   },
   {
    "archivo": "chunk_54.json",
@@ -596,7 +596,7 @@
     0,
     -672
    ],
-   "piezas": 241
+   "piezas": 246
   },
   {
    "archivo": "chunk_57.json",
@@ -606,7 +606,7 @@
     0,
     -416
    ],
-   "piezas": 234
+   "piezas": 241
   },
   {
    "archivo": "chunk_58.json",
@@ -616,7 +616,7 @@
     0,
     -160
    ],
-   "piezas": 185
+   "piezas": 202
   },
   {
    "archivo": "chunk_59.json",
@@ -626,7 +626,7 @@
     0,
     96
    ],
-   "piezas": 81
+   "piezas": 80
   },
   {
    "archivo": "chunk_60.json",
@@ -636,7 +636,7 @@
     0,
     352
    ],
-   "piezas": 460
+   "piezas": 474
   },
   {
    "archivo": "chunk_61.json",
@@ -646,7 +646,7 @@
     0,
     608
    ],
-   "piezas": 336
+   "piezas": 323
   },
   {
    "archivo": "chunk_62.json",
@@ -666,7 +666,7 @@
     0,
     864
    ],
-   "piezas": 171
+   "piezas": 205
   },
   {
    "archivo": "chunk_64.json",
@@ -676,7 +676,7 @@
     0,
     1120
    ],
-   "piezas": 366
+   "piezas": 398
   },
   {
    "archivo": "chunk_65.json",
@@ -706,7 +706,7 @@
     0,
     -928
    ],
-   "piezas": 279
+   "piezas": 271
   },
   {
    "archivo": "chunk_68.json",
@@ -716,7 +716,7 @@
     0,
     -672
    ],
-   "piezas": 38
+   "piezas": 39
   },
   {
    "archivo": "chunk_69.json",
@@ -736,7 +736,7 @@
     0,
     -160
    ],
-   "piezas": 154
+   "piezas": 153
   },
   {
    "archivo": "chunk_71.json",
@@ -746,7 +746,7 @@
     0,
     96
    ],
-   "piezas": 181
+   "piezas": 166
   },
   {
    "archivo": "chunk_72.json",
@@ -756,7 +756,7 @@
     0,
     352
    ],
-   "piezas": 795
+   "piezas": 799
   },
   {
    "archivo": "chunk_73.json",
@@ -766,7 +766,7 @@
     0,
     608
    ],
-   "piezas": 500
+   "piezas": 484
   },
   {
    "archivo": "chunk_74.json",
@@ -796,7 +796,7 @@
     0,
     1120
    ],
-   "piezas": 538
+   "piezas": 496
   },
   {
    "archivo": "chunk_77.json",
@@ -816,7 +816,7 @@
     0,
     -1184
    ],
-   "piezas": 60
+   "piezas": 54
   },
   {
    "archivo": "chunk_79.json",
@@ -826,7 +826,7 @@
     0,
     -928
    ],
-   "piezas": 266
+   "piezas": 257
   },
   {
    "archivo": "chunk_80.json",
@@ -836,7 +836,7 @@
     0,
     -672
    ],
-   "piezas": 133
+   "piezas": 160
   },
   {
    "archivo": "chunk_81.json",
@@ -846,7 +846,7 @@
     0,
     -416
    ],
-   "piezas": 255
+   "piezas": 257
   },
   {
    "archivo": "chunk_82.json",
@@ -856,7 +856,7 @@
     0,
     -160
    ],
-   "piezas": 368
+   "piezas": 334
   },
   {
    "archivo": "chunk_83.json",
@@ -866,7 +866,7 @@
     0,
     96
    ],
-   "piezas": 302
+   "piezas": 301
   },
   {
    "archivo": "chunk_84.json",
@@ -876,7 +876,7 @@
     0,
     352
    ],
-   "piezas": 502
+   "piezas": 533
   },
   {
    "archivo": "chunk_85.json",
@@ -886,7 +886,7 @@
     0,
     608
    ],
-   "piezas": 311
+   "piezas": 336
   },
   {
    "archivo": "chunk_86.json",
@@ -896,7 +896,7 @@
     0,
     -1440
    ],
-   "piezas": 46
+   "piezas": 50
   },
   {
    "archivo": "chunk_87.json",
@@ -906,7 +906,7 @@
     0,
     864
    ],
-   "piezas": 199
+   "piezas": 196
   },
   {
    "archivo": "chunk_88.json",
@@ -916,7 +916,7 @@
     0,
     1120
    ],
-   "piezas": 98
+   "piezas": 103
   },
   {
    "archivo": "chunk_89.json",
@@ -936,7 +936,7 @@
     0,
     -1184
    ],
-   "piezas": 461
+   "piezas": 459
   },
   {
    "archivo": "chunk_91.json",
@@ -946,7 +946,7 @@
     0,
     -928
    ],
-   "piezas": 481
+   "piezas": 466
   },
   {
    "archivo": "chunk_92.json",
@@ -956,7 +956,7 @@
     0,
     -672
    ],
-   "piezas": 279
+   "piezas": 315
   },
   {
    "archivo": "chunk_93.json",
@@ -966,7 +966,7 @@
     0,
     -416
    ],
-   "piezas": 202
+   "piezas": 233
   },
   {
    "archivo": "chunk_94.json",
@@ -976,7 +976,7 @@
     0,
     -160
    ],
-   "piezas": 154
+   "piezas": 157
   },
   {
    "archivo": "chunk_95.json",
@@ -986,7 +986,7 @@
     0,
     96
    ],
-   "piezas": 347
+   "piezas": 346
   },
   {
    "archivo": "chunk_96.json",
@@ -996,7 +996,7 @@
     0,
     352
    ],
-   "piezas": 577
+   "piezas": 536
   },
   {
    "archivo": "chunk_97.json",
@@ -1006,7 +1006,7 @@
     0,
     608
    ],
-   "piezas": 168
+   "piezas": 195
   },
   {
    "archivo": "chunk_98.json",
@@ -1026,7 +1026,7 @@
     0,
     -1440
    ],
-   "piezas": 106
+   "piezas": 107
   },
   {
    "archivo": "chunk_100.json",
@@ -1036,7 +1036,7 @@
     0,
     864
    ],
-   "piezas": 105
+   "piezas": 122
   },
   {
    "archivo": "chunk_101.json",
@@ -1046,7 +1046,7 @@
     0,
     1120
    ],
-   "piezas": 450
+   "piezas": 456
   },
   {
    "archivo": "chunk_102.json",
@@ -1066,7 +1066,7 @@
     0,
     -1184
    ],
-   "piezas": 294
+   "piezas": 295
   },
   {
    "archivo": "chunk_104.json",
@@ -1076,7 +1076,7 @@
     0,
     -928
    ],
-   "piezas": 254
+   "piezas": 301
   },
   {
    "archivo": "chunk_105.json",
@@ -1086,7 +1086,7 @@
     0,
     -672
    ],
-   "piezas": 176
+   "piezas": 208
   },
   {
    "archivo": "chunk_106.json",
@@ -1096,7 +1096,7 @@
     0,
     -416
    ],
-   "piezas": 151
+   "piezas": 138
   },
   {
    "archivo": "chunk_107.json",
@@ -1106,7 +1106,7 @@
     0,
     -160
    ],
-   "piezas": 405
+   "piezas": 325
   },
   {
    "archivo": "chunk_108.json",
@@ -1116,7 +1116,7 @@
     0,
     96
    ],
-   "piezas": 96
+   "piezas": 105
   },
   {
    "archivo": "chunk_109.json",
@@ -1126,7 +1126,7 @@
     0,
     352
    ],
-   "piezas": 182
+   "piezas": 211
   },
   {
    "archivo": "chunk_110.json",
@@ -1136,7 +1136,7 @@
     0,
     608
    ],
-   "piezas": 320
+   "piezas": 330
   },
   {
    "archivo": "chunk_111.json",
@@ -1166,7 +1166,7 @@
     0,
     864
    ],
-   "piezas": 136
+   "piezas": 189
   },
   {
    "archivo": "chunk_114.json",
@@ -1176,7 +1176,7 @@
     0,
     1120
    ],
-   "piezas": 300
+   "piezas": 311
   },
   {
    "archivo": "chunk_115.json",
@@ -1196,7 +1196,7 @@
     0,
     -1184
    ],
-   "piezas": 253
+   "piezas": 293
   },
   {
    "archivo": "chunk_117.json",
@@ -1206,7 +1206,7 @@
     0,
     -928
    ],
-   "piezas": 452
+   "piezas": 462
   },
   {
    "archivo": "chunk_118.json",
@@ -1216,7 +1216,7 @@
     0,
     -672
    ],
-   "piezas": 367
+   "piezas": 335
   },
   {
    "archivo": "chunk_119.json",
@@ -1226,7 +1226,7 @@
     0,
     -416
    ],
-   "piezas": 216
+   "piezas": 199
   },
   {
    "archivo": "chunk_120.json",
@@ -1236,7 +1236,7 @@
     0,
     -160
    ],
-   "piezas": 175
+   "piezas": 150
   },
   {
    "archivo": "chunk_121.json",
@@ -1246,7 +1246,7 @@
     0,
     96
    ],
-   "piezas": 122
+   "piezas": 158
   },
   {
    "archivo": "chunk_122.json",
@@ -1256,7 +1256,7 @@
     0,
     352
    ],
-   "piezas": 160
+   "piezas": 170
   },
   {
    "archivo": "chunk_123.json",
@@ -1266,7 +1266,7 @@
     0,
     608
    ],
-   "piezas": 202
+   "piezas": 174
   },
   {
    "archivo": "chunk_124.json",
@@ -1276,7 +1276,7 @@
     0,
     -1440
    ],
-   "piezas": 180
+   "piezas": 199
   },
   {
    "archivo": "chunk_125.json",
@@ -1286,7 +1286,7 @@
     0,
     864
    ],
-   "piezas": 160
+   "piezas": 147
   },
   {
    "archivo": "chunk_126.json",
@@ -1296,7 +1296,7 @@
     0,
     1120
    ],
-   "piezas": 102
+   "piezas": 104
   },
   {
    "archivo": "chunk_127.json",
@@ -1316,7 +1316,7 @@
     0,
     -1184
    ],
-   "piezas": 175
+   "piezas": 160
   },
   {
    "archivo": "chunk_129.json",
@@ -1326,7 +1326,7 @@
     0,
     -928
    ],
-   "piezas": 82
+   "piezas": 80
   },
   {
    "archivo": "chunk_130.json",
@@ -1336,7 +1336,7 @@
     0,
     -672
    ],
-   "piezas": 427
+   "piezas": 373
   },
   {
    "archivo": "chunk_131.json",
@@ -1346,7 +1346,7 @@
     0,
     -416
    ],
-   "piezas": 320
+   "piezas": 297
   },
   {
    "archivo": "chunk_132.json",
@@ -1356,7 +1356,7 @@
     0,
     -160
    ],
-   "piezas": 143
+   "piezas": 159
   },
   {
    "archivo": "chunk_133.json",
@@ -1366,7 +1366,7 @@
     0,
     96
    ],
-   "piezas": 137
+   "piezas": 146
   },
   {
    "archivo": "chunk_134.json",
@@ -1396,7 +1396,7 @@
     0,
     -1440
    ],
-   "piezas": 25
+   "piezas": 26
   },
   {
    "archivo": "chunk_137.json",
@@ -1406,7 +1406,7 @@
     0,
     864
    ],
-   "piezas": 177
+   "piezas": 197
   },
   {
    "archivo": "chunk_138.json",
@@ -1416,7 +1416,7 @@
     0,
     1120
    ],
-   "piezas": 161
+   "piezas": 127
   },
   {
    "archivo": "chunk_139.json",
@@ -1426,7 +1426,7 @@
     0,
     1376
    ],
-   "piezas": 32
+   "piezas": 22
   },
   {
    "archivo": "chunk_140.json",
@@ -1436,7 +1436,7 @@
     0,
     -1184
    ],
-   "piezas": 162
+   "piezas": 150
   },
   {
    "archivo": "chunk_141.json",
@@ -1446,7 +1446,7 @@
     0,
     -928
    ],
-   "piezas": 460
+   "piezas": 343
   },
   {
    "archivo": "chunk_142.json",
@@ -1456,7 +1456,7 @@
     0,
     -672
    ],
-   "piezas": 499
+   "piezas": 532
   },
   {
    "archivo": "chunk_143.json",
@@ -1476,7 +1476,7 @@
     0,
     -416
    ],
-   "piezas": 53
+   "piezas": 120
   },
   {
    "archivo": "chunk_145.json",
@@ -1486,7 +1486,7 @@
     0,
     -160
    ],
-   "piezas": 187
+   "piezas": 189
   },
   {
    "archivo": "chunk_146.json",
@@ -1496,7 +1496,7 @@
     0,
     96
    ],
-   "piezas": 24
+   "piezas": 19
   },
   {
    "archivo": "chunk_147.json",
@@ -3296,6 +3296,32 @@
    },
    {
     "pos": [
+     268,
+     0,
+     -84
+    ],
+    "dir": [
+     0,
+     0,
+     -1
+    ],
+    "ovalo": false
+   },
+   {
+    "pos": [
+     244,
+     0,
+     -84
+    ],
+    "dir": [
+     0,
+     0,
+     1
+    ],
+    "ovalo": false
+   },
+   {
+    "pos": [
      280,
      0,
      876
@@ -3610,7 +3636,7 @@
     "pos": [
      988,
      0,
-     1156
+     1132
     ],
     "dir": [
      0,
@@ -3623,7 +3649,7 @@
     "pos": [
      1012,
      0,
-     1156
+     1132
     ],
     "dir": [
      0,
@@ -3636,7 +3662,7 @@
     "pos": [
      1036,
      0,
-     1156
+     1132
     ],
     "dir": [
      0,
@@ -3649,7 +3675,7 @@
     "pos": [
      964,
      0,
-     1156
+     1132
     ],
     "dir": [
      0,
@@ -3662,7 +3688,7 @@
     "pos": [
      940,
      0,
-     1156
+     1132
     ],
     "dir": [
      0,
@@ -3675,7 +3701,7 @@
     "pos": [
      916,
      0,
-     1156
+     1132
     ],
     "dir": [
      0,
@@ -3688,7 +3714,7 @@
     "pos": [
      1048,
      0,
-     908
+     884
     ],
     "dir": [
      0,
@@ -3701,7 +3727,7 @@
     "pos": [
      1016,
      0,
-     908
+     884
     ],
     "dir": [
      0,
@@ -3870,7 +3896,20 @@
     "pos": [
      1548,
      0,
-     -164
+     -188
+    ],
+    "dir": [
+     0,
+     0,
+     -1
+    ],
+    "ovalo": false
+   },
+   {
+    "pos": [
+     1548,
+     0,
+     -108
     ],
     "dir": [
      0,
@@ -3883,7 +3922,20 @@
     "pos": [
      1524,
      0,
-     -164
+     -188
+    ],
+    "dir": [
+     0,
+     0,
+     1
+    ],
+    "ovalo": false
+   },
+   {
+    "pos": [
+     1524,
+     0,
+     -108
     ],
     "dir": [
      0,
@@ -4742,58 +4794,6 @@
      -1348,
      0,
      -330
-    ],
-    "dir": [
-     -1,
-     0,
-     0
-    ],
-    "ovalo": false
-   },
-   {
-    "pos": [
-     316,
-     0,
-     -254
-    ],
-    "dir": [
-     1,
-     0,
-     0
-    ],
-    "ovalo": false
-   },
-   {
-    "pos": [
-     316,
-     0,
-     -234
-    ],
-    "dir": [
-     1,
-     0,
-     0
-    ],
-    "ovalo": false
-   },
-   {
-    "pos": [
-     316,
-     0,
-     -274
-    ],
-    "dir": [
-     -1,
-     0,
-     0
-    ],
-    "ovalo": false
-   },
-   {
-    "pos": [
-     316,
-     0,
-     -294
     ],
     "dir": [
      -1,
@@ -6104,7 +6104,7 @@
    },
    {
     "pos": [
-     -124,
+     -140,
      0,
      346
     ],
@@ -6117,7 +6117,7 @@
    },
    {
     "pos": [
-     -124,
+     -140,
      0,
      366
     ],
@@ -6130,7 +6130,7 @@
    },
    {
     "pos": [
-     -124,
+     -140,
      0,
      326
     ],
@@ -6143,7 +6143,7 @@
    },
    {
     "pos": [
-     -124,
+     -140,
      0,
      306
     ],
@@ -6208,7 +6208,7 @@
    },
    {
     "pos": [
-     900,
+     908,
      0,
      784
     ],
@@ -6221,7 +6221,7 @@
    },
    {
     "pos": [
-     900,
+     908,
      0,
      752
     ],
@@ -6754,6 +6754,32 @@
    },
    {
     "pos": [
+     -468,
+     0,
+     1132
+    ],
+    "dir": [
+     1,
+     0,
+     0
+    ],
+    "ovalo": false
+   },
+   {
+    "pos": [
+     -468,
+     0,
+     1108
+    ],
+    "dir": [
+     -1,
+     0,
+     0
+    ],
+    "ovalo": false
+   },
+   {
+    "pos": [
      124,
      0,
      1256
@@ -7225,11 +7251,11 @@
   },
   "avenidaCentral": 1,
   "estacionamientos": 17,
-  "rejasCalle": 9,
-  "rejasCierran": 3,
+  "rejasCalle": 10,
+  "rejasCierran": 4,
   "garajes": 16,
   "salidasEmergencia": 46,
-  "entradasRotas": 34,
+  "entradasRotas": 45,
   "autopistas": 2,
   "crucesArreglados": 0,
   "esquinasArregladas": 775,
@@ -7241,17 +7267,17 @@
   "refugios": 2,
   "parques": 10,
   "plazaCeldas": 1812,
-  "puertas": 1662,
-  "ventanasCerradas": 656,
-  "ventanasRotas": 134,
-  "rejas": 3591,
-  "portones": 343,
-  "mediana": 1526,
-  "tramosDiagonales": 7295,
+  "puertas": 1663,
+  "ventanasCerradas": 657,
+  "ventanasRotas": 130,
+  "rejas": 3599,
+  "portones": 321,
+  "mediana": 1549,
+  "tramosDiagonales": 7333,
   "ruta": 892,
-  "edificiosDe2oMas": 116,
+  "edificiosDe2oMas": 117,
   "pisosMax": 5,
-  "escaleras": 135,
+  "escaleras": 137,
   "escalerasAlTecho": 78,
   "puentes": 14,
   "tablas": 37

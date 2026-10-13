@@ -156,6 +156,8 @@ Las puertas son huecos en la pared, sin hoja.
 - **Veredas**: las esquinas de 90° de las veredas (con la calle, el campo o un parque) se biselan a 45°, en varias pasadas
   (primero las puntas, después los rincones); la punta de una vereda nunca se afila.
 - **Óvalos**: isla de pasto de radio 5 con un anillo de 2 carriles marcado; nunca pegados al campo ni a la plaza.
+- **Vereda asegurada**: al final (después de lotes, óvalos y la reparación de esquinas) todo edificio, jardín o parque que
+  quede pegado a la calzada recupera su vereda, y se vuelve a limpiar la sierra y a biselar (también contra estacionamientos).
 - **Veredas que se tocan por una punta** (sobre todo junto al campo): la esquina se cierra con media celda en diagonal.
 - **Sierra de medias celdas**: al crecer una forma con diagonales, sus lados rectos quedaban como una pila de medias celdas
   (la sierra «≶»); esas celdas se vuelven enteras antes del bisel y otra vez después de la reparación de esquinas.

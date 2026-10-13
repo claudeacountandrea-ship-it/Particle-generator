@@ -26,7 +26,7 @@
    912
   ]
  },
- "totalPiezas": 461,
+ "totalPiezas": 479,
  "chunks": [
   {
    "archivo": "chunk_00.json",
@@ -46,7 +46,7 @@
     0,
     -1440
    ],
-   "piezas": 94
+   "piezas": 96
   },
   {
    "archivo": "chunk_02.json",
@@ -56,7 +56,7 @@
     0,
     -1184
    ],
-   "piezas": 56
+   "piezas": 55
   },
   {
    "archivo": "chunk_03.json",
@@ -86,7 +86,7 @@
     0,
     -1184
    ],
-   "piezas": 121
+   "piezas": 138
   },
   {
    "archivo": "chunk_06.json",
@@ -1886,6 +1886,32 @@
    },
    {
     "pos": [
+     268,
+     0,
+     -84
+    ],
+    "dir": [
+     0,
+     0,
+     -1
+    ],
+    "ovalo": false
+   },
+   {
+    "pos": [
+     244,
+     0,
+     -84
+    ],
+    "dir": [
+     0,
+     0,
+     1
+    ],
+    "ovalo": false
+   },
+   {
+    "pos": [
      280,
      0,
      876
@@ -2200,7 +2226,7 @@
     "pos": [
      988,
      0,
-     1156
+     1132
     ],
     "dir": [
      0,
@@ -2213,7 +2239,7 @@
     "pos": [
      1012,
      0,
-     1156
+     1132
     ],
     "dir": [
      0,
@@ -2226,7 +2252,7 @@
     "pos": [
      1036,
      0,
-     1156
+     1132
     ],
     "dir": [
      0,
@@ -2239,7 +2265,7 @@
     "pos": [
      964,
      0,
-     1156
+     1132
     ],
     "dir": [
      0,
@@ -2252,7 +2278,7 @@
     "pos": [
      940,
      0,
-     1156
+     1132
     ],
     "dir": [
      0,
@@ -2265,7 +2291,7 @@
     "pos": [
      916,
      0,
-     1156
+     1132
     ],
     "dir": [
      0,
@@ -2278,7 +2304,7 @@
     "pos": [
      1048,
      0,
-     908
+     884
     ],
     "dir": [
      0,
@@ -2291,7 +2317,7 @@
     "pos": [
      1016,
      0,
-     908
+     884
     ],
     "dir": [
      0,
@@ -2460,7 +2486,20 @@
     "pos": [
      1548,
      0,
-     -164
+     -188
+    ],
+    "dir": [
+     0,
+     0,
+     -1
+    ],
+    "ovalo": false
+   },
+   {
+    "pos": [
+     1548,
+     0,
+     -108
     ],
     "dir": [
      0,
@@ -2473,7 +2512,20 @@
     "pos": [
      1524,
      0,
-     -164
+     -188
+    ],
+    "dir": [
+     0,
+     0,
+     1
+    ],
+    "ovalo": false
+   },
+   {
+    "pos": [
+     1524,
+     0,
+     -108
     ],
     "dir": [
      0,
@@ -3332,58 +3384,6 @@
      -1348,
      0,
      -330
-    ],
-    "dir": [
-     -1,
-     0,
-     0
-    ],
-    "ovalo": false
-   },
-   {
-    "pos": [
-     316,
-     0,
-     -254
-    ],
-    "dir": [
-     1,
-     0,
-     0
-    ],
-    "ovalo": false
-   },
-   {
-    "pos": [
-     316,
-     0,
-     -234
-    ],
-    "dir": [
-     1,
-     0,
-     0
-    ],
-    "ovalo": false
-   },
-   {
-    "pos": [
-     316,
-     0,
-     -274
-    ],
-    "dir": [
-     -1,
-     0,
-     0
-    ],
-    "ovalo": false
-   },
-   {
-    "pos": [
-     316,
-     0,
-     -294
     ],
     "dir": [
      -1,
@@ -4694,7 +4694,7 @@
    },
    {
     "pos": [
-     -124,
+     -140,
      0,
      346
     ],
@@ -4707,7 +4707,7 @@
    },
    {
     "pos": [
-     -124,
+     -140,
      0,
      366
     ],
@@ -4720,7 +4720,7 @@
    },
    {
     "pos": [
-     -124,
+     -140,
      0,
      326
     ],
@@ -4733,7 +4733,7 @@
    },
    {
     "pos": [
-     -124,
+     -140,
      0,
      306
     ],
@@ -4798,7 +4798,7 @@
    },
    {
     "pos": [
-     900,
+     908,
      0,
      784
     ],
@@ -4811,7 +4811,7 @@
    },
    {
     "pos": [
-     900,
+     908,
      0,
      752
     ],
@@ -5344,6 +5344,32 @@
    },
    {
     "pos": [
+     -468,
+     0,
+     1132
+    ],
+    "dir": [
+     1,
+     0,
+     0
+    ],
+    "ovalo": false
+   },
+   {
+    "pos": [
+     -468,
+     0,
+     1108
+    ],
+    "dir": [
+     -1,
+     0,
+     0
+    ],
+    "ovalo": false
+   },
+   {
+    "pos": [
      124,
      0,
      1256
@@ -5815,11 +5841,11 @@
   },
   "avenidaCentral": 1,
   "estacionamientos": 17,
-  "rejasCalle": 9,
-  "rejasCierran": 3,
+  "rejasCalle": 10,
+  "rejasCierran": 4,
   "garajes": 16,
   "salidasEmergencia": 46,
-  "entradasRotas": 34,
+  "entradasRotas": 45,
   "autopistas": 2,
   "crucesArreglados": 0,
   "esquinasArregladas": 775,
@@ -5831,17 +5857,17 @@
   "refugios": 2,
   "parques": 10,
   "plazaCeldas": 1812,
-  "puertas": 1662,
-  "ventanasCerradas": 656,
-  "ventanasRotas": 134,
-  "rejas": 3591,
-  "portones": 343,
-  "mediana": 1526,
-  "tramosDiagonales": 7295,
+  "puertas": 1663,
+  "ventanasCerradas": 657,
+  "ventanasRotas": 130,
+  "rejas": 3599,
+  "portones": 321,
+  "mediana": 1549,
+  "tramosDiagonales": 7333,
   "ruta": 892,
-  "edificiosDe2oMas": 116,
+  "edificiosDe2oMas": 117,
   "pisosMax": 5,
-  "escaleras": 135,
+  "escaleras": 137,
   "escalerasAlTecho": 78,
   "puentes": 14,
   "tablas": 37
