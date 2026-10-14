@@ -86,6 +86,7 @@
       const fv = (i, dg) => { const c = i >> 2, px = c % C + CEN[i & 3][0], py = ((c / C) | 0) + CEN[i & 3][1]; return dg ? [px + py, px - py] : [px, py]; }, scF = dg => dg ? Math.SQRT1_2 : 1;
       const city = []; for (let i = 0; i < NQ; i++) if (cityQ[i]) city.push(i);
       let pxs = 0, pys = 0, pn = 0; for (let i = 0; i < NQ; i++) if (t[i] === 2) { const c = i >> 2; pxs += c % C; pys += (c / C) | 0; pn++; }
+      const nearPlaza = new Uint8Array(C * Rr); { const P0 = t.map(v => v === 2 ? 1 : 0), G0 = grow(P0, 11); for (let i = 0; i < NQ; i++) if (G0[i]) nearPlaza[i >> 2] = 1; } // la plaza y su anillo de césped y pista
       const pc = pn ? [pxs / pn, pys / pn] : [C / 2, Rr / 2], target = o.barrioArea ?? 9000, art = new Uint8Array(NQ), artId = new Int32Array(NQ), leaves = []; let nCut = 0;
       const split = (set, depth) => {
         if (set.length / 4 < target * 1.7 || depth > 7) { if (set.length) leaves.push(set); return; }
@@ -96,7 +97,7 @@
         let glo = 1e9, ghi = -1e9; for (const i of set) { const g = fv(i, dg)[1 - ax]; if (g < glo) glo = g; if (g > ghi) ghi = g; }
         const jog = chance(0.6) ? { g1: Math.round(glo + (ghi - glo) * (0.25 + R() * 0.5)), d: (chance(0.5) ? 1 : -1) * rnd(6, 16) } : null;
         const posAt = g => { if (!jog || g <= jog.g1) return [pos, hw]; const k2 = Math.min(Math.abs(jog.d), Math.floor(g - jog.g1)); return [pos + Math.sign(jog.d) * k2, k2 < Math.abs(jog.d) ? Math.round(hw * 1.42) : hw]; };
-        for (const i of set) { const f = fv(i, dg), [p2, h2] = posAt(f[1 - ax]), a = f[ax]; if (a > p2 - h2 && a < p2 + h2) { art[i] = 1; artId[i] = id; } else (a < p2 ? A : B).push(i); }
+        for (const i of set) { const f = fv(i, dg), [p2, h2] = posAt(f[1 - ax]), a = f[ax]; if (a > p2 - h2 && a < p2 + h2 && !nearPlaza[i >> 2]) { art[i] = 1; artId[i] = id; } else (a < p2 ? A : B).push(i); } // la avenida no cruza la plaza: termina en ella
         split(A, depth + 1); split(B, depth + 1); };
       split(city, 0);
       // el barrio del centro: el que tiene la plaza (o el más cercano al centro)
@@ -529,7 +530,7 @@
       return [...splitW(A2, gA, diag, minT, fp), ...splitW(B2, gB, diag, minT, fp)];
     };
     const erode = (set, steps) => { let cur = set; for (let s2 = 0; s2 < steps; s2++) { stamp++; for (const i of cur) mk[i] = stamp; cur = cur.filter(i => { const c = i >> 2, k = i & 3, x = c % C, y = (c / C) | 0; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (!inQ(x + dx, y + dy, k)) return false; return true; }); } return cur; };
-    let nextH = 1, nMalls = 0, nPark = 0, nMans = 0, nSolo = 0, nAnexo = 0, nProg = 0, nCalleSuelta = 0, nVerde = 0, nEntP = 0, nJardin = 0, nVerAseg = 0;
+    let nextH = 1, nMalls = 0, nPark = 0, nMans = 0, nSolo = 0, nAnexo = 0, nProg = 0, nCalleSuelta = 0, nTorreV = 0, nVerde = 0, nEntP = 0, nJardin = 0, nVerAseg = 0;
     const roleOf = new Map(); // uso de cada cuarto: sala, cocina, garaje, dormitorio, baño, local...
     const addHouse = (type, zone, rooms, patio, hub = -1, roles = null) => {
       const hid = nextH++, all = rooms.flat(), [hx, hy] = centerOf(all), h = { id: hid, type, zone, cx: hx, cy: hy, area: all.length / 4, rooms: new Set(), patio: 0, refuge: false };
@@ -608,6 +609,15 @@
             hospital: [['urgencias', 'sala de espera'], ['laboratorio', 'farmacia'], ['mantenimiento'], ['capilla']], escuela: [['aula', 'aula', 'baños'], ['comedor', 'cocina'], ['biblioteca']],
             policia: [['garaje policial'], ['celda', 'celda', 'baños'], ['armería', 'vestuario']], bomberos: [['torre de práctica'], ['vestuario', 'sala de guardia'], ['taller']], mercado: [['puesto', 'puesto'], ['puesto', 'depósito']] };
           if (ANEXOS[sp] && h.patio) { let free = yard.slice(); const progs = ANEXOS[sp];
+            // base militar y cárcel: torres de vigilancia en las esquinas del terreno, junto al muro (≈4×4, 3 pisos, se entra desde el patio)
+            if (sp === 'militar' || sp === 'carcel') { const DIRS = dg ? [[1, 0], [-1, 0], [0, 1], [0, -1]] : [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+              for (const [ux, uy] of DIRS) { let best = -1, bv = -1e9; for (const i of free) { const c6 = i >> 2, v = (c6 % C) * ux + ((c6 / C) | 0) * uy; if (v > bv) { bv = v; best = i; } } if (best < 0) continue;
+                const bx = (best >> 2) % C, by = ((best >> 2) / C) | 0, region = free.filter(i => Math.abs((i >> 2) % C - bx) <= 7 && Math.abs((((i >> 2) / C) | 0) - by) <= 7); let dg6 = dg, rr = rectIn(region, dg); if (!rr || rr.length / 4 < 12) { dg6 = !dg; rr = rectIn(region, dg6); } if (!rr || rr.length / 4 < 12) continue;
+                { const sc6 = dg6 ? Math.SQRT1_2 : 1, bpx = bx + 0.5, bpy = by + 0.5, bf = dg6 ? [bpx + bpy, bpx - bpy] : [bpx, bpy]; // se achica a ≈4×4 hacia la esquina
+                  for (const L6 of [0, 1]) { const e6 = extOf(rr, dg6); if ((e6[L6][1] - e6[L6][0]) * sc6 <= 5.5) continue; const lo = Math.abs(bf[L6] - e6[L6][0]) <= Math.abs(bf[L6] - e6[L6][1]);
+                    const c6 = cutAt(rr, dg6, L6, lo ? e6[L6][0] + Math.round(4 / sc6) : e6[L6][1] - Math.round(4 / sc6), 1); if (c6 && c6[lo ? 0 : 1].length / 4 >= 12) rr = c6[lo ? 0 : 1]; } }
+                const ht = addHouse(sp, zone, [rr], null, -1, ['torre de vigilancia']); ht.campus = true; ht.recinto = true; ht.patio = h.patio; ht.anexo = true; ht.torre = true; nAnexo++; nTorreV++;
+                const cs = new Set(rr.map(i => i >> 2)), near = new Set(); for (const c6 of cs) { const x = c6 % C, y = (c6 / C) | 0; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) near.add((y + dy) * C + x + dx); } free = free.filter(i => !near.has(i >> 2)); } }
             for (const pr of progs) { let rect = rectIn(erode(free, 2), dg) || rectIn(erode(free, 2), !dg); if (!rect || rect.length / 4 < 48) break;
               for (let g4 = 0; g4 < 3 && rect.length / 4 > 130; g4++) { const e2 = extOf(rect, dg), L2 = (e2[0][1] - e2[0][0]) >= (e2[1][1] - e2[1][0]) ? 0 : 1, r2 = cutAt(rect, dg, L2, Math.round(e2[L2][0] + (e2[L2][1] - e2[L2][0]) * Math.max(0.3, 110 / (rect.length / 4))), 2); if (!r2 || r2[0].length / 4 < 48) break; rect = r2[0]; } // edificios de ~110 celdas
               const rooms2 = pr.length > 1 && rect.length / 4 >= 90 ? splitN(rect, pr.length, 16, dg, 4) : [rect]; const hx = addHouse(sp, zone, rooms2, null, -1, rooms2.map((_, k2) => pr[k2] || pr[pr.length - 1]));
@@ -1027,7 +1037,7 @@
       } }
     // plaza y parques: portones centrados en sus tramos más largos de reja
     const rejaRuns = l => runs.filter(r => (r.a === l || r.b === l) && r.segs[0].cls === 'reja').sort((p, r2) => r2.segs.length - p.segs.length);
-    rejaRuns(RING).slice(0, 6).forEach(r => openMid(r, 'porton', 3, true));
+    rejaRuns(RING).filter(r => r.segs.length >= 6).slice(0, 12).forEach(r => openMid(r, 'porton', 3, true)); // el césped de la plaza: portones en cada lado
     for (let l = 6; l < kinds.length; l++) if (kinds[l] === 'parque' || kinds[l] === 'juegos') rejaRuns(l).slice(0, 2).forEach(r => openMid(r, 'porton', 2, true)); // todo pasto: al menos 2 entradas
     // caminos por cuartos de celda (ventana rota cuesta más, la mediana se salta)
     const segAt = new Map(segs.map(s2 => [s2.dir + (s2.dir[0] === 'd' ? Math.min(s2.a[0], s2.b[0]) + ',' + Math.min(s2.a[1], s2.b[1]) : s2.a[0] + ',' + s2.a[1]), s2]));
@@ -1122,6 +1132,40 @@
     for (const [cx, cy] of rotPts) for (let a = 0; a < 8; a++) { const th = (a + 0.5) * Math.PI / 4; trafico.flechas.push({ x: cx + Math.cos(th) * 8.5, y: cy + Math.sin(th) * 8.5, dx: +Math.sin(th).toFixed(3), dy: +(-Math.cos(th)).toFixed(3), ovalo: true }); }
     const route = s0 >= 0 ? (() => { const r = walk(s0, i => q[i] === PLAZA); if (r.i < 0) return null; const p = []; for (let j = r.i; j >= 0; j = r.prev[j]) p.push(j); return { quarters: p.reverse(), cost: r.dist[r.i] }; })() : null;
     const routeCells = route ? [...new Set(route.quarters.map(i => i >> 2))].map(c => [c % C, (c / C) | 0]) : [];
+    // RUTA PRINCIPAL (estilo Left 4 Dead): larga y con curvas, de A a la plaza pasando por adentro de edificios (casas, almacenes,
+    // tiendas, mercado...) y por patios y pasajes; la calle cuesta más que el interior. Es la ruta jugable; lo demás es relleno
+    const walkW = (start, goal, extra) => { // como walk, pero cada cuarto pesa según qué es (adentro barato, calle cara)
+      const W2 = l => { const k = kindOf(l); return k === 'room' || k === 'pasaje' || k === 'plaza' ? 1 : k === 'patio' || k === 'parking' || k === 'parque' || k === 'juegos' ? 2 : k === 'vereda' ? 3 : k === 'corr' ? 6 : 3; };
+      const dist = new Int32Array(NQ).fill(1e9), prev = new Int32Array(NQ).fill(-1), bk = [[start]]; dist[start] = 0;
+      const step = (i, j, s2, d) => { const c2 = cost(s2); if (!c2 || kindOf(q[j]) === 'out' || kindOf(q[j]) === 'agua') return; const nd = d + c2 * W2(q[j]) + (extra ? extra[j] : 0); if (nd < dist[j]) { dist[j] = nd; prev[j] = i; (bk[nd] = bk[nd] || []).push(j); } };
+      for (let d = 0; d < bk.length; d++) for (const i of bk[d] || []) { if (dist[i] !== d) continue; if (goal(i)) return { i, prev, dist };
+        const c = i >> 2, k = i & 3, x = c % C, y = (c / C) | 0, d1 = segAt.get('d1' + x + ',' + y), d2 = segAt.get('d2' + x + ',' + y);
+        if (k === 0) { step(i, i + 1, d2, d); step(i, i + 3, d1, d); if (y > 0) step(i, ((y - 1) * C + x) * 4 + 2, segAt.get('h' + x + ',' + y), d); }
+        else if (k === 1) { step(i, i - 1, d2, d); step(i, i + 1, d1, d); if (x < C - 1) step(i, (y * C + x + 1) * 4 + 3, segAt.get('v' + (x + 1) + ',' + y), d); }
+        else if (k === 2) { step(i, i - 1, d1, d); step(i, i + 1, d2, d); if (y < Rr - 1) step(i, ((y + 1) * C + x) * 4, segAt.get('h' + x + ',' + (y + 1)), d); }
+        else { step(i, i - 3, d1, d); step(i, i - 1, d2, d); if (x > 0) step(i, (y * C + x - 1) * 4 + 1, segAt.get('v' + x + ',' + y), d); } }
+      return null; };
+    let rutaPrincipal = null;
+    if (s0 >= 0 && route) { const pEnd = route.quarters[route.quarters.length - 1], ax = (s0 >> 2) % C, ay = ((s0 >> 2) / C) | 0, bx = (pEnd >> 2) % C, by = ((pEnd >> 2) / C) | 0, L = Math.hypot(bx - ax, by - ay) || 1, nx = -(by - ay) / L, ny = (bx - ax) / L;
+      const roomQ = new Map(); for (let i = 0; i < NQ; i++) if (kinds[q[i]] === 'room' && !roomQ.has(q[i])) roomQ.set(q[i], i);
+      const PREF = new Set(['almacen', 'super', 'mercado', 'comercial', 'tienda', 'casa', 'condominio', 'comida', 'oficinas', 'escuela', 'hospital', 'policia', 'bomberos']), K = rnd(5, 7), used = new Set(), wps = [];
+      for (let k = 1; k <= K; k++) { const f = k / (K + 1), side = k % 2 ? 1 : -1, off = side * L * (0.12 + R() * 0.16), tx = ax + (bx - ax) * f + nx * off, ty = ay + (by - ay) * f + ny * off;
+        const h = [...houses.values()].filter(h2 => PREF.has(h2.type) && h2.front && !used.has(h2.id)).sort((a, b) => Math.hypot(a.cx - tx, a.cy - ty) - Math.hypot(b.cx - tx, b.cy - ty))[0];
+        if (!h) continue; used.add(h.id); const rq = roomQ.get(h.front); if (rq != null) wps.push({ casa: h.id, tipo: h.type, i: rq }); }
+      const extra = new Int32Array(NQ), quarters = [s0]; let cur = s0, ok = true; const goals = [...wps.map(w => w.i), -1];
+      for (const g2 of goals) { const r = walkW(cur, g2 < 0 ? i => q[i] === PLAZA : i => q[i] === q[g2], extra); if (!r) { ok = false; break; }
+        const seg = []; for (let j = r.i; j >= 0 && j !== cur; j = r.prev[j]) seg.push(j); seg.reverse(); for (const j of seg) { quarters.push(j); extra[j] += 6; } cur = r.i; } // lo ya recorrido cuesta más: no vuelve por el mismo camino
+      if (ok) { const cells = []; let last = -1; for (const i of quarters) { const c = i >> 2; if (c !== last) { cells.push([c % C, (c / C) | 0]); last = c; } }
+        let adentro = 0; for (const i of quarters) if (kindOf(q[i]) === 'room') adentro++;
+        rutaPrincipal = { celdas: cells, pasaPor: wps.map(w => w.tipo), casas: wps.map(w => w.casa), largo: cells.length, adentro: +(adentro / quarters.length).toFixed(2) }; } }
+    // transitabilidad: qué tanto se puede recorrer a pie y en auto
+    const transito = (() => { if (s0 < 0) return null; const r = walk(s0, null), reach = r.dist; let walkable = 0, got = 0; const hs2 = new Set();
+      for (let i = 0; i < NQ; i++) { const k = kindOf(q[i]); if (k === 'out' || k === 'agua') continue; walkable++; if (reach[i] < 1e9) { got++; if (k === 'room') hs2.add(houseOf(q[i])); } }
+      let roadQ = 0; for (let i = 0; i < NQ; i++) if (q[i] === ROAD) roadQ++;
+      const front = [...houses.values()].filter(h => { const rs = byHouse.get(h.id) || []; return rs.some(rr => [rr.a, rr.b].some(l => l === ROAD || l === VEREDA) && rr.segs.some(x => x.cls === 'puerta' || x.cls === 'garaje')); }).length;
+      const pEnd = route ? route.quarters[route.quarters.length - 1] : -1, rect = pEnd >= 0 ? Math.hypot(((s0 >> 2) % C) - ((pEnd >> 2) % C), (((s0 >> 2) / C) | 0) - (((pEnd >> 2) / C) | 0)) : 0;
+      return { personas: { alcanzable: +(got / walkable).toFixed(3), edificiosAlcanzables: hs2.size, edificios: houses.size }, autos: { calzadaCeldas: Math.round(roadQ / 4), redesSeparadas: 1, edificiosConPuertaACalle: front },
+        rutaDirecta: route ? { pasos: route.cost, rodeo: rect ? +(routeCells.length / rect).toFixed(2) : null } : null, rutaPrincipal: rutaPrincipal ? { celdas: rutaPrincipal.largo, rodeo: rect ? +(rutaPrincipal.largo / rect).toFixed(2) : null, porDentro: rutaPrincipal.adentro } : null }; })();
     // refugios: casas junto a la ruta a 1/3 y 2/3; una sola entrada y ventanas cerradas
     const refuges = [];
     if (routeCells.length) for (const f of [1 / 3, 2 / 3]) {
@@ -1149,6 +1193,7 @@
     const anyRoom = c => [0, 1, 2, 3].some(k => kinds[q[c * 4 + k]] === 'room');
     for (const h of houses.values()) {
       const big = h.rooms.size;
+      if (h.torre) { h.pisos = 3; continue; } // torre de vigilancia: se sube a mirar
       if (h.type === 'corporativo') { h.pisos = 2; h.altura = rnd(6, 12); continue; } // torre: solo los pisos 1 y 2 se usan, el resto es fachada
       h.pisos = h.type === 'casa' ? (big < 4 || chance({ centro: 0.7, medio: 0.5 }[h.zone] ?? 0.3) ? 2 : 1) // casa chica: el resto de cuartos arriba
         : h.type === 'condominio' ? rnd(3, 5) : h.type === 'mansion' ? 2 : h.type === 'oficinas' ? rnd(2, 3) : h.type === 'tienda' ? (chance(0.4) ? 2 : 1) : h.type === 'comercial' ? rnd(2, 3)
@@ -1253,7 +1298,7 @@
     const count = c => segs.filter(s => s.cls === c).length, hs = [...houses.values()];
     const stats = {
       casas: hs.filter(h => h.type === 'casa').length, tiendas: hs.filter(h => h.type === 'tienda').length, oficinas: hs.filter(h => h.type === 'oficinas').length, condominios: hs.filter(h => h.type === 'condominio').length,
-      centroComercial: hs.filter(h => h.type === 'comercial').length, mansiones: nMans, patios: hs.filter(h => h.patio).length, almacenes: hs.filter(h => h.type === 'almacen').length, derribos: nDemol, rotondas: nRot, islasVerdes: nIsla, plazuelas: nPlazuela, granjas: nGranja, lotesVerdes: nVerde, comidaRapida: hs.filter(h => h.type === 'comida').length, torres: hs.filter(h => h.type === 'corporativo').length, edificiosRecinto: nAnexo, supermercados: hs.filter(h => h.type === 'super').length, mercados: hs.filter(h => h.type === 'mercado').length, barrios: barrios.length, pasajes: nPas, especiales: nSpecial, avenidaCentral: nBlvd, estacionamientos: nPark, rejasCalle: nBarr, rejasCierran: nBarrFull, garajes: nGar, salidasEmergencia: nEmerg, entradasRotas: nHueco, autopistas: nHwy, crucesArreglados: nFixX, esquinasArregladas: nFixW, sueltas: hs.filter(h => h.style === 'suelta').length, cuartosUnidos: nMerge, avenidas: nAv, accesosArreglados: nFix,
+      centroComercial: hs.filter(h => h.type === 'comercial').length, mansiones: nMans, patios: hs.filter(h => h.patio).length, almacenes: hs.filter(h => h.type === 'almacen').length, derribos: nDemol, rotondas: nRot, islasVerdes: nIsla, plazuelas: nPlazuela, granjas: nGranja, lotesVerdes: nVerde, comidaRapida: hs.filter(h => h.type === 'comida').length, torresVigilancia: nTorreV, torres: hs.filter(h => h.type === 'corporativo').length, edificiosRecinto: nAnexo, supermercados: hs.filter(h => h.type === 'super').length, mercados: hs.filter(h => h.type === 'mercado').length, barrios: barrios.length, pasajes: nPas, especiales: nSpecial, avenidaCentral: nBlvd, estacionamientos: nPark, rejasCalle: nBarr, rejasCierran: nBarrFull, garajes: nGar, salidasEmergencia: nEmerg, entradasRotas: nHueco, autopistas: nHwy, crucesArreglados: nFixX, esquinasArregladas: nFixW, sueltas: hs.filter(h => h.style === 'suelta').length, cuartosUnidos: nMerge, avenidas: nAv, accesosArreglados: nFix,
       cuartos: hs.reduce((a, h) => a + h.rooms.size, 0), refugios: refuges.length, parques: kinds.filter(k => k === 'parque').length, plazaCeldas: plaza ? Math.round(plaza.area) : 0,
       puertas: count('puerta'), ventanasCerradas: count('ventana'), ventanasRotas: count('ventanaRota'), rejas: count('reja'), portones: count('porton'), mediana: nMed,
       tramosDiagonales: segs.filter(s => s.dir[0] === 'd').length, ruta: route ? route.cost : null,
@@ -1271,7 +1316,7 @@
     const roomInfo = []; { const acc = new Map(); for (let i = 0; i < NQ; i++) { const l = q[i]; if (kinds[l] !== 'room') continue; const c = i >> 2; let a = acc.get(l); if (!a) acc.set(l, a = [0, 0, 0]); a[0] += c % C + 0.5; a[1] += ((c / C) | 0) + 0.5; a[2]++; }
       for (const [l, a] of acc) roomInfo.push({ l, cx: a[0] / a[2], cy: a[1] / a[2], area: a[2] / 4, role: roleOf.get(l) || '', arriba: rolesUp.get(l) || [] }); }
     for (const b of barrios) if (b.n) { b.cx = b.sx / b.n; b.cy = b.sy / b.n; }
-    return { motor: true, roomInfo, objetos, barrios: barrios.filter(b => b.n).map(b => ({ nombre: b.nombre, cx: b.cx, cy: b.cy, estilo: b.suelta > 0.5 ? 'casas sueltas con jardín' : 'casas adosadas' })), seed, n, W, H, C4: C, q, kinds, kindOf, houseOf, segs, houses, bossL: PLAZA, plaza, A, routeCells, stats, pisos, maxPisos, escaleras, puentes, viaMayor: major, rotondas: rotPts, trafico, decoracion: [...rotPts, ...decoPts].map(([x, y]) => ({ x, y })) };
+    return { motor: true, roomInfo, objetos, barrios: barrios.filter(b => b.n).map(b => ({ nombre: b.nombre, cx: b.cx, cy: b.cy, estilo: b.suelta > 0.5 ? 'casas sueltas con jardín' : 'casas adosadas' })), seed, n, W, H, C4: C, q, kinds, kindOf, houseOf, segs, houses, bossL: PLAZA, plaza, A, routeCells, rutaPrincipal, transito, stats, pisos, maxPisos, escaleras, puentes, viaMayor: major, rotondas: rotPts, trafico, decoracion: [...rotPts, ...decoPts].map(([x, y]) => ({ x, y })) };
   }
 
   root.MotorCiudad = { generate };

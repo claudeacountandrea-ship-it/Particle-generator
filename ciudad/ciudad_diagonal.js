@@ -218,6 +218,7 @@
       else if (ob.tipo === 'tobogan') add('Tobogan', 'Wedge', [X(ob.x), 3 * sc2, Z(ob.y)], [3 * sc2, 6 * sc2, 10 * sc2], '#e04f4f', 'Plastic', null, ob.x, ob.y);
       else if (ob.tipo === 'columpio') add('Columpio', 'Block', [X(ob.x), 4 * sc2, Z(ob.y)], [10 * sc2, 8 * sc2, 1 * sc2], '#3f7fd9', 'Metal', null, ob.x, ob.y);
       else add('Arenero', 'Block', [X(ob.x), 0.3 * sc2, Z(ob.y)], [8 * sc2, 0.6 * sc2, 8 * sc2], '#e8d28a', 'Sand', null, ob.x, ob.y); }
+    if (o.marcas !== false) for (const [x2, y2, len] of cajones(c)) add('LineaCajon', 'Block', [X(x2), 0.05, Z(y2 + len / 2)], [0.4, 0.1, len * C], '#f2f2f2', 'SmoothSurface', null, x2, y2);
     // marcas del piso: líneas entre carriles y flechas del sentido del tráfico (piezas planas blancas)
     if (c.trafico && o.marcas !== false) { for (const l of c.trafico.lineas) { const hor = l.y1 === l.y2, len = (hor ? l.x2 - l.x1 : l.y2 - l.y1) * C, cx = (l.x1 + l.x2) / 2, cy = (l.y1 + l.y2) / 2; add('LineaCarril', 'Block', [X(cx), 0.05, Z(cy)], hor ? [len, 0.1, 0.4] : [0.4, 0.1, len], '#f2f2f2', 'SmoothSurface', null, cx, cy); }
       for (const f of c.trafico.flechas) add('FlechaCarril', 'Block', [X(f.x), 0.05, Z(f.y)], [C * 1.6, 0.1, 0.6], '#f2f2f2', 'SmoothSurface', [0, +(-Math.atan2(f.dy, f.dx) * 180 / Math.PI).toFixed(1), 0], f.x, f.y); }
@@ -238,6 +239,7 @@
       PlayerStart: A ? { pos: at(A), nota: c.A ? 'punto A: la entrada de la muralla' : 'punto A: el patio de entrada de la ciudad' } : null,
       refugios: [...c.houses.values()].filter(h => h.refuge).map((h, i) => ({ nombre: h.final ? 'B (refugio final)' : 'Refugio ' + (i + 1), pos: at(h), casa: h.type })),
       ...(c.plaza ? { plaza: { nombre: 'B: plaza (llegada)', pos: at(c.plaza), celdas: Math.round(c.plaza.area) } } : {}),
+      ...(c.rutaPrincipal ? { rutaPrincipal: { nota: 'ruta jugable de A a la plaza: larga, con curvas y por adentro de edificios; lo demás es relleno', pasaPor: c.rutaPrincipal.pasaPor, puntos: c.rutaPrincipal.celdas.filter((_, k2) => k2 % 3 === 0).map(([x, y]) => [X(x + 0.5), 0, Z(y + 0.5)]) } } : {}),
       ...(c.decoracion ? { decoracion: c.decoracion.map(d => ({ pos: [X(d.x), 0, Z(d.y)], nota: 'isla libre: estatua, letrero o árbol' })) } : {}),
       ...(c.trafico ? { sentidoTrafico: c.trafico.flechas.map(f => ({ pos: [X(f.x), 0, Z(f.y)], dir: [+f.dx.toFixed(3), 0, +f.dy.toFixed(3)], ovalo: !!f.ovalo })) } : {}),
     };
@@ -246,6 +248,9 @@
 
   // ---------- dibujo para el visor
   const COLS = { taller: '#a8a29a', kiosco: '#d6dde3', cancha: '#b5643c', helipuerto: '#56606e', corporativo: '#7fa3c4', super: '#9fd3b0', comida: '#f0b860', mercado: '#c9d28f', mansion: '#d8c4a0', calle: '#45494f', vereda: '#9a958c', pasaje: '#7a6d5c', out: '#2f3d26', ruina: '#3a332c', casa: '#c9a77c', tienda: '#b9c4cc', edificio: '#a39d93', oficinas: '#8fa3b8', condominio: '#d3b98f', comercial: '#e6e1d6', almacen: '#8d8a83', parking: '#585c63', escuela: '#e8c26a', rotonda: '#6fa34a', cantero: '#7cb35a', hospital: '#e9eef2', policia: '#5b7bb0', bomberos: '#c9574a', militar: '#7a8250', carcel: '#77736e', agua: '#3d7fb3', juegos: '#93c463', mercado: '#b6ad98', entrada: '#7f9150', refugio: '#e8b23a', plaza: '#b6ad98', parque: '#5d8a3f', patio: '#7f9a4c' };
+  // cajones de estacionamiento: líneas de 2 celdas en las celdas enteras de estacionamiento (en la rejilla recta)
+  const cajones = c => { const out = [], { C4, H, q } = c, full = (x, y) => x >= 0 && y >= 0 && x < C4 && y < H - 1 && [0, 1, 2, 3].every(k => c.kindOf(q[(y * C4 + x) * 4 + k]) === 'parking');
+    for (let y = 0; y < H - 2; y++) { const m = ((y % 6) + 6) % 6; if (m !== 0 && m !== 4) continue; for (let x = 0; x < C4; x += 2) if (full(x, y) && full(x, y + 1) && full(x - 1, y) && full(x - 1, y + 1)) out.push([x, y, 2]); } return out; };
   // cada casa con su propio tono (variación del color de su tipo), para distinguir casas vecinas
   const shade = (hex, f) => { const v = parseInt(hex.slice(1), 16), ch = sh => Math.max(0, Math.min(255, Math.round(((v >> sh) & 255) * f))); return '#' + [16, 8, 0].map(sh => ch(sh).toString(16).padStart(2, '0')).join(''); };
   const houseTone = (h, base) => shade(base, (h.tint ? 0.88 : 0.8) + ((h.id * 2654435761 >>> 0) % 1000) / 1000 * (h.tint ? 0.24 : 0.4)); // en un barrio, tonos parecidos
@@ -286,7 +291,8 @@
       for (const f of c.trafico.flechas) { const L = 0.9, px = f.x * s, py = f.y * s, ux = f.dx, uy = f.dy, nx2 = -uy, ny2 = ux; g.beginPath(); g.moveTo(px - ux * L * s, py - uy * L * s); g.lineTo(px + ux * L * s, py + uy * L * s);
         g.moveTo(px + (ux * L - ux * 0.55 + nx2 * 0.45) * s, py + (uy * L - uy * 0.55 + ny2 * 0.45) * s); g.lineTo(px + ux * L * s, py + uy * L * s); g.lineTo(px + (ux * L - ux * 0.55 - nx2 * 0.45) * s, py + (uy * L - uy * 0.55 - ny2 * 0.45) * s); g.stroke(); } }
     if (c.decoracion && piso === 1 && opt.decoracion) for (const d of c.decoracion) { g.fillStyle = '#f2d36b'; g.strokeStyle = '#3a2a08'; g.lineWidth = 1; g.beginPath(); for (let a = 0; a < 10; a++) { const r2 = (a % 2 ? 0.45 : 1.1) * s, an = a * Math.PI / 5 - Math.PI / 2; a ? g.lineTo(d.x * s + Math.cos(an) * r2, d.y * s + Math.sin(an) * r2) : g.moveTo(d.x * s + Math.cos(an) * r2, d.y * s + Math.sin(an) * r2); } g.closePath(); g.fill(); g.stroke(); }
-    if (opt.route) { g.fillStyle = 'rgba(95,211,232,.55)'; for (const [x, y] of c.routeCells) g.fillRect(x * s + s * .2, y * s + s * .2, s * .6, s * .6); }
+    if (opt.route) { g.fillStyle = 'rgba(95,211,232,.45)'; for (const [x, y] of c.routeCells) g.fillRect(x * s + s * .3, y * s + s * .3, s * .4, s * .4); // ruta directa (referencia)
+      if (c.rutaPrincipal) { const P = c.rutaPrincipal.celdas; g.strokeStyle = 'rgba(255,140,30,.9)'; g.lineWidth = Math.max(2, s * 0.45); g.lineJoin = 'round'; g.lineCap = 'round'; g.beginPath(); P.forEach(([x, y], k2) => k2 ? g.lineTo((x + 0.5) * s, (y + 0.5) * s) : g.moveTo((x + 0.5) * s, (y + 0.5) * s)); g.stroke(); } } // ruta principal (la jugable)
     const ST = {
       exterior: ['#121416', .32], interior: ['#121416', .26], medianera: ['#121416', .32], muralla: ['#7a4b3a', .5], ruina: ['#5a4d42', .3],
       puerta: ['#c0782f', .24], muro: ['#2a211c', .55], garaje: ['#d9d4c7', .3, [.35, .12]], hueco: ['#ff8a1f', .2, [.12, .25]], bordillo: ['#d8d2c4', .14], mediana: ['#e3c75a', .18, [.6, .3]], entrada: ['#7fe08a', .3, [.1, .3]], ventana: ['#8ecae6', .2], ventanaRota: ['#ff8a1f', .26, [.2, .15]], reja: ['#c5ccd3', .16, [.25, .2]], porton: ['#7fe08a', .16, [.08, .3]],
@@ -305,6 +311,9 @@
       for (const [, a] of acc) { const px = a[0] / a[2] * s, py = a[1] / a[2] * s, r = Math.sqrt(a[2]) * s * 0.35; g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = Math.max(1, s * 0.15);
         if (a[3] === 'helipuerto') { g.beginPath(); g.arc(px, py, r, 0, 7); g.stroke(); g.fillStyle = '#fff'; g.font = `800 ${Math.max(10, Math.round(r))}px Saira Condensed, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('H', px, py); }
         else { g.beginPath(); g.arc(px, py, r * 0.4, 0, 7); g.stroke(); g.beginPath(); g.moveTo(px, py - r); g.lineTo(px, py + r); g.stroke(); } } }
+    // estacionamientos: cajones pintados (filas de 2 de fondo con pasillo de 2 al medio, un cajón cada 2 celdas)
+    { g.strokeStyle = 'rgba(240,240,240,.7)'; g.lineWidth = Math.max(1, s * 0.08);
+      for (const [x2, y2, len] of cajones(c)) { g.beginPath(); g.moveTo(x2 * s, y2 * s); g.lineTo(x2 * s, (y2 + len) * s); g.stroke(); } }
     // estacionamientos: una P en el medio
     g.textAlign = 'center'; g.textBaseline = 'middle';
     for (const [, a] of pk) if (a[2] > 30) { g.fillStyle = '#e6e6e6'; g.font = `800 ${Math.max(10, Math.round(s * 3))}px Saira Condensed, sans-serif`; g.fillText('P', a[0] / a[2] * s, a[1] / a[2] * s); }

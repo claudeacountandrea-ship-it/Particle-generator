@@ -21,7 +21,7 @@ const list = out.chunks.map((c, k) => {
 const index = {
   formato: 'TruWorlds piezas v1: {name, shape, pos, size, rot (grados, orden Y,X,Z), color 0-1, material}; studs; Y arriba; el norte del mapa mira a -Z; el mapa está centrado en el origen',
   modo: motor ? 'ciudad (motor derivado de la mazmorra)' : diag ? 'diagonal (mazmorra pintada)' : 'cuadricula', semilla: seed, tamano: diag ? `${w}x${w} (lattice de la mazmorra)` : `${w}x${h} celdas`, medidas: out.medidas, escala: out.scale,
-  totalPiezas: out.parts.length, chunks: list, spawns: out.spawns, estadisticas: map.stats,
+  totalPiezas: out.parts.length, chunks: list, spawns: out.spawns, estadisticas: map.stats, transitabilidad: map.transito || null,
 };
 fs.writeFileSync(path.join(dir, 'index.json'), JSON.stringify(index, null, 1));
 if (opts.techos) console.log('techos de diseño:', Object.keys(opts.techos).join(', '));

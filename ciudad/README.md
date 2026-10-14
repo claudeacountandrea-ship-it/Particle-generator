@@ -229,6 +229,24 @@ Las puertas son huecos en la pared, sin hoja.
 - **Comisaría y bomberos**: plantillas con baños; comisaría con garaje policial, pabellón de celdas y armería con vestuario;
   bomberos con cocheras, dormitorio, cocina, baños, gimnasio, sala de guardia y oficina, más torre de práctica, vestuario y taller.
 
+## Ruta principal, transitabilidad, torres y cajones
+- **Dos rutas de A a B**: la **directa** (la más corta, cuadritos celestes en el visor) y la **principal** (línea naranja). La
+  principal es semilarga y no va recta: pasa por 5 a 7 edificios elegidos a un lado y al otro de la línea A→B (zigzag), entra
+  por la puerta del frente y sale por otra, y cruza patios, pasajes y estacionamientos; prefiere ir por dentro antes que por la
+  vereda. Es la que se usa para jugar (ahí van los obstáculos); todo lo demás es relleno.
+  En el modelo: `rutaPrincipal = { celdas, pasaPor, casas, largo, adentro }`; en `index.json` → `spawns.rutaPrincipal` (un punto
+  cada 3 celdas) y `spawns.rutaPrincipal.pasaPor` (los edificios en orden).
+- **Transitabilidad** (`index.json` → `transitabilidad`):
+  - `personas.alcanzable`: fracción del suelo caminable al que se llega a pie desde A (1 = todo); `edificiosAlcanzables` de `edificios`.
+  - `autos.calzadaCeldas`: celdas de calzada; `redesSeparadas`: 1 = toda la calle conectada (sin calles imposibles);
+    `edificiosConPuertaACalle`: edificios con puerta o garaje a la vereda/calle.
+  - `rutaDirecta.pasos` y `rodeo` (largo / distancia en línea recta); `rutaPrincipal.celdas`, `rodeo` (≈3,5 a 4,5) y
+    `porDentro` (fracción de la ruta que va dentro de edificios).
+- **Torres de vigilancia**: la base militar y la cárcel ponen una torre de ≈4×4 y 3 pisos en las esquinas del terreno, junto al
+  muro, con la puerta al patio.
+- **Estacionamientos con cajones**: líneas `LineaCajon` (pintura en el suelo) en filas de 2 celdas de fondo con pasillo de 2
+  entre filas; una sola entrada de autos hacia la calle. Con `--marcas=no` no se exportan.
+
 ## Medidas arcade (fáciles de cambiar)
 Las medidas no son realistas, son de juego: números redondos en metros de Blender (1 m = 4 studs), pensados para un
 personaje de unos 3 m. Lo que en la vida mide 2, aquí mide 3. Están todas en la tabla `MEDIDAS` de `ciudad.js`:
@@ -271,5 +289,7 @@ La salida queda en `ciudad/export/<modo>_semilla_<n>/`. El modo diagonal tarda u
 - **Ruta A→B**: el visor marca la ruta más corta (pasando por casas y ventanas) y la ruta solo por calles, para ver cuánto ahorra el atajo.
 
 ## Pendiente
+- Subidas: calles a distinta altura con rampas.
+- Obstáculos en la ruta principal (rejas, autos, demoliciones, casas destruidas) y alcantarillas como tramo de la ruta.
 - Generador de puente: una pista muy ancha con obstáculos, huecos y autos chocados.
 - Autos y choques en el modo diagonal (las calles de 2 no dejan espacio sin taparlas).
