@@ -191,6 +191,14 @@ Las puertas son huecos en la pared, sin hoja.
 - **Cada construcción con su espacio**: algunas manzanas medianas del centro y del anillo medio son un solo lote con un
   **supermercado** (sala de ventas, depósito y carga) o una **comida rápida** (comedor, cocina, baño) retirados de la calle,
   con su estacionamiento adelante y su entrada de autos. La comida rápida chica (lote menor a 130) pasa a tienda.
+- **Programa mínimo de cada construcción** (auditable con `node ciudad/auditar.js 7`): tienda (local, depósito, baño), oficinas
+  (recepción, sala de reuniones, oficinas, baño), comida rápida (comedor, cocina, baño), supermercado (sala de ventas, depósito,
+  carga, baño), almacén (almacén, oficina, bodega, baño), condominio (cada departamento con sala, dormitorio y baño), y los usos
+  clave de hospital, escuela, comisaría, bomberos, mercado, base y cárcel. Si al partir falta un uso, lo toma un cuarto repetido
+  o genérico. Casas y negocios sin jardín dejan un patio atrás cuando el lote alcanza.
+- **Instalaciones como mini ciudades**: en terrenos grandes el edificio principal va en un extremo y en el patio se levantan
+  otros edificios: hospital (urgencias y sala de espera, laboratorio y farmacia, mantenimiento, capilla), escuela (aulas,
+  comedor, biblioteca), comisaría (garaje policial, celdas), bomberos (torre de práctica, taller), mercado (puestos).
 - **Base militar y cárcel**: una mini ciudad dentro del muro: el cuartel en un extremo del terreno y en el patio otros
   edificios separados (barracas, comedor y cocina, hangar, taller; en la cárcel, pabellones, comedor y taller).
 - **Antejardín**: en la mitad de los barrios la casa se retira 3 de la vereda y se entra por un jardín al frente.

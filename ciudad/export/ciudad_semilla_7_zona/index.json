@@ -26,7 +26,7 @@
    912
   ]
  },
- "totalPiezas": 591,
+ "totalPiezas": 588,
  "chunks": [
   {
    "archivo": "chunk_00.json",
@@ -46,7 +46,7 @@
     0,
     -1440
    ],
-   "piezas": 77
+   "piezas": 78
   },
   {
    "archivo": "chunk_02.json",
@@ -56,7 +56,7 @@
     0,
     -1184
    ],
-   "piezas": 86
+   "piezas": 85
   },
   {
    "archivo": "chunk_03.json",
@@ -76,7 +76,7 @@
     0,
     -1440
    ],
-   "piezas": 294
+   "piezas": 264
   },
   {
    "archivo": "chunk_05.json",
@@ -86,7 +86,7 @@
     0,
     -1184
    ],
-   "piezas": 116
+   "piezas": 136
   },
   {
    "archivo": "chunk_06.json",
@@ -96,7 +96,7 @@
     0,
     -1440
    ],
-   "piezas": 12
+   "piezas": 20
   },
   {
    "archivo": "chunk_07.json",
@@ -106,7 +106,7 @@
     0,
     -1184
    ],
-   "piezas": 4
+   "piezas": 3
   }
  ],
  "spawns": {
@@ -114,7 +114,7 @@
    "pos": [
     -1820,
     12,
-    68
+    -28
    ],
    "nota": "punto A: la entrada de la muralla"
   },
@@ -122,11 +122,11 @@
    {
     "nombre": "Refugio 1",
     "pos": [
-     -1114.4,
+     -928.926,
      12,
-     181.422
+     51.815
     ],
-    "casa": "casa"
+    "casa": "condominio"
    },
    {
     "nombre": "Refugio 2",
@@ -1770,32 +1770,6 @@
    },
    {
     "pos": [
-     -276,
-     0,
-     516
-    ],
-    "dir": [
-     0,
-     0,
-     -1
-    ],
-    "ovalo": false
-   },
-   {
-    "pos": [
-     -300,
-     0,
-     516
-    ],
-    "dir": [
-     0,
-     0,
-     1
-    ],
-    "ovalo": false
-   },
-   {
-    "pos": [
      -130,
      0,
      -1276
@@ -2459,19 +2433,6 @@
    },
    {
     "pos": [
-     220,
-     0,
-     708
-    ],
-    "dir": [
-     0,
-     0,
-     -1
-    ],
-    "ovalo": false
-   },
-   {
-    "pos": [
      196,
      0,
      468
@@ -2501,19 +2462,6 @@
      196,
      0,
      628
-    ],
-    "dir": [
-     0,
-     0,
-     1
-    ],
-    "ovalo": false
-   },
-   {
-    "pos": [
-     196,
-     0,
-     708
     ],
     "dir": [
      0,
@@ -5176,7 +5124,7 @@
    },
    {
     "pos": [
-     68,
+     92,
      0,
      -244
     ],
@@ -5189,33 +5137,7 @@
    },
    {
     "pos": [
-     148,
-     0,
-     -244
-    ],
-    "dir": [
-     1,
-     0,
-     0
-    ],
-    "ovalo": false
-   },
-   {
-    "pos": [
-     68,
-     0,
-     -268
-    ],
-    "dir": [
-     -1,
-     0,
-     0
-    ],
-    "ovalo": false
-   },
-   {
-    "pos": [
-     148,
+     92,
      0,
      -268
     ],
@@ -6528,7 +6450,7 @@
    },
    {
     "pos": [
-     -540,
+     -516,
      0,
      268
     ],
@@ -6541,7 +6463,7 @@
    },
    {
     "pos": [
-     -460,
+     -436,
      0,
      268
     ],
@@ -6554,7 +6476,7 @@
    },
    {
     "pos": [
-     -540,
+     -516,
      0,
      244
     ],
@@ -6567,7 +6489,7 @@
    },
    {
     "pos": [
-     -460,
+     -436,
      0,
      244
     ],
@@ -6866,6 +6788,19 @@
    },
    {
     "pos": [
+     660,
+     0,
+     828
+    ],
+    "dir": [
+     1,
+     0,
+     0
+    ],
+    "ovalo": false
+   },
+   {
+    "pos": [
      500,
      0,
      804
@@ -6880,6 +6815,19 @@
    {
     "pos": [
      580,
+     0,
+     804
+    ],
+    "dir": [
+     -1,
+     0,
+     0
+    ],
+    "ovalo": false
+   },
+   {
+    "pos": [
+     660,
      0,
      804
     ],
@@ -8194,21 +8142,21 @@
  },
  "estadisticas": {
   "casas": 67,
-  "tiendas": 26,
-  "oficinas": 18,
-  "condominios": 24,
+  "tiendas": 28,
+  "oficinas": 17,
+  "condominios": 22,
   "centroComercial": 1,
   "mansiones": 2,
-  "patios": 75,
+  "patios": 91,
   "almacenes": 2,
   "derribos": 3,
   "rotondas": 4,
   "islasVerdes": 13,
   "lotesVerdes": 2,
-  "comidaRapida": 5,
-  "edificiosRecinto": 2,
+  "comidaRapida": 8,
+  "edificiosRecinto": 7,
   "supermercados": 3,
-  "mercados": 1,
+  "mercados": 2,
   "barrios": 9,
   "pasajes": 7,
   "especiales": {
@@ -8222,36 +8170,36 @@
    "lago": 1
   },
   "avenidaCentral": 0,
-  "estacionamientos": 16,
-  "rejasCalle": 15,
-  "rejasCierran": 2,
-  "garajes": 14,
-  "salidasEmergencia": 39,
-  "entradasRotas": 30,
+  "estacionamientos": 15,
+  "rejasCalle": 21,
+  "rejasCierran": 11,
+  "garajes": 5,
+  "salidasEmergencia": 42,
+  "entradasRotas": 36,
   "autopistas": 2,
   "crucesArreglados": 0,
-  "esquinasArregladas": 673,
-  "sueltas": 38,
-  "cuartosUnidos": 2,
+  "esquinasArregladas": 762,
+  "sueltas": 48,
+  "cuartosUnidos": 1,
   "avenidas": 0,
-  "accesosArreglados": 1,
-  "cuartos": 547,
+  "accesosArreglados": 4,
+  "cuartos": 579,
   "refugios": 2,
-  "parques": 15,
+  "parques": 11,
   "plazaCeldas": 2664,
-  "puertas": 1449,
-  "ventanasCerradas": 617,
-  "ventanasRotas": 127,
-  "rejas": 3377,
-  "portones": 314,
-  "mediana": 1934,
-  "tramosDiagonales": 6307,
-  "ruta": 900,
-  "edificiosDe2oMas": 114,
+  "puertas": 1514,
+  "ventanasCerradas": 652,
+  "ventanasRotas": 155,
+  "rejas": 3676,
+  "portones": 315,
+  "mediana": 1906,
+  "tramosDiagonales": 6517,
+  "ruta": 902,
+  "edificiosDe2oMas": 118,
   "pisosMax": 5,
-  "escaleras": 123,
-  "escalerasAlTecho": 53,
-  "puentes": 9,
-  "tablas": 26
+  "escaleras": 134,
+  "escalerasAlTecho": 68,
+  "puentes": 26,
+  "tablas": 25
  }
 }
