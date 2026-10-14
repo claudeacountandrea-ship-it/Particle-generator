@@ -10,7 +10,7 @@ const args = Object.fromEntries(process.argv.slice(2).map(a => a.replace(/^--/, 
 const seed = +(args.semilla ?? 7), modo = args.modo ?? 'ciudad', diag = modo !== 'cuadricula', motor = modo === 'ciudad';
 const [w, h] = diag ? [+(args.n ?? (motor ? 12 : 19)), 0] : (args.tamano ?? '150x110').split('x').map(Number);
 const map = motor ? MotorCiudad.generate({ seed, n: w }) : diag ? CiudadDiagonal.generate({ seed, n: w }) : Ciudad.generate({ seed, w, h }), ligera = 'ligera' in args, zona = args.zona ? args.zona.split(',').map(Number) : null, tdir = path.join(__dirname, 'disenos', 'techos'), techos = fs.existsSync(tdir) ? Object.fromEntries(fs.readdirSync(tdir).filter(f => f.endsWith('.json')).map(f => [f.slice(0, -5), JSON.parse(fs.readFileSync(path.join(tdir, f), 'utf8'))])) : {},
-  opts = { pisos: !ligera && args.pisos !== 'no', pisoInterior: !ligera && args.pisoInterior !== 'no', roofs: args.techos !== 'no', zona, techos: Object.keys(techos).length ? techos : null }, out = diag ? CiudadDiagonal.toParts(map, opts) : Ciudad.toParts(map);
+  opts = { pisos: !ligera && args.pisos !== 'no', pisoInterior: !ligera && args.pisoInterior !== 'no', roofs: args.techos !== 'no', marcas: !ligera && args.marcas !== 'no', techoSimple: ligera, zona, techos: Object.keys(techos).length ? techos : null }, out = diag ? CiudadDiagonal.toParts(map, opts) : Ciudad.toParts(map);
 const dir = path.join(__dirname, 'export', `${motor ? 'ciudad' : diag ? 'diagonal' : 'cuadricula'}_semilla_${seed}${ligera ? '_ligera' : ''}${zona ? '_zona' : ''}`);
 fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
 const list = out.chunks.map((c, k) => {

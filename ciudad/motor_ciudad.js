@@ -39,7 +39,7 @@
     }
     // 2) escala ×F por cuartos
     // margen alrededor de la ciudad para el anillo de asfalto y las autopistas de salida
-    const M = o.margen ?? 24, C = C0 * F + 2 * M, Rr = R0 * F + 2 * M, W = C + 1, H = Rr + 1, NQ = C * Rr * 4;
+    const M = o.margen ?? 50, C = C0 * F + 2 * M, Rr = R0 * F + 2 * M, W = C + 1, H = Rr + 1, NQ = C * Rr * 4;
     const orig = new Int32Array(NQ);
     for (let y = 0; y < Rr; y++) for (let x = 0; x < C; x++) for (let k = 0; k < 4; k++) {
       const px = (x - M + CEN[k][0]) / F, py = (y - M + CEN[k][1]) / F, cx = Math.floor(px), cy = Math.floor(py);
@@ -63,6 +63,20 @@
         for (let y = 0; y < Rr; y++) for (let x = 0; x < C; x++) {
           const along = dx ? (x - cx) * dx : (y - cy) * dy, across = dx ? y - (cy + off) : x - (cx + off);
           if (along > 0 && across >= -8 && across < 8) /* autopista: 2 carriles de 3 por sentido + mediana + veredas = 16 */ for (let k = 0; k < 4; k++) { const i = (y * C + x) * 4 + k; if (!t[i]) { t[i] = 1; major[y * C + x] = 1; hwyM[y * C + x] = 1; } } } } }
+    // caminos rurales: 1 o 2 caminos angostos (8) salen del anillo al campo y terminan en una granja (caserío y su campo)
+    let nGranja = 0; const camposCultivo = [];
+    if (o.granjas !== false) { let sx = 0, sy = 0, sn = 0; for (let i = 0; i < NQ; i++) if (cityQ[i]) { const c = i >> 2; sx += c % C; sy += (c / C) | 0; sn++; } const gx = Math.round(sx / sn), gy = Math.round(sy / sn);
+      const free = (x, y) => x >= 2 && y >= 2 && x < C - 2 && y < Rr - 2 && [0, 1, 2, 3].every(k => t[(y * C + x) * 4 + k] === 0);
+      const quiero = rnd(1, 2); for (const [dx, dy, off0] of mezcla([[1, 0], [-1, 0], [0, 1], [0, -1]], R).flatMap(d => [[...d, rnd(-60, -25)], [...d, rnd(25, 60)]])) { if (nGranja >= quiero) break; const off = off0, P2 = (d, a) => dx ? [gx + dx * d, gy + off + a] : [gx + off + a, gy + dy * d];
+        let d0 = -1, seenCity = false; for (let d = 0; d < Math.max(C, Rr); d++) { const [x, y] = P2(d, 0); if (x < 0 || y < 0 || x >= C || y >= Rr) break; if (!free(x, y)) seenCity = true; else if (seenCity && [-6, 0, 6].every(a => free(...P2(d, a)))) { d0 = d; break; } }
+        if (d0 < 0) continue; const dEnd = d0 + rnd(4, 8); if (![-12, 0, 12].every(a => free(...P2(dEnd + 19, a)))) continue; // tiene que entrar la granja
+        if ([...Array(dEnd - d0 + 30).keys()].some(k2 => [-18, 18].some(a => { const [x, y] = P2(d0 + k2, a); return x >= 0 && y >= 0 && x < C && y < Rr && hwyM[y * C + x]; }))) continue; // lejos de la autopista
+        nGranja++;
+        const setT = (d, a, v) => { const [x, y] = P2(d, a); if (x < 0 || y < 0 || x >= C || y >= Rr) return; for (let k = 0; k < 4; k++) { const i = (y * C + x) * 4 + k; if (t[i] === 0) t[i] = v; } };
+        for (let d = d0 - 3; d <= dEnd; d++) for (let a = -4; a < 4; a++) setT(d, a, 1); // el camino
+        for (let d = dEnd + 1; d <= dEnd + 18; d++) for (let a = -11; a < 11; a++) setT(d, a, 1 + (Math.abs(a) < 9 && d > dEnd + 1 && d < dEnd + 17 ? 2 : 0)); // caserío: manzana con su calle alrededor
+        const side = chance(0.5) ? 1 : -1, field = []; for (let d = dEnd - 4; d <= dEnd + 18; d++) for (let a = 13; a < 30; a++) { const [x, y] = P2(d, side * a); if (free(x, y)) field.push([x, y]); }
+        camposCultivo.push(field); for (const [x, y] of field) for (let k = 0; k < 4; k++) t[(y * C + x) * 4 + k] = 4; } } // campo de cultivo (pasto)
     // TRAZADO POR ETAPAS (o.trazado !== 'mazmorra'): 1) la silueta es la de la mazmorra; 2) la silueta se parte en barrios con
     // cortes rectos o a 45° y cada corte es una avenida (16 de ancho los primeros, 12 los siguientes); 3) el barrio del centro
     // conserva las calles orgánicas de la mazmorra (casco antiguo, con la plaza); 4) cada otro barrio tiene su cuadrícula de
@@ -240,6 +254,17 @@
           const i = (y * C + x) * 4 + k, dx = Math.abs(x + CEN[k][0] - cx), dy = Math.abs(y + CEN[k][1] - cy);
           if (dx < 5 && dy < 5 && dx + dy < 7) t[i] = 9; // isla de la rotonda
           else if (dx < 14 && dy < 14 && dx + dy < 20 && t[i] !== 0 && t[i] !== 2) t[i] = 1; } } } }
+    // plazuelas: donde el asfalto sobra (a más de 7 celdas de cualquier borde, fuera de avenidas y óvalos), el centro de ese
+    // espacio pasa a ser una plazuela verde con su vereda; alrededor queda una calzada normal de ~6
+    let nPlazuela = 0;
+    { const NR = t.map(v => v === 1 ? 0 : 1), G = grow(NR, 7), I0 = new Uint8Array(NQ); // por cuartos: las diagonales del borde quedan limpias
+      const nearRot = c => rotPts.some(([rx, ry]) => Math.max(Math.abs(c % C - rx), Math.abs(((c / C) | 0) - ry)) < 18);
+      for (let i = 0; i < NQ; i++) if (t[i] === 1 && !G[i] && !major[i >> 2] && !nearRot(i >> 2)) I0[i] = 1;
+      const I1 = grow(I0, 1); for (let i = 0; i < NQ; i++) if (I1[i] && t[i] !== 1) I1[i] = 0;
+      const seen = new Uint8Array(NQ); for (let s0 = 0; s0 < NQ; s0++) { if (!I1[s0] || seen[s0]) continue; const st = [s0], mem = []; seen[s0] = 1;
+        while (st.length) { const i = st.pop(); mem.push(i); nb(i, j => { if (I1[j] && !seen[j]) { seen[j] = 1; st.push(j); } }); }
+        if (mem.length / 4 < 9) continue; nPlazuela++; for (const i of mem) t[i] = 4; // hueco → plazuela o juegos
+        let sx = 0, sy = 0; for (const i of mem) { const c = i >> 2; sx += c % C; sy += (c / C) | 0; } decoPts.push([Math.round(sx / mem.length) + 0.5, Math.round(sy / mem.length) + 0.5]); } }
     // asfalto que sobra: donde la calzada es muy ancha en todas direcciones, una isla verde al medio (la vía no queda tan vacía)
     { const R1 = new Uint8Array(C * Rr); for (let c = 0; c < C * Rr; c++) R1[c] = [0, 1, 2, 3].every(k => t[c * 4 + k] === 1) ? 1 : 0;
       const rad = 12, cand = []; for (let y = rad; y < Rr - rad; y += 2) for (let x = rad; x < C - rad; x += 2) { if (!R1[y * C + x]) continue; let ok = true; for (let dy = -rad; dy <= rad && ok; dy++) for (let dx = -rad; dx <= rad; dx++) if (Math.abs(dx) + Math.abs(dy) <= rad + 4 && !R1[(y + dy) * C + x + dx]) { ok = false; break; } if (ok) cand.push([x, y]); }
@@ -469,8 +494,8 @@
     // programa de una casa: cada cuarto con su peso de área (la sala es la más grande y da a la calle, el baño es la mitad
     // de un dormitorio, la cocina como un dormitorio y hacia el patio); el corte cae donde reparte el área según los pesos
     const PROG = { sala: [2, 36, 2], garaje: [1.4, 32, 1], cocina: [1.05, 26, -1], dormitorio: [1, 26, 0], baño: [0.4, 14, -0.5], estudio: [0.8, 20, 0],
-      local: [2.4, 40, 2], depósito: [1, 20, -1], recepción: [1.3, 26, 2], oficina: [1, 22, 0], 'sala de reuniones': [1.2, 26, 0], comedor: [2, 36, 2], 'sala de ventas': [3, 60, 2], carga: [0.8, 24, -1] };
-    const negocioProg = (type, a) => type === 'tienda' ? (a >= 95 ? ['local', 'depósito', 'baño'] : ['local', 'baño']) : type === 'oficinas' ? ['recepción', ...(a >= 160 ? ['sala de reuniones'] : []), 'oficina', 'oficina', ...(a >= 220 ? ['oficina'] : []), 'baño'] : type === 'comida' ? ['comedor', 'cocina', 'baño'] : ['sala de ventas', 'depósito', 'carga', 'baño']; // programa mínimo de cada negocio // [peso, área mínima, cuánto quiere la calle]
+      local: [2.4, 40, 2], lobby: [2.2, 40, 2], depósito: [1, 20, -1], recepción: [1.3, 26, 2], oficina: [1, 22, 0], 'sala de reuniones': [1.2, 26, 0], comedor: [2, 36, 2], 'sala de ventas': [3, 60, 2], carga: [0.8, 24, -1] };
+    const negocioProg = (type, a) => type === 'tienda' ? (a >= 95 ? ['local', 'depósito', 'baño'] : ['local', 'baño']) : type === 'oficinas' ? ['recepción', ...(a >= 160 ? ['sala de reuniones'] : []), 'oficina', 'oficina', ...(a >= 220 ? ['oficina'] : []), 'baño'] : type === 'comida' ? ['comedor', 'cocina', 'baño'] : type === 'corporativo' ? ['lobby', 'recepción', 'sala de reuniones', 'oficina', 'oficina', 'baño'] : ['sala de ventas', 'depósito', 'carga', 'baño']; // programa mínimo de cada negocio // [peso, área mínima, cuánto quiere la calle]
     const casaProg = nR => { const p = ['sala', 'cocina', 'baño']; if (nR >= 5) p.push('garaje'); while (p.length < nR) p.push(p.length === 6 ? 'baño' : 'dormitorio'); return p; };
     const cutFrac = (set, f, minA, minB, diag, minT, tA = minT, tB = minT) => {
       stamp++; let xs0 = 1e9, xs1 = -1, ys0 = 1e9, ys1 = -1;
@@ -521,10 +546,11 @@
     const special = new Map(), used = new Set(), big = (z, min, max = 1e9) => bz.filter(x => !used.has(x.b) && z.includes(x.zone) && x.b.length / 4 >= min && x.b.length / 4 <= max).sort((p, r2) => r2.b.length - p.b.length);
     const forcedMall = bz.filter(x => x.zone !== 'suburbio').sort((p, r2) => r2.b.length - p.b.length)[0]?.b; if (forcedMall) used.add(forcedMall);
     const take = (kind, list, far = false) => { const x = far ? list.sort((p, r2) => Math.hypot(...centerOf(r2.b).map((v, k2) => v - [pcx, pcy][k2])) - Math.hypot(...centerOf(p.b).map((v, k2) => v - [pcx, pcy][k2])))[0] : list[0]; if (x) { special.set(x.b, kind); used.add(x.b); } };
-    for (let k2 = 0; k2 < (n >= 16 ? 2 : 1); k2++) take('hospital', big(['medio', 'centro'], 420));
+    const pref = (z, a, b) => big(z, a).length ? big(z, a) : big(z, b); // terreno grande si hay: la instalación es una mini ciudad
+    for (let k2 = 0; k2 < (n >= 16 ? 2 : 1); k2++) take('hospital', pref(['medio', 'centro'], 750, 420));
     if (forcedMall) special.set(forcedMall, 'comercial'); for (const x of big(['centro'], 900).slice(0, n >= 14 ? 1 : 0)) { special.set(x.b, 'comercial'); used.add(x.b); }
     take('policia', big(['medio', 'centro'], 260, 900)); take('bomberos', big(['medio', 'suburbio'], 180, 600));
-    for (let k2 = 0; k2 < (n >= 16 ? 2 : 1); k2++) take('escuela', big(['medio', 'suburbio'], 380));
+    for (let k2 = 0; k2 < (n >= 16 ? 2 : 1); k2++) take('escuela', pref(['medio', 'suburbio'], 650, 380));
     for (let k2 = 0; k2 < (n >= 14 ? 2 : 1); k2++) take('mercado', big(['medio', 'centro'], 300)); // mercado de abastos (para las compras de la casa)
     { const bigOr = (min, min2) => big(['suburbio', 'medio'], min).filter(x => x.zone === 'suburbio').length ? big(['suburbio'], min) : big(['suburbio'], min2); // terreno grande: la base es una mini ciudad
       take('militar', bigOr(1100, 380), true); if (n >= 14) take('carcel', bigOr(800, 300), true); }
@@ -587,7 +613,11 @@
               const rooms2 = pr.length > 1 && rect.length / 4 >= 90 ? splitN(rect, pr.length, 16, dg, 4) : [rect]; const hx = addHouse(sp, zone, rooms2, null, -1, rooms2.map((_, k2) => pr[k2] || pr[pr.length - 1]));
               hx.campus = true; hx.recinto = h.recinto; hx.patio = h.patio; hx.anexo = true; nAnexo++;
               const cs = new Set(rect.map(i => i >> 2)), near = new Set(); for (const c of cs) { const x = c % C, y = (c / C) | 0; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) near.add((y + dy) * C + x + dx); }
-              free = free.filter(i => !near.has(i >> 2)); } }
+              free = free.filter(i => !near.has(i >> 2)); }
+            // en lo que queda del terreno: cancha deportiva (escuela, base) o helipuerto (hospital)
+            const extra = sp === 'hospital' ? 'helipuerto' : sp === 'escuela' || sp === 'militar' ? 'cancha' : null;
+            if (extra) { let r5 = rectIn(erode(free, 1), dg) || rectIn(erode(free, 1), !dg); if (r5 && r5.length / 4 >= 40) { if (extra === 'helipuerto' && r5.length / 4 > 100) { const e5 = extOf(r5, dg), L5 = (e5[0][1] - e5[0][0]) >= (e5[1][1] - e5[1][0]) ? 0 : 1, c5 = cutAt(r5, dg, L5, Math.round((e5[L5][0] + e5[L5][1]) / 2), 3); if (c5) r5 = c5[0]; }
+              const l5 = newLabel(extra, 0); for (const i of r5) q[i] = l5; } } }
           if (park) { const l = newLabel('parking', 0); for (const i of park) q[i] = l; nPark++; }
           done = true; break;
         }
@@ -618,7 +648,7 @@
         if (!solo && zone !== 'suburbio' && chance(zone === 'centro' ? 0.1 : 0.05)) { const l = newLabel('parking', 0); for (const i of [...lot, ...extra[k]]) q[i] = l; nPark++; return; }
         // lote angosto (menos de 6 de ancho): no sirve para oficina ni casa; queda de área verde (letreros, decoración)
         { let th = 0, cur = lot; while (cur.length && th < 4) { cur = erode(cur, 1); th++; } if (th < 3) { const l = newLabel('parque', 0); for (const i of [...lot, ...extra[k]]) q[i] = l; nVerde++; return; } }
-        const u = R(), type0 = zone === 'centro' ? (u < 0.55 ? 'tienda' : u < 0.72 ? 'comida' : 'oficinas') : zone === 'medio' ? (u < 0.5 ? 'condominio' : u < 0.58 ? 'comida' : 'casa') : 'casa', type = solo || (type0 === 'comida' && lot.length / 4 < 130 ? 'tienda' : type0); // la comida rápida necesita lote para su estacionamiento
+        const u = R(), type0 = zone === 'centro' ? (u < 0.48 ? 'tienda' : u < 0.62 ? 'comida' : u < 0.82 || lot.length / 4 < 150 ? 'oficinas' : 'corporativo') : zone === 'medio' ? (u < 0.5 ? 'condominio' : u < 0.58 ? 'comida' : 'casa') : 'casa', type = solo || (type0 === 'comida' && lot.length / 4 < 130 ? 'tienda' : type0); // la comida rápida necesita lote para su estacionamiento
         let nR = type === 'casa' ? rnd(3, 7) : type === 'condominio' ? rnd(5, 7) : type === 'tienda' ? rnd(2, 4) : type === 'comida' ? 3 : type === 'super' ? 3 : rnd(4, 6);
         const B2 = barrioOf(lot); nR = type === 'casa' ? rnd(B2.nR[0], B2.nR[1]) : nR; // el barrio decide el tamaño de sus casas
         const per = type === 'casa' ? rnd(B2.per[0], B2.per[1]) : rnd(34, 46); // área de cada cuarto: entra al menos un auto (5×6 o más)
@@ -635,7 +665,7 @@
         const cutAt = cutAtDepth(lot, diag, ax, Math.round(fromLo ? lo + depthWant / sc : hi - depthWant / sc), fromLo);
         if (cutAt == null) house = lot; else lot.forEach((i, k) => ((fromLo ? fr[k][ax] < cutAt : fr[k][ax] > cutAt) ? house : yard).push(i));
         if (cutAt != null && Math.min(fromLo ? hi - cutAt : cutAt - lo, fromLo ? cutAt - lo : hi - cutAt) * sc < 4) { house = lot; yard = []; }
-        if (type === 'tienda' || type === 'oficinas' || type === 'comida' || type === 'super' || yard.length / 4 < 16 || house.length / 4 < 16) { house = lot; yard = []; }
+        if (type === 'tienda' || type === 'oficinas' || type === 'comida' || type === 'super' || type === 'corporativo' || yard.length / 4 < 16 || house.length / 4 < 16) { house = lot; yard = []; }
         // sin jardín: la casa deja un patio atrás (y la tienda u oficina, un patio de servicio) si el lote alcanza
         if (!yard.length && house.length / 4 >= ((type === 'casa' || type === 'condominio') ? 150 : 190) && ['casa', 'condominio', 'tienda', 'oficinas'].includes(type)) { const dBack = Math.max(4, Math.round(((hi - lo) * sc) * 0.25)), cB = cutAtDepth(lot, diag, ax, Math.round(fromLo ? hi - dBack / sc : lo + dBack / sc), !fromLo);
           if (cB != null) { const back = house.filter(i => { const k2 = lot.indexOf(i); return fromLo ? fr[k2][ax] > cB : fr[k2][ax] < cB; }); const rest2 = house.filter(i => !back.includes(i)); if (back.length / 4 >= 16 && rest2.length / 4 >= 90 && erode(back, 1).length) { house = rest2; yard = back; } } }
@@ -650,7 +680,7 @@
         yard.push(...extra[k]);
         let lvs, roles = null; const cdo = type === 'condominio' ? template('condominio', house, diag) : null;
         if (cdo) { lvs = cdo.rooms; roles = cdo.roles; }
-        else if (type === 'comida' || type === 'super' || type === 'tienda' || type === 'oficinas') { const rq = lot.filter(roadNb), fp = rq.length ? centerOf(rq) : null, pr = splitW(house, negocioProg(type, house.length / 4), diag, 4, fp); lvs = pr.map(x => x[0]); roles = pr.map(x => x[1]); } // el frente (local, recepción, comedor) da a la calle
+        else if (type === 'comida' || type === 'super' || type === 'tienda' || type === 'oficinas' || type === 'corporativo') { const rq = lot.filter(roadNb), fp = rq.length ? centerOf(rq) : null, pr = splitW(house, negocioProg(type, house.length / 4), diag, 4, fp); lvs = pr.map(x => x[0]); roles = pr.map(x => x[1]); } // el frente (local, recepción, comedor) da a la calle
         else if (type === 'casa' || type === 'condominio') { const wsum = k2 => casaProg(k2).reduce((a2, r) => a2 + PROG[r][0], 0); while (nR > (type === 'condominio' ? 4 : 3) && house.length / 4 / wsum(nR) < per * 0.8) nR--; // cuartos grandes: menos cuartos si no entran (el resto va arriba)
           const rq = lot.filter(roadNb), fp = rq.length ? centerOf(rq) : null, pr = splitW(house, casaProg(nR), diag, 4, fp); lvs = pr.map(x => x[0]); roles = pr.map(x => x[1]);
           if (lvs.length < 3 && house.length / 4 >= 80) { // forma rara: la casa es el rectángulo más grande que entra y el resto es jardín
@@ -728,6 +758,8 @@
       if (ka === 'parking' || kb === 'parking') { const ko = ka === 'parking' ? kb : ka; const ot = ka === 'parking' ? b : a; return ST(ko) ? 'bordillo' : ko === 'room' ? 'exterior' : ko === 'out' || ko === 'parking' ? null : 'reja'; } // el estacionamiento se abre a la calle y al terreno de su recinto
       if (ST(ka) && ST(kb)) return (ka === 'corr' || kb === 'corr') && (ka === 'vereda' || kb === 'vereda') ? 'bordillo' : null;
       if ((ka === 'plaza' && kb === 'parque') || (kb === 'plaza' && ka === 'parque')) return null; // el césped se abre a la plaza
+      if ((ka === 'parque' || ka === 'juegos') && (kb === 'parque' || kb === 'juegos')) return null; // dos áreas verdes vecinas: sin reja entre ellas
+      if (ka === 'cancha' || kb === 'cancha' || ka === 'helipuerto' || kb === 'helipuerto') return ka === 'patio' || kb === 'patio' ? 'bordillo' : 'reja'; // cancha y helipuerto: pintados en el terreno
       if (ka === 'patio' || kb === 'patio') { const [p, ot, ko] = ka === 'patio' ? [a, b, kb] : [b, a, ka]; return ko === 'room' ? (houseOf(ot) === houseOf(p) ? 'exterior' : 'medianera') : 'reja'; }
       if (ks === 'room|room') return houseOf(a) === houseOf(b) ? 'interior' : 'medianera';
       if (ka === 'room' || kb === 'room') return 'exterior';
@@ -879,7 +911,7 @@
         const banos = new Set(cand.slice(0, nb2)); for (const l of pv) roleOf.set(l, banos.has(l) ? 'baño' : roleOf.get(l) === 'estudio' ? 'estudio' : 'dormitorio'); } }
     // programa mínimo de cada construcción: si falta un uso obligatorio, lo toma un cuarto repetido o genérico (el más chico para
     // los baños), nunca el último de su uso ni el cuarto de entrada
-    const PROG_MIN = { casa: ['sala', 'cocina', 'baño'], condominio: ['sala', 'cocina', 'baño', 'dormitorio'], mansion: ['hall', 'cocina', 'baño'], tienda: ['local', 'baño'], oficinas: ['recepción', 'oficina', 'baño'], comida: ['comedor', 'cocina', 'baño'],
+    const PROG_MIN = { corporativo: ['lobby', 'oficina', 'baño'], casa: ['sala', 'cocina', 'baño'], condominio: ['sala', 'cocina', 'baño', 'dormitorio'], mansion: ['hall', 'cocina', 'baño'], tienda: ['local', 'baño'], oficinas: ['recepción', 'oficina', 'baño'], comida: ['comedor', 'cocina', 'baño'],
       super: ['sala de ventas', 'depósito', 'baño'], almacen: ['almacén', 'oficina', 'baño'], hospital: ['recepción', 'urgencias', 'habitación', 'quirófano', 'farmacia', 'baños'], escuela: ['dirección', 'aula', 'baños', 'gimnasio'],
       policia: ['recepción', 'oficina', 'celda', 'baños'], bomberos: ['cochera', 'dormitorio', 'cocina', 'baños'], mercado: ['nave de puestos', 'depósito', 'baños'], comercial: ['pasillo', 'local', 'baños'], militar: ['mando', 'barraca', 'comedor', 'baños'], carcel: ['guardia', 'celda', 'comedor', 'baños'] };
     { const GEN = new Set(['sala', 'oficina', 'habitación', 'aula', 'barraca', 'local', 'localB', 'depósito', 'dormitorio', 'celda', 'pabellón', 'departamento', 'bodega', 'estudio', 'garaje', 'comedor', 'cochera', 'gimnasio', 'enfermería', 'sala de espera', 'taller', 'armería']), areaR2 = new Map(); for (let i = 0; i < NQ; i++) if (kinds[q[i]] === 'room') areaR2.set(q[i], (areaR2.get(q[i]) || 0) + 1);
@@ -895,7 +927,7 @@
       const outL = l => isSt(l) || ((h.campus || h.type === 'comida' || h.type === 'super') && (l === h.patio || kindOf(l) === 'parking')); // un recinto sale a su propio terreno
       const toRoad = rs.filter(r => (outL(r.a) || outL(r.b)) && kindOf(outL(r.a) ? r.b : r.a) === 'room').sort((p, r2) => r2.segs.length - p.segs.length);
       const street = toRoad.filter(r => r.segs.length >= 3).length ? toRoad.filter(r => r.segs.length >= 3) : toRoad;
-      const recRun = street.find(r => (h.type === 'condominio' && roleOf.get(h.hub) === 'pasillo' ? ['pasillo'] : ['recepción', 'guardia', 'mando', 'dirección', 'sala', 'comedor', 'nave de puestos', 'sala de ventas', 'local']).includes(roleOf.get(outL(r.a) ? r.b : r.a)));
+      const recRun = street.find(r => (h.type === 'condominio' && roleOf.get(h.hub) === 'pasillo' ? ['pasillo'] : ['recepción', 'guardia', 'mando', 'dirección', 'sala', 'comedor', 'nave de puestos', 'sala de ventas', 'local', 'lobby']).includes(roleOf.get(outL(r.a) ? r.b : r.a)));
       const fr = recRun || street[0];
       if (h.hub) { toRoad.filter(r => r.a === h.hub || r.b === h.hub).slice(0, 2).forEach(r => openMid(r, 'puerta', Math.min(3, r.segs.length))); }
       // puerta principal de 2 de ancho; una tienda tiene 2 puertas principales (salvo una minitienda)
@@ -942,7 +974,7 @@
       if (h.type === 'comercial' || h.type === 'escuela') for (const r of inner) { const ra = roleOf.get(r.a), rb = roleOf.get(r.b), other = ra === 'pasillo' ? rb : rb === 'pasillo' ? ra : null;
         if (other && (h.type === 'comercial' ? ['local', 'patio de comidas', 'tienda ancla'].includes(other) : other === 'patio de recreo') && r.segs.length >= 4) openMid(r, 'puerta', r.segs.length - 2, true); }
       // ventanas: en las paredes que dan a calle, plaza o parque, nunca en la punta ni junto a una puerta
-      const pOpen = { super: 0.2, mansion: 0.1, comida: 0.3, mercado: 0.15, casa: 0.18, tienda: 0.3, oficinas: 0.12, condominio: 0.14, comercial: 0.2, almacen: 0.08 }[h.type];
+      const pOpen = { corporativo: 0.05, super: 0.2, mansion: 0.1, comida: 0.3, mercado: 0.15, casa: 0.18, tienda: 0.3, oficinas: 0.12, condominio: 0.14, comercial: 0.2, almacen: 0.08 }[h.type];
       for (const r of rs) {
         if (kindOf(r.a) === 'patio' && kindOf(r.b) === 'patio') continue;
         if (!r.segs.every(s => s.cls === 'exterior' || s.cls === 'puerta') || r.segs.length < 3) continue;
@@ -1095,12 +1127,13 @@
     const anyRoom = c => [0, 1, 2, 3].some(k => kinds[q[c * 4 + k]] === 'room');
     for (const h of houses.values()) {
       const big = h.rooms.size;
+      if (h.type === 'corporativo') { h.pisos = 2; h.altura = rnd(6, 12); continue; } // torre: solo los pisos 1 y 2 se usan, el resto es fachada
       h.pisos = h.type === 'casa' ? (big < 4 || chance({ centro: 0.7, medio: 0.5 }[h.zone] ?? 0.3) ? 2 : 1) // casa chica: el resto de cuartos arriba
         : h.type === 'condominio' ? rnd(3, 5) : h.type === 'mansion' ? 2 : h.type === 'oficinas' ? rnd(2, 3) : h.type === 'tienda' ? (chance(0.4) ? 2 : 1) : h.type === 'comercial' ? rnd(2, 3)
         : ['hospital', 'escuela', 'policia', 'bomberos'].includes(h.type) ? 2 : 1;
     }
     // puentes y tablas entre techos de edificios cercanos (más caminos cuando las calles están cerradas)
-    const puentes = []; { const cand = new Map(), NOB = new Set(['militar', 'carcel']);
+    const puentes = []; { const cand = new Map(), NOB = new Set(['militar', 'carcel', 'corporativo']);
       for (let y = 0; y < Rr; y++) for (let x = 0; x < C; x++) { const h1 = cellH[y * C + x]; if (!h1 || NOB.has(houses.get(h1)?.type)) continue;
         for (const [dx, dy] of [[1, 0], [0, 1]]) { let g = 0, x2 = x + dx, y2 = y + dy;
           while (x2 < C && y2 < Rr && g <= 8 && !anyRoom(y2 * C + x2)) { g++; x2 += dx; y2 += dy; }
@@ -1159,7 +1192,7 @@
         for (let k = 2; k <= h.pisos; k++) up.push(l === st && h.type !== 'condominio' ? (h.campus || h.type === 'comercial' ? 'pasillo' : 'hall') // donde llega la escalera
           : h.type === 'casa' || h.type === 'mansion' ? (r0 === 'baño' || r0 === 'pasillo' ? r0 : dormUp(l))
           : h.type === 'condominio' ? r0 // departamento repetido piso por piso
-          : h.type === 'oficinas' || h.type === 'tienda' ? (r0 === 'baño' ? 'baño' : 'oficina')
+          : h.type === 'oficinas' || h.type === 'tienda' || h.type === 'corporativo' ? (r0 === 'baño' ? 'baño' : r0 === 'lobby' ? 'hall' : 'oficina')
           : ['garaje', 'cochera', 'garaje policial', 'urgencias', 'patio de presos'].includes(r0) ? (h.type === 'hospital' ? 'habitación' : 'oficina') : r0);
         rolesUp.set(l, up); } }
     for (let k = 2; k <= maxPisos; k++) {
@@ -1178,7 +1211,7 @@
     const count = c => segs.filter(s => s.cls === c).length, hs = [...houses.values()];
     const stats = {
       casas: hs.filter(h => h.type === 'casa').length, tiendas: hs.filter(h => h.type === 'tienda').length, oficinas: hs.filter(h => h.type === 'oficinas').length, condominios: hs.filter(h => h.type === 'condominio').length,
-      centroComercial: hs.filter(h => h.type === 'comercial').length, mansiones: nMans, patios: hs.filter(h => h.patio).length, almacenes: hs.filter(h => h.type === 'almacen').length, derribos: nDemol, rotondas: nRot, islasVerdes: nIsla, lotesVerdes: nVerde, comidaRapida: hs.filter(h => h.type === 'comida').length, edificiosRecinto: nAnexo, supermercados: hs.filter(h => h.type === 'super').length, mercados: hs.filter(h => h.type === 'mercado').length, barrios: barrios.length, pasajes: nPas, especiales: nSpecial, avenidaCentral: nBlvd, estacionamientos: nPark, rejasCalle: nBarr, rejasCierran: nBarrFull, garajes: nGar, salidasEmergencia: nEmerg, entradasRotas: nHueco, autopistas: nHwy, crucesArreglados: nFixX, esquinasArregladas: nFixW, sueltas: hs.filter(h => h.style === 'suelta').length, cuartosUnidos: nMerge, avenidas: nAv, accesosArreglados: nFix,
+      centroComercial: hs.filter(h => h.type === 'comercial').length, mansiones: nMans, patios: hs.filter(h => h.patio).length, almacenes: hs.filter(h => h.type === 'almacen').length, derribos: nDemol, rotondas: nRot, islasVerdes: nIsla, plazuelas: nPlazuela, granjas: nGranja, lotesVerdes: nVerde, comidaRapida: hs.filter(h => h.type === 'comida').length, torres: hs.filter(h => h.type === 'corporativo').length, edificiosRecinto: nAnexo, supermercados: hs.filter(h => h.type === 'super').length, mercados: hs.filter(h => h.type === 'mercado').length, barrios: barrios.length, pasajes: nPas, especiales: nSpecial, avenidaCentral: nBlvd, estacionamientos: nPark, rejasCalle: nBarr, rejasCierran: nBarrFull, garajes: nGar, salidasEmergencia: nEmerg, entradasRotas: nHueco, autopistas: nHwy, crucesArreglados: nFixX, esquinasArregladas: nFixW, sueltas: hs.filter(h => h.style === 'suelta').length, cuartosUnidos: nMerge, avenidas: nAv, accesosArreglados: nFix,
       cuartos: hs.reduce((a, h) => a + h.rooms.size, 0), refugios: refuges.length, parques: kinds.filter(k => k === 'parque').length, plazaCeldas: plaza ? Math.round(plaza.area) : 0,
       puertas: count('puerta'), ventanasCerradas: count('ventana'), ventanasRotas: count('ventanaRota'), rejas: count('reja'), portones: count('porton'), mediana: nMed,
       tramosDiagonales: segs.filter(s => s.dir[0] === 'd').length, ruta: route ? route.cost : null,

@@ -25,6 +25,6 @@ cópialo a `techos/casa.json` para probarlo.
 
 ## Probar a escala chica
 ```
-node ciudad/exportar.js --semilla=7 --zona=200,20,60,60
+node ciudad/exportar.js --semilla=7 --zona=226,46,60,60
 ```
 Exporta solo ese pedazo del mapa (en celdas; las coordenadas se ven en el visor) a `ciudad/export/ciudad_semilla_7_zona/`.

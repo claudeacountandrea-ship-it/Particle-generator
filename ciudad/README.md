@@ -73,9 +73,9 @@ Está separado del generador de mazmorras (`editor/`), que no se tocó. Tiene tr
 - `index.html`: el visor. Elige modo, semilla y tamaño, y mira la ruta A→B.
 - `exportar.js`: escribe las piezas para TruWorlds.
 - `export/ciudad_semilla_7/`: **la ciudad del motor con pisos** (n=12, ~25.000 piezas: plantas de arriba, escaleras y puentes entre techos).
-- `export/ciudad_semilla_7_zona/`: **zona de prueba chica** (celdas 200,20 a 260,80; ~460 piezas) para mirar en TruWorlds y corregir rápido.
+- `export/ciudad_semilla_7_zona/`: **zona de prueba chica** (celdas 226,46 a 286,106) para mirar en TruWorlds y corregir rápido.
 - `disenos/`: techos de diseño propio con piezas de TruWorlds (Block, Wedge, Ball, Cylinder); ver `disenos/LEEME.md`.
-- `export/ciudad_semilla_7_ligera/`: la misma ciudad **sin plantas de arriba ni piso de color dentro de las casas** (~14.600 piezas, bajo el tope de 15.000).
+- `export/ciudad_semilla_7_ligera/`: la misma ciudad **sin plantas de arriba, piso de color, marcas de carriles ni tono de techo por barrio** (~15.800 piezas; el mapa creció con granjas y plazuelas).
 - `export/diagonal_semilla_7/`: ciudad diagonal ya exportada (19×19, **5.468 piezas, 25 chunks, máx. 391**).
 - `export/cuadricula_semilla_7/`: ciudad en cuadrícula ya exportada (150×110 celdas, 2.413 piezas).
 
@@ -199,6 +199,15 @@ Las puertas son huecos en la pared, sin hoja.
 - **Instalaciones como mini ciudades**: en terrenos grandes el edificio principal va en un extremo y en el patio se levantan
   otros edificios: hospital (urgencias y sala de espera, laboratorio y farmacia, mantenimiento, capilla), escuela (aulas,
   comedor, biblioteca), comisaría (garaje policial, celdas), bomberos (torre de práctica, taller), mercado (puestos).
+- **Plazuelas**: donde la calzada sobra (a más de 7 celdas de cualquier borde, fuera de avenidas y óvalos) el centro pasa a
+  ser una plazuela o una placita de juegos con su vereda; alrededor queda una calzada normal. Dos áreas verdes vecinas no
+  llevan reja entre ellas.
+- **Torres corporativas** (centro, lotes grandes): lobby, recepción, sala de reuniones, oficinas y baño; solo los pisos 1 y 2
+  se usan, el resto es fachada de vidrio (`Fachada`) hasta 6–12 pisos, con el techo arriba.
+- **Caminos rurales y granjas**: 1 o 2 caminos angostos salen del anillo al campo (lejos de las autopistas) y terminan en un
+  caserío con su campo de cultivo. El margen del mapa ahora es de 50 celdas.
+- **Instalaciones más grandes**: el hospital y la escuela prefieren terrenos de 750 y 650 celdas; en lo que sobra del terreno,
+  helipuerto (hospital) o cancha deportiva (escuela, base militar).
 - **Base militar y cárcel**: una mini ciudad dentro del muro: el cuartel en un extremo del terreno y en el patio otros
   edificios separados (barracas, comedor y cocina, hangar, taller; en la cárcel, pabellones, comedor y taller).
 - **Antejardín**: en la mitad de los barrios la casa se retira 3 de la vereda y se entra por un jardín al frente.
