@@ -26,7 +26,7 @@
    1016
   ]
  },
- "totalPiezas": 446,
+ "totalPiezas": 488,
  "chunks": [
   {
    "archivo": "chunk_00.json",
@@ -36,7 +36,7 @@
     0,
     -1648
    ],
-   "piezas": 25
+   "piezas": 27
   },
   {
    "archivo": "chunk_01.json",
@@ -46,7 +46,7 @@
     0,
     -1392
    ],
-   "piezas": 129
+   "piezas": 104
   },
   {
    "archivo": "chunk_02.json",
@@ -56,7 +56,7 @@
     0,
     -1136
    ],
-   "piezas": 33
+   "piezas": 31
   },
   {
    "archivo": "chunk_03.json",
@@ -66,7 +66,7 @@
     0,
     -1648
    ],
-   "piezas": 21
+   "piezas": 23
   },
   {
    "archivo": "chunk_04.json",
@@ -76,7 +76,7 @@
     0,
     -1392
    ],
-   "piezas": 197
+   "piezas": 221
   },
   {
    "archivo": "chunk_05.json",
@@ -86,7 +86,7 @@
     0,
     -1136
    ],
-   "piezas": 41
+   "piezas": 82
   }
  ],
  "spawns": {
@@ -1174,32 +1174,6 @@
    },
    {
     "pos": [
-     -244,
-     0,
-     164
-    ],
-    "dir": [
-     0,
-     0,
-     -1
-    ],
-    "ovalo": false
-   },
-   {
-    "pos": [
-     -268,
-     0,
-     164
-    ],
-    "dir": [
-     0,
-     0,
-     1
-    ],
-    "ovalo": false
-   },
-   {
-    "pos": [
      -69.333,
      0,
      -460
@@ -1956,7 +1930,7 @@
     "pos": [
      268,
      0,
-     -164
+     -188
     ],
     "dir": [
      0,
@@ -1969,7 +1943,7 @@
     "pos": [
      268,
      0,
-     -84
+     -108
     ],
     "dir": [
      0,
@@ -1982,7 +1956,7 @@
     "pos": [
      244,
      0,
-     -164
+     -188
     ],
     "dir": [
      0,
@@ -1995,7 +1969,7 @@
     "pos": [
      244,
      0,
-     -84
+     -108
     ],
     "dir": [
      0,
@@ -4216,7 +4190,7 @@
    },
    {
     "pos": [
-     676,
+     708,
      0,
      12
     ],
@@ -4229,7 +4203,46 @@
    },
    {
     "pos": [
-     676,
+     788,
+     0,
+     12
+    ],
+    "dir": [
+     1,
+     0,
+     0
+    ],
+    "ovalo": false
+   },
+   {
+    "pos": [
+     868,
+     0,
+     12
+    ],
+    "dir": [
+     1,
+     0,
+     0
+    ],
+    "ovalo": false
+   },
+   {
+    "pos": [
+     948,
+     0,
+     12
+    ],
+    "dir": [
+     1,
+     0,
+     0
+    ],
+    "ovalo": false
+   },
+   {
+    "pos": [
+     708,
      0,
      -12
     ],
@@ -4242,46 +4255,7 @@
    },
    {
     "pos": [
-     780,
-     0,
-     12
-    ],
-    "dir": [
-     1,
-     0,
-     0
-    ],
-    "ovalo": false
-   },
-   {
-    "pos": [
-     860,
-     0,
-     12
-    ],
-    "dir": [
-     1,
-     0,
-     0
-    ],
-    "ovalo": false
-   },
-   {
-    "pos": [
-     940,
-     0,
-     12
-    ],
-    "dir": [
-     1,
-     0,
-     0
-    ],
-    "ovalo": false
-   },
-   {
-    "pos": [
-     780,
+     788,
      0,
      -12
     ],
@@ -4294,7 +4268,7 @@
    },
    {
     "pos": [
-     860,
+     868,
      0,
      -12
     ],
@@ -4307,7 +4281,7 @@
    },
    {
     "pos": [
-     940,
+     948,
      0,
      -12
     ],
@@ -6036,7 +6010,7 @@
    },
    {
     "pos": [
-     580,
+     620,
      0,
      1292
     ],
@@ -6049,7 +6023,7 @@
    },
    {
     "pos": [
-     660,
+     700,
      0,
      1292
     ],
@@ -6062,7 +6036,7 @@
    },
    {
     "pos": [
-     740,
+     780,
      0,
      1292
     ],
@@ -6075,7 +6049,7 @@
    },
    {
     "pos": [
-     820,
+     860,
      0,
      1292
     ],
@@ -6088,7 +6062,7 @@
    },
    {
     "pos": [
-     580,
+     620,
      0,
      1268
     ],
@@ -6101,7 +6075,7 @@
    },
    {
     "pos": [
-     660,
+     700,
      0,
      1268
     ],
@@ -6114,7 +6088,7 @@
    },
    {
     "pos": [
-     740,
+     780,
      0,
      1268
     ],
@@ -6127,7 +6101,7 @@
    },
    {
     "pos": [
-     820,
+     860,
      0,
      1268
     ],
@@ -6558,23 +6532,23 @@
  },
  "estadisticas": {
   "casas": 53,
-  "tiendas": 37,
-  "oficinas": 21,
-  "condominios": 30,
+  "tiendas": 33,
+  "oficinas": 17,
+  "condominios": 27,
   "centroComercial": 1,
   "mansiones": 2,
-  "patios": 94,
-  "almacenes": 2,
+  "patios": 87,
+  "almacenes": 1,
   "derribos": 3,
   "rotondas": 4,
   "islasVerdes": 2,
   "plazuelas": 30,
   "granjas": 2,
   "lotesVerdes": 2,
-  "comidaRapida": 5,
-  "torres": 5,
+  "comidaRapida": 17,
+  "torres": 3,
   "edificiosRecinto": 10,
-  "supermercados": 4,
+  "supermercados": 3,
   "mercados": 3,
   "barrios": 9,
   "pasajes": 6,
@@ -6589,36 +6563,36 @@
    "lago": 1
   },
   "avenidaCentral": 0,
-  "estacionamientos": 8,
+  "estacionamientos": 11,
   "rejasCalle": 0,
   "rejasCierran": 0,
-  "garajes": 6,
-  "salidasEmergencia": 61,
-  "entradasRotas": 36,
+  "garajes": 7,
+  "salidasEmergencia": 47,
+  "entradasRotas": 28,
   "autopistas": 2,
   "crucesArreglados": 0,
-  "esquinasArregladas": 1349,
-  "sueltas": 53,
-  "cuartosUnidos": 10,
+  "esquinasArregladas": 1314,
+  "sueltas": 43,
+  "cuartosUnidos": 7,
   "avenidas": 0,
   "accesosArreglados": 0,
-  "cuartos": 631,
+  "cuartos": 619,
   "refugios": 0,
   "parques": 25,
   "plazaCeldas": 2532,
-  "puertas": 1720,
-  "ventanasCerradas": 696,
-  "ventanasRotas": 137,
-  "rejas": 5583,
-  "portones": 508,
-  "mediana": 1664,
-  "tramosDiagonales": 7487,
+  "puertas": 1644,
+  "ventanasCerradas": 682,
+  "ventanasRotas": 149,
+  "rejas": 5289,
+  "portones": 498,
+  "mediana": 1648,
+  "tramosDiagonales": 7348,
   "ruta": null,
-  "edificiosDe2oMas": 125,
+  "edificiosDe2oMas": 116,
   "pisosMax": 5,
-  "escaleras": 141,
-  "escalerasAlTecho": 70,
+  "escaleras": 136,
+  "escalerasAlTecho": 66,
   "puentes": 22,
-  "tablas": 28
+  "tablas": 26
  }
 }

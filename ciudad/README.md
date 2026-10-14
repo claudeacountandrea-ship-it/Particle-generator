@@ -216,6 +216,19 @@ Las puertas son huecos en la pared, sin hoja.
 - **Visor**: «Contornos» rodea cada lote (casa + jardín) y cada parque, juegos o lago; «Tipo de edificio» escribe casa,
   condominio, tienda u oficinas con sus pisos (por ejemplo «condominio 3P»). El selector «Piso» muestra la calle, los pisos 2 a 4 (lo que no llega queda oscuro) y los techos con los puentes.
 
+## Solo construcciones, pisos con triángulos y escaleras giradas
+- **Sin objetos sueltos**: ya no se ponen juegos (tobogán, columpio, arenero), árboles, bancas, fuente ni tachos; cada parque es
+  arquitectura: un recinto cercado con 2 portones de 2. Con `objetos: true` vuelven.
+- **Triángulos de piso**: donde una pared va en diagonal, la media celda se cubre con una banda girada a 45° (una pieza por
+  tramo y por lado) en el piso, las losas de arriba y el techo: ya no queda el hueco triangular.
+- **Escaleras giradas**: en una casa en diagonal la escalera es un rectángulo a 45° (bordes en vértices de la rejilla) y su
+  rampa sale girada igual. Cada escalera trae `cx, cy, dir, largo, ancho, esquinas, celdas` en el modelo.
+- **Construcciones mínimas**: una casa de 2 cuartos es un monoambiente (sala con cocina, baño, dormitorio arriba); una de un solo
+  ambiente es un taller; una tienda de un solo ambiente es un kiosco; una oficina de 2 cuartos es oficina con baño. Si una
+  vivienda no tiene lugar para el baño, la cocina se abre a la sala y ese cuarto es el baño.
+- **Comisaría y bomberos**: plantillas con baños; comisaría con garaje policial, pabellón de celdas y armería con vestuario;
+  bomberos con cocheras, dormitorio, cocina, baños, gimnasio, sala de guardia y oficina, más torre de práctica, vestuario y taller.
+
 ## Medidas arcade (fáciles de cambiar)
 Las medidas no son realistas, son de juego: números redondos en metros de Blender (1 m = 4 studs), pensados para un
 personaje de unos 3 m. Lo que en la vida mide 2, aquí mide 3. Están todas en la tabla `MEDIDAS` de `ciudad.js`:
