@@ -74,8 +74,8 @@
         nGranja++;
         const setT = (d, a, v) => { const [x, y] = P2(d, a); if (x < 0 || y < 0 || x >= C || y >= Rr) return; for (let k = 0; k < 4; k++) { const i = (y * C + x) * 4 + k; if (t[i] === 0) t[i] = v; } };
         for (let d = d0 - 3; d <= dEnd; d++) for (let a = -4; a < 4; a++) setT(d, a, 1); // el camino
-        for (let d = dEnd + 1; d <= dEnd + 18; d++) for (let a = -11; a < 11; a++) setT(d, a, 1 + (Math.abs(a) < 9 && d > dEnd + 1 && d < dEnd + 17 ? 2 : 0)); // caserío: manzana con su calle alrededor
-        const side = chance(0.5) ? 1 : -1, field = []; for (let d = dEnd - 4; d <= dEnd + 18; d++) for (let a = 13; a < 30; a++) { const [x, y] = P2(d, side * a); if (free(x, y)) field.push([x, y]); }
+        for (let d = dEnd + 1; d <= dEnd + 16; d++) for (let a = -10; a < 10; a++) setT(d, a, 3); // la granja: el lote al final del camino (la casa y el granero)
+        const side = chance(0.5) ? 1 : -1, field = []; for (let d = dEnd + 1; d <= dEnd + 16; d++) for (let a = 10; a < 26; a++) { const [x, y] = P2(d, side * a); if (free(x, y)) field.push([x, y]); }
         camposCultivo.push(field); for (const [x, y] of field) for (let k = 0; k < 4; k++) t[(y * C + x) * 4 + k] = 4; } } // campo de cultivo (pasto)
     // TRAZADO POR ETAPAS (o.trazado !== 'mazmorra'): 1) la silueta es la de la mazmorra; 2) la silueta se parte en barrios con
     // cortes rectos o a 45° y cada corte es una avenida (16 de ancho los primeros, 12 los siguientes); 3) el barrio del centro
@@ -529,7 +529,7 @@
       return [...splitW(A2, gA, diag, minT, fp), ...splitW(B2, gB, diag, minT, fp)];
     };
     const erode = (set, steps) => { let cur = set; for (let s2 = 0; s2 < steps; s2++) { stamp++; for (const i of cur) mk[i] = stamp; cur = cur.filter(i => { const c = i >> 2, k = i & 3, x = c % C, y = (c / C) | 0; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (!inQ(x + dx, y + dy, k)) return false; return true; }); } return cur; };
-    let nextH = 1, nMalls = 0, nPark = 0, nMans = 0, nSolo = 0, nAnexo = 0, nProg = 0, nVerde = 0, nEntP = 0, nJardin = 0, nVerAseg = 0;
+    let nextH = 1, nMalls = 0, nPark = 0, nMans = 0, nSolo = 0, nAnexo = 0, nProg = 0, nCalleSuelta = 0, nVerde = 0, nEntP = 0, nJardin = 0, nVerAseg = 0;
     const roleOf = new Map(); // uso de cada cuarto: sala, cocina, garaje, dormitorio, baño, local...
     const addHouse = (type, zone, rooms, patio, hub = -1, roles = null) => {
       const hid = nextH++, all = rooms.flat(), [hx, hy] = centerOf(all), h = { id: hid, type, zone, cx: hx, cy: hy, area: all.length / 4, rooms: new Set(), patio: 0, refuge: false };
@@ -871,8 +871,11 @@
     }
     // vereda asegurada: los lotes, la reparación de esquinas y los óvalos mueven bordes después de trazar las veredas; al final,
     // todo edificio, jardín o parque que quede pegado a la calzada recupera su vereda (1 celda), y se vuelve a limpiar y biselar
-    const asegurarVereda = () => { const B = new Uint8Array(NQ); for (let i = 0; i < NQ; i++) { const k = kindOf(q[i]); if (k === 'room' || k === 'patio' || k === 'parque' || k === 'juegos' || k === 'parking') B[i] = 1; }
-      const V = grow(B, 1); let n2 = 0; for (let i = 0; i < NQ; i++) if (V[i] && q[i] === ROAD) { q[i] = VEREDA; n2++; } return n2; };
+    // vereda pareja: al final se rehacen todas las veredas con el mismo ancho (1 celda) alrededor de manzanas, jardines,
+    // parques y estacionamientos, y del lado del campo; así no hay escalones donde antes cambiaba de 1 a 2 celdas
+    const asegurarVereda = () => { if (o.veredaPareja !== false) for (let i = 0; i < NQ; i++) if (q[i] === VEREDA) q[i] = ROAD;
+      const B = new Uint8Array(NQ), O2 = new Uint8Array(NQ); for (let i = 0; i < NQ; i++) { const k = kindOf(q[i]); if (k === 'room' || k === 'patio' || k === 'parque' || k === 'juegos' || k === 'parking' || k === 'plaza' || k === 'cancha' || k === 'helipuerto') B[i] = 1; else if (k === 'out') O2[i] = 1; }
+      const V = grow(B, 1), VO = grow(O2, 1); let n2 = 0; for (let i = 0; i < NQ; i++) if ((V[i] || VO[i]) && q[i] === ROAD) { q[i] = VEREDA; n2++; } return n2; };
     // entrada de autos: la vereda rodea también los estacionamientos y cada uno abre una sola entrada de ~7 celdas, en el medio
     // de su frente a la calzada (la vereda es más importante: el estacionamiento no se la come entera)
     const entradasAutos = () => { const cellHas = (c, pred) => [0, 1, 2, 3].some(k => pred(q[c * 4 + k])); const byP = new Map();
@@ -884,7 +887,20 @@
         const nearHouse = (x, y) => { for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) for (let k = 0; k < 4; k++) { const kd = kindOf(q[((y + dy) * C + x + dx) * 4 + k]); if (kd === 'room' || kd === 'patio' || kd === 'parque' || kd === 'juegos') return true; } return false; };
         for (const [x, y] of cs) { if (Math.max(Math.abs(x - cx), Math.abs(y - cy)) > 3 || nearHouse(x, y)) continue; for (let k = 0; k < 4; k++) if (q[(y * C + x) * 4 + k] === VEREDA) q[(y * C + x) * 4 + k] = ROAD; } // solo la franja entre el estacionamiento y la calle
         nEntP++; } };
-    nVerAseg = asegurarVereda(); normalize(); entradasAutos(); normalize(); sierra(); bisel(); sierra(true); normalize(); // la reparación de esquinas también puede dejar sierra en las veredas
+    // calles imposibles: un pedazo de calzada que quedó desconectado de la red (encerrado por veredas) pasa a ser plazuela
+    // (o vereda si es chico): ningún auto llega ahí
+    const sinCalleSuelta = () => { const seen = new Uint8Array(NQ), comps2 = []; for (let s0 = 0; s0 < NQ; s0++) { if (q[s0] !== ROAD || seen[s0]) continue; const st = [s0], mem = []; seen[s0] = 1;
+        while (st.length) { const i = st.pop(); mem.push(i); nb(i, j => { if (q[j] === ROAD && !seen[j]) { seen[j] = 1; st.push(j); } }); } comps2.push(mem); }
+      comps2.sort((a, b) => b.length - a.length); const main = new Uint8Array(NQ); for (const i of comps2[0] || []) main[i] = 1;
+      for (const mem of comps2.slice(1)) { // primero se intenta conectar: cruzando la vereda (hasta 8 cuartos) hacia la red principal
+        const prev = new Map(), st = mem.slice(); for (const i of mem) prev.set(i, -1); let hit = -1;
+        for (let h2 = 0; h2 < st.length && hit < 0; h2++) { const i = st[h2]; let dpt = 0; for (let j = i; prev.get(j) >= 0 && dpt < 20; j = prev.get(j)) dpt++; if (dpt > 8) continue;
+          nb(i, j => { if (hit >= 0 || prev.has(j)) return; if (main[j]) { prev.set(j, i); hit = j; return; } if (q[j] === VEREDA) { prev.set(j, i); st.push(j); } }); }
+        if (hit >= 0) { let mid = hit, cnt = 0; for (let j = hit; j >= 0 && prev.get(j) >= 0; j = prev.get(j)) { cnt++; if (cnt === 3) mid = j; }
+          const cx = (mid >> 2) % C, cy = ((mid >> 2) / C) | 0; for (let y = cy - 3; y <= cy + 3; y++) for (let x = cx - 3; x <= cx + 3; x++) { if (x < 0 || y < 0 || x >= C || y >= Rr) continue; for (let k = 0; k < 4; k++) if (q[(y * C + x) * 4 + k] === VEREDA) q[(y * C + x) * 4 + k] = ROAD; }
+          for (const i of mem) main[i] = 1; nCalleSuelta++; continue; }
+        const l = mem.length / 4 >= 30 ? newLabel('parque', 0) : VEREDA; for (const i of mem) q[i] = l; nCalleSuelta++; } };
+    nVerAseg = asegurarVereda(); normalize(); sinCalleSuelta(); entradasAutos(); normalize(); sierra(); bisel(); sierra(true); normalize(); // la reparación de esquinas también puede dejar sierra en las veredas
     // consistencia: cada cuarto que quedó en el mapa pertenece a una casa existente
     { const present = new Map(); for (let i = 0; i < NQ; i++) { const l = q[i]; if (kinds[l] === 'room') { if (!present.has(l)) present.set(l, []); present.get(l).push(i); } }
       for (const h of houses.values()) h.rooms = new Set([...h.rooms].filter(l => present.has(l)));
